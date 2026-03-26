@@ -18,7 +18,7 @@ export const products: Product[] = [
   p(3, 'COAF', 'Corona/Affligem', 3.00, '#f4b738'),
   p(4, 'HE0%', 'Heineken 0%', 3.00, '#f4b738'),
   p(5, 'JUIC', 'Juices', 4.50, '#294c4e'),
-  p(6, 'SOFT', 'Softdrinks', 4.00, '#294c4e'),
+  p(6, 'SOFT', 'Soft\nDrinks', 4.00, '#294c4e'),
   p(7, 'ABSO', 'Absolute', 6.00, '#bb706b'),
   p(8, 'BOMB', 'Bombay', 3.00, '#8f8255'),
   p(9, 'APPC', 'Apple Cider', 3.00, '#f4b738'),
