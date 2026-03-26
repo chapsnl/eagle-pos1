@@ -124,8 +124,8 @@ export const GarderobePage = () => {
           </div>
         </div>
         <div className="w-full max-w-[280px]">
-          <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">
-            Tasnummer (B)
+          <label className="text-[13px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block text-center">
+            Tasnummer
           </label>
           <div
             onClick={() => setActiveField('bag')}
@@ -133,8 +133,8 @@ export const GarderobePage = () => {
             style={{
               backgroundColor: '#d1d5db',
               color: '#111',
-              fontSize: showNumpad ? 'clamp(28px, 6vw, 48px)' : 'clamp(40px, 10vw, 80px)',
-              padding: showNumpad ? 'clamp(8px, 1.5vh, 14px) 12px' : 'clamp(16px, 3vh, 32px) 16px',
+              fontSize: 'clamp(40px, 10vw, 80px)',
+              padding: 'clamp(16px, 3vh, 32px) 16px',
               border: activeField === 'bag' ? '3px solid #00cc13' : '3px solid transparent',
               boxShadow: activeField === 'bag' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
               transition: 'all 0.2s ease',

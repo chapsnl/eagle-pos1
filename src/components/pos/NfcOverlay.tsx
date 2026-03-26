@@ -1,4 +1,4 @@
-import { Nfc, X, PenLine } from 'lucide-react';
+import { Nfc, PenLine } from 'lucide-react';
 
 interface NfcOverlayProps {
   status: 'scanning' | 'writing' | null;
