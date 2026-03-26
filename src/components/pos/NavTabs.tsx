@@ -8,7 +8,7 @@ interface NavTabsProps {
 
 const tabs: { view: AppView; label: string }[] = [
   { view: 'bar', label: 'BAR' },
-  { view: 'garderobe', label: 'GARDEROBE' },
+  { view: 'garderobe', label: 'COAT CHECK' },
   { view: 'betaling', label: 'PAY' },
   { view: 'arm-nummer', label: 'NO-NFC' },
   { view: 'admin', label: 'ADMIN' },
@@ -21,7 +21,7 @@ export const NavTabs = ({ activeView, onViewChange, itemCount = 0 }: NavTabsProp
         <button
           key={view}
           onClick={() => onViewChange(view)}
-          className="flex-1 py-2.5 text-[clamp(11px,2.5vw,15px)] font-extrabold uppercase tracking-wide relative"
+          className="flex-1 py-3.5 text-[clamp(12px,2.5vw,16px)] font-extrabold uppercase tracking-wide relative"
           style={activeView === view ? {
             backgroundColor: '#00cc13',
             color: '#ffffff',
