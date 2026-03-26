@@ -102,8 +102,8 @@ export const GarderobePage = () => {
         Garderobe
       </h2>
 
-      <div className="flex-1 flex flex-col items-center justify-center gap-3 px-4">
-        <div className="w-full" style={{ maxWidth: '280px' }}>
+      <div className="flex-1 flex flex-col items-center justify-center gap-2 px-4 min-h-0">
+        <div className="w-full max-w-[280px]">
           <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">
             Jasnummer (C)
           </label>
@@ -113,8 +113,8 @@ export const GarderobePage = () => {
             style={{
               backgroundColor: '#d1d5db',
               color: '#111',
-              fontSize: showNumpad ? 'clamp(40px, 8vw, 64px)' : 'clamp(56px, 12vw, 96px)',
-              padding: showNumpad ? 'clamp(12px, 2vh, 20px) 16px' : 'clamp(24px, 5vh, 48px) 16px',
+              fontSize: showNumpad ? 'clamp(28px, 6vw, 48px)' : 'clamp(40px, 10vw, 80px)',
+              padding: showNumpad ? 'clamp(8px, 1.5vh, 14px) 12px' : 'clamp(16px, 3vh, 32px) 16px',
               border: activeField === 'coat' ? '3px solid #00cc13' : '3px solid transparent',
               boxShadow: activeField === 'coat' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
               transition: 'all 0.2s ease',
@@ -123,7 +123,7 @@ export const GarderobePage = () => {
             {coatNumber || <span style={{ color: '#9ca3af' }}>—</span>}
           </div>
         </div>
-        <div className="w-full" style={{ maxWidth: '280px' }}>
+        <div className="w-full max-w-[280px]">
           <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">
             Tasnummer (B)
           </label>
@@ -133,8 +133,8 @@ export const GarderobePage = () => {
             style={{
               backgroundColor: '#d1d5db',
               color: '#111',
-              fontSize: showNumpad ? 'clamp(40px, 8vw, 64px)' : 'clamp(56px, 12vw, 96px)',
-              padding: showNumpad ? 'clamp(12px, 2vh, 20px) 16px' : 'clamp(24px, 5vh, 48px) 16px',
+              fontSize: showNumpad ? 'clamp(28px, 6vw, 48px)' : 'clamp(40px, 10vw, 80px)',
+              padding: showNumpad ? 'clamp(8px, 1.5vh, 14px) 12px' : 'clamp(16px, 3vh, 32px) 16px',
               border: activeField === 'bag' ? '3px solid #00cc13' : '3px solid transparent',
               boxShadow: activeField === 'bag' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
               transition: 'all 0.2s ease',
@@ -155,14 +155,14 @@ export const GarderobePage = () => {
       </div>
 
       {showNumpad && (
-        <div className="px-4 pb-2">
+        <div className="px-4 pb-1">
           <div className="w-full max-w-md mx-auto grid grid-cols-3 gap-0">
             {NUM_KEYS.map((key, i) => (
               <button
                 key={i}
                 onClick={() => key && handleNumKey(key)}
                 disabled={!key}
-                className="py-3 text-2xl font-extrabold uppercase disabled:invisible"
+                className="py-2 text-xl font-extrabold uppercase disabled:invisible"
                 style={{
                   backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
                   color: key === 'DEL' ? '#fff' : '#e5e5e5',
@@ -176,11 +176,11 @@ export const GarderobePage = () => {
         </div>
       )}
 
-      <div className="px-4 pb-3 pt-1">
+      <div className="px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-1">
         <button
           onClick={handleSubmit}
           disabled={!coatNumber && !bagNumber}
-          className="w-full py-4 text-xl font-extrabold uppercase disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+          className="w-full py-3 text-lg font-extrabold uppercase disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           style={{
             backgroundColor: '#00cc13',
             color: '#fff',

@@ -1,0 +1,21 @@
+{
+  "name": "Eagle POS",
+  "short_name": "Eagle POS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#181c24",
+  "theme_color": "#00cc13",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/placeholder.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/placeholder.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

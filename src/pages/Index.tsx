@@ -111,7 +111,7 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-[100dvh] flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
       <NfcOverlay status={nfcStatus} onCancel={handleCancelNfc} />
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
@@ -120,15 +120,17 @@ const Index = () => {
         <>
           <OrderBar items={items} total={total} onRemoveItem={removeItem} onClear={clearOrder} />
           <ProductGrid onAddProduct={addProduct} />
-          <button
-            onClick={handleSend}
-            disabled={items.length === 0}
-            className="pos-btn py-4 text-xl flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110 active:brightness-75"
-            style={{ backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340, inset 0 1px 0 #ffffff20' }}
-          >
-            <Send className="w-6 h-6" />
-            SEND — €{total.toFixed(2)}
-          </button>
+          <div className="pb-[max(0px,env(safe-area-inset-bottom))]">
+            <button
+              onClick={handleSend}
+              disabled={items.length === 0}
+              className="pos-btn w-full py-3 text-lg flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110 active:brightness-75"
+              style={{ backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340, inset 0 1px 0 #ffffff20' }}
+            >
+              <Send className="w-5 h-5" />
+              SEND — €{total.toFixed(2)}
+            </button>
+          </div>
         </>
       )}
 
