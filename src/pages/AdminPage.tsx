@@ -1,46 +1,8 @@
 import { useState } from 'react';
-import { Lock, Trash2, ArrowRightLeft, Mail, DollarSign, RotateCcw, AlertTriangle, X, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, ArrowRightLeft, Mail, DollarSign, RotateCcw, AlertTriangle, X, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { useActiveSessions, useIncidentSessions } from '@/hooks/useSessions';
 
 export const AdminPage = () => {
-  const [pinInput, setPinInput] = useState('');
-  const [unlocked, setUnlocked] = useState(false);
-
-  const handlePinSubmit = () => {
-    if (pinInput === '2520') {
-      setUnlocked(true);
-    } else {
-      setPinInput('');
-    }
-  };
-
-  if (!unlocked) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6">
-        <Lock className="w-12 h-12 text-muted-foreground" />
-        <h2 className="text-xl font-extrabold uppercase tracking-[0.15em] text-foreground">
-          Admin Pincode
-        </h2>
-        <input
-          type="password"
-          inputMode="numeric"
-          maxLength={4}
-          value={pinInput}
-          onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
-          onKeyDown={(e) => e.key === 'Enter' && handlePinSubmit()}
-          placeholder="••••"
-          className="w-40 bg-secondary text-foreground border border-border rounded-lg px-4 py-4 text-3xl font-bold text-center tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground/30"
-        />
-        <button
-          onClick={handlePinSubmit}
-          disabled={pinInput.length !== 4}
-          className="pos-btn bg-primary text-primary-foreground rounded-lg px-8 py-3 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110"
-        >
-          UNLOCK
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div className="flex-1 overflow-y-auto p-4">
@@ -109,12 +71,6 @@ export const AdminPage = () => {
           onClick={() => console.log('Wissen')}
         />
 
-        <button
-          onClick={() => setUnlocked(false)}
-          className="pos-btn text-xs text-muted-foreground hover:text-destructive mt-8"
-        >
-          VERGRENDEL ADMIN
-        </button>
       </div>
     </div>
   );
