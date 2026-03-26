@@ -34,7 +34,7 @@
     --input: 220 12% 20%;
     --ring: 42 88% 59%;
 
-    --radius: 0.5rem;
+    --radius: 0rem;
 
     /* POS Category Colors */
     --pos-beer: 42 88% 59%;
@@ -67,18 +67,37 @@
     @apply border-border;
   }
 
+  html, body, #root {
+    @apply h-full overflow-hidden;
+  }
+
   body {
     @apply bg-background text-foreground font-mono;
     -webkit-user-select: none;
     user-select: none;
     overscroll-behavior: none;
     touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
 @layer utilities {
   .pos-btn {
-    @apply font-bold uppercase tracking-wide text-sm transition-all duration-100 active:scale-95 select-none;
+    @apply font-bold uppercase tracking-wide text-sm transition-all duration-100 active:scale-[0.97] select-none;
+    border-radius: 0;
+  }
+
+  .pos-product-btn {
+    min-height: 0;
+  }
+
+  .product-label {
+    font-size: clamp(0.65rem, 2.2vw, 1.1rem);
+  }
+
+  .product-price {
+    font-size: clamp(0.6rem, 2vw, 1rem);
   }
 
   .pos-feedback-overlay {
