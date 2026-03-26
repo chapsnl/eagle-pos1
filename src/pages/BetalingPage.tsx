@@ -1,4 +1,4 @@
-import { OrderItem } from '@/types/pos';
+import { DbOrderItem } from '@/pages/Index';
 import { X, Nfc, CreditCard, Banknote, Send } from 'lucide-react';
 
 interface BetalingPageProps {
