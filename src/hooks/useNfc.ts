@@ -1,93 +1,25 @@
 /**
- * NFC helper – supports Fully Kiosk Browser (Android JS interface) AND Web NFC (NDEFReader).
- * Fully Kiosk is checked first since that's the target runtime on Sunmi/Pax handhelds.
+ * Web NFC helper – wraps NDEFReader for scan & write.
+ * Falls back gracefully when the API is unavailable (desktop browsers).
  */
 
-declare global {
-  interface Window {
-    Android?: {
-      useJavaScriptCallbackNFC?: (enable: boolean) => void;
-    };
-    nfcScanResult?: (data: string) => void;
-    nfcScanResultMifareUltralight?: (data: string) => void;
-  }
-}
+export const isNfcSupported = (): boolean => 'NDEFReader' in window;
 
 export interface NfcScanResult {
   uid: string;
   message?: string;
 }
 
-/** Check if Fully Kiosk NFC bridge is available */
-const isFullyKiosk = (): boolean =>
-  typeof window.Android !== 'undefined' &&
-  typeof window.Android?.useJavaScriptCallbackNFC === 'function';
-
-/** Check if Web NFC is available (Chrome on Android) */
-const isWebNfc = (): boolean => 'NDEFReader' in window;
-
-export const isNfcSupported = (): boolean => isFullyKiosk() || isWebNfc();
-
 /**
- * Scan NFC via Fully Kiosk Browser's Android JS interface.
+ * Perform an NFC scan. Resolves with the UID when a tag is detected.
+ * Rejects on timeout or user-abort.
  */
-const scanFullyKiosk = (timeoutMs: number): Promise<NfcScanResult> => {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      // Clean up callbacks
-      window.nfcScanResult = undefined;
-      window.nfcScanResultMifareUltralight = undefined;
-      reject(new Error('NFC_TIMEOUT'));
-    }, timeoutMs);
-
-    const handleResult = (data: string) => {
-      clearTimeout(timer);
-      window.nfcScanResult = undefined;
-      window.nfcScanResultMifareUltralight = undefined;
-      // Fully Kiosk returns the UID/serial as the data string for NDEF tags
-      // For Mifare Ultralight it returns JSON with uid field
-      const uid = data.trim();
-      if (uid) {
-        resolve({ uid });
-      } else {
-        reject(new Error('NFC_READ_ERROR'));
-      }
-    };
-
-    const handleMifare = (data: string) => {
-      clearTimeout(timer);
-      window.nfcScanResult = undefined;
-      window.nfcScanResultMifareUltralight = undefined;
-      try {
-        const pages = JSON.parse(data);
-        // First page usually contains the UID
-        const uidPage = pages.find((p: any) => p.uid);
-        if (uidPage?.uid) {
-          resolve({ uid: uidPage.uid });
-        } else if (pages[0]?.hex) {
-          resolve({ uid: pages[0].hex });
-        } else {
-          reject(new Error('NFC_READ_ERROR'));
-        }
-      } catch {
-        reject(new Error('NFC_READ_ERROR'));
-      }
-    };
-
-    // Register global callbacks that Fully Kiosk will call
-    window.nfcScanResult = handleResult;
-    window.nfcScanResultMifareUltralight = handleMifare;
-
-    // Tell Fully Kiosk to start sending NFC results via JS callback
-    window.Android!.useJavaScriptCallbackNFC!(true);
-  });
-};
-
-/**
- * Scan NFC via Web NFC API (NDEFReader) — Chrome on Android only.
- */
-const scanWebNfc = (timeoutMs: number): Promise<NfcScanResult> => {
+export const scanNfc = (timeoutMs = 15000): Promise<NfcScanResult> => {
   return new Promise(async (resolve, reject) => {
+    if (!isNfcSupported()) {
+      return reject(new Error('NFC_NOT_SUPPORTED'));
+    }
+
     const controller = new AbortController();
     const timer = setTimeout(() => {
       controller.abort();
@@ -99,7 +31,7 @@ const scanWebNfc = (timeoutMs: number): Promise<NfcScanResult> => {
       await reader.scan({ signal: controller.signal });
       reader.addEventListener('reading', ({ serialNumber }: any) => {
         clearTimeout(timer);
-        controller.abort();
+        controller.abort(); // stop scanning
         resolve({ uid: serialNumber });
       });
       reader.addEventListener('readingerror', () => {
@@ -115,27 +47,12 @@ const scanWebNfc = (timeoutMs: number): Promise<NfcScanResult> => {
 };
 
 /**
- * Perform an NFC scan. Uses Fully Kiosk first, falls back to Web NFC.
- */
-export const scanNfc = (timeoutMs = 15000): Promise<NfcScanResult> => {
-  if (isFullyKiosk()) {
-    return scanFullyKiosk(timeoutMs);
-  }
-  if (isWebNfc()) {
-    return scanWebNfc(timeoutMs);
-  }
-  return Promise.reject(new Error('NFC_NOT_SUPPORTED'));
-};
-
-/**
- * Write an NDEF text record to a tag.
- * Note: Fully Kiosk Browser does not support NFC writing via JS interface.
- * Only Web NFC supports writing.
+ * Write an NDEF text record to a tag. Resolves when the write succeeds.
  */
 export const writeNfc = (text: string, timeoutMs = 15000): Promise<NfcScanResult> => {
   return new Promise(async (resolve, reject) => {
-    if (!isWebNfc()) {
-      return reject(new Error('NFC_WRITE_NOT_SUPPORTED'));
+    if (!isNfcSupported()) {
+      return reject(new Error('NFC_NOT_SUPPORTED'));
     }
 
     const controller = new AbortController();
@@ -146,6 +63,7 @@ export const writeNfc = (text: string, timeoutMs = 15000): Promise<NfcScanResult
 
     try {
       const writer = new (window as any).NDEFReader();
+      // We need to scan first to detect the tag, then write
       await writer.scan({ signal: controller.signal });
       writer.addEventListener('reading', async ({ serialNumber }: any) => {
         try {
