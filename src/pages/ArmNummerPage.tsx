@@ -97,45 +97,40 @@ export const ArmNummerPage = () => {
 
       {/* Product grid matching physical board layout */}
       <div className="flex-1 overflow-hidden flex flex-col">
-        {gridLayout.map((row, ri) => {
-          // Calculate column positions for CSS grid
-          const columns = row.map((cell) => cell.span === 2 ? '2fr' : '1fr').join(' ');
-          return (
-            <div
-              key={ri}
-              className="flex-1 grid"
-              style={{ minHeight: 0, gridTemplateColumns: '1fr 1fr 1fr 1fr 2fr 2fr 2fr' }}
-            >
-              {row.map((cell, ci) => {
-                if (!cell.code) {
-                  return <div key={ci} className="border-[0.5px] border-black/10 bg-card" />;
-                }
-                const product = productMap.get(cell.code);
-                if (!product) return <div key={ci} />;
-                const colIndex = row.slice(0, ci).reduce((sum, c) => sum + c.span, 0);
-                return (
-                  <button
-                    key={ci}
-                    onClick={() => addProduct(product)}
-                    style={{
-                      backgroundColor: product.color,
-                      color: product.textColor,
-                      gridColumn: `span ${cell.span}`,
-                    }}
-                    className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 active:brightness-75 active:shadow-[inset_0_0_0_2px_hsl(var(--destructive)),0_0_12px_hsl(var(--destructive)/0.5)] p-1 min-w-0"
+        {gridLayout.map((row, ri) => (
+          <div
+            key={ri}
+            className="flex-1 flex"
+            style={{ minHeight: 0 }}
+          >
+            {row.map((cell, ci) => {
+              if (!cell.code) {
+                return <div key={ci} style={{ flex: cell.span }} className="border-[0.5px] border-black/10 bg-card" />;
+              }
+              const product = productMap.get(cell.code);
+              if (!product) return <div key={ci} style={{ flex: cell.span }} />;
+              return (
+                <button
+                  key={ci}
+                  onClick={() => addProduct(product)}
+                  style={{
+                    flex: cell.span,
+                    backgroundColor: product.color,
+                    color: product.textColor,
+                  }}
+                  className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 active:brightness-75 active:shadow-[inset_0_0_0_2px_hsl(var(--destructive)),0_0_12px_hsl(var(--destructive)/0.5)] p-1 min-w-0"
+                >
+                  <span
+                    className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line"
+                    style={{ fontSize: cell.span === 2 ? 'clamp(0.9rem, 2.8vw, 2rem)' : 'clamp(0.55rem, 1.6vw, 1.1rem)' }}
                   >
-                    <span
-                      className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line"
-                      style={{ fontSize: cell.span === 2 ? 'clamp(0.9rem, 2.8vw, 2rem)' : 'clamp(0.55rem, 1.6vw, 1.1rem)' }}
-                    >
-                      {product.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })}
+                    {product.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );
