@@ -39,8 +39,6 @@ const gridLayout: { code: string; span: number; hideLabel?: boolean }[][] = [
 
 const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
 
-const lookupNumber = (num: string): boolean => !num.endsWith('0');
-
 type Phase = 'input-arm' | 'not-found' | 'input-bag' | 'products';
 
 export const ArmNummerPage = () => {
@@ -50,58 +48,51 @@ export const ArmNummerPage = () => {
   const [items, setItems] = useState<ArmOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionTotal, setSessionTotal] = useState(0);
   const { data: products } = useProducts();
-  const createSession = useCreateSession();
+  const findActiveSessionByWardrobe = useFindActiveSessionByWardrobe();
   const updateSession = useUpdateSession();
   const addDrinkLogs = useAddDrinkLogs();
 
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
 
+  const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string, onNotFound: () => void) => {
+    try {
+      const session = await findActiveSessionByWardrobe.mutateAsync(wardrobeNum);
+      if (!session) {
+        onNotFound();
+        return;
+      }
+      setSessionId(session.id);
+      setSessionTotal(Number(session.total_amount ?? 0));
+      setFeedback('success');
+      setTimeout(() => { setFeedback(null); setPhase('products'); }, 1000);
+    } catch {
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+    }
+  }, [findActiveSessionByWardrobe]);
+
   useEffect(() => {
     if (phase === 'input-arm' && armNumber.length >= 3) {
-      setTimeout(async () => {
-        if (lookupNumber(armNumber)) {
-          // Create session with wardrobe number
-          try {
-            const wardrobeNum = `C${armNumber}`;
-            const session = await createSession.mutateAsync({
-              wardrobe_number: wardrobeNum,
-              is_event_numbered: true,
-            });
-            setSessionId(session.id);
-            setFeedback('success');
-            setTimeout(() => { setFeedback(null); setPhase('products'); }, 1000);
-          } catch {
-            setFeedback('error');
-            setTimeout(() => setFeedback(null), 2000);
-          }
-        } else {
-          setPhase('not-found');
-        }
+      setTimeout(() => {
+        void resolveSessionByWardrobe(`C${armNumber}`, () => setPhase('not-found'));
       }, 300);
     }
-  }, [armNumber, phase]);
+  }, [armNumber, phase, resolveSessionByWardrobe]);
 
   useEffect(() => {
     if (phase === 'input-bag' && bagNumber.length >= 3) {
-      setTimeout(async () => {
-        try {
-          const wardrobeNum = `B${bagNumber}`;
-          const session = await createSession.mutateAsync({
-            wardrobe_number: wardrobeNum,
-            is_event_numbered: true,
-          });
-          setSessionId(session.id);
-          setFeedback('success');
-          setTimeout(() => { setFeedback(null); setPhase('products'); }, 1000);
-        } catch {
+      setTimeout(() => {
+        void resolveSessionByWardrobe(`B${bagNumber}`, () => {
           setFeedback('error');
-          setTimeout(() => setFeedback(null), 2000);
-        }
+          setTimeout(() => setFeedback(null), 1500);
+          setBagNumber('');
+        });
       }, 300);
     }
-  }, [bagNumber, phase]);
+  }, [bagNumber, phase, resolveSessionByWardrobe]);
 
   const handleNumKey = (key: string) => {
     if (phase === 'input-arm') {
@@ -124,7 +115,6 @@ export const ArmNummerPage = () => {
   const handleSubmit = useCallback(async () => {
     if (items.length === 0 || !sessionId) return;
     try {
-      // Save drink logs linked to the session
       const logs = items.flatMap((item) =>
         Array.from({ length: item.quantity }, () => ({
           session_id: sessionId,
@@ -133,21 +123,20 @@ export const ArmNummerPage = () => {
         }))
       );
       await addDrinkLogs.mutateAsync(logs);
-      // Update session total
       await updateSession.mutateAsync({
         id: sessionId,
-        total_amount: total,
+        total_amount: sessionTotal + total,
       });
       setFeedback('success');
       setTimeout(() => {
         setFeedback(null);
-        setArmNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setPhase('input-arm');
+        setArmNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setPhase('input-arm');
       }, 2000);
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [armNumber, bagNumber, items, sessionId, total, addDrinkLogs, updateSession]);
+  }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession]);
 
   if (phase === 'input-arm' || phase === 'input-bag') {
     const value = phase === 'input-arm' ? armNumber : bagNumber;
