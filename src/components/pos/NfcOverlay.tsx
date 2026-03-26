@@ -30,11 +30,11 @@ export const NfcOverlay = ({ status, onCancel }: NfcOverlayProps) => {
         ref={inputRef}
         type="text"
         autoFocus
-        className="absolute opacity-0 w-0 h-0"
-        style={{ position: 'absolute', left: '-9999px' }}
-        tabIndex={-1}
-        onKeyDown={(e) => e.preventDefault()}
-        readOnly
+        className="absolute opacity-0"
+        style={{ position: 'absolute', left: '-9999px', width: 1, height: 1 }}
+        tabIndex={0}
+        value=""
+        onChange={() => {}}
       />
       <Nfc
         className="w-32 h-32 animate-[nfcPulse_3s_ease-in-out_infinite]"
