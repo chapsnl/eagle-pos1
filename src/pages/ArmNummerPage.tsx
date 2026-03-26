@@ -41,7 +41,7 @@ const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
 
 const lookupNumber = (num: string): boolean => !num.endsWith('0');
 
-type Phase = 'input-arm' | 'checking' | 'not-found' | 'input-bag' | 'products';
+type Phase = 'input-arm' | 'not-found' | 'input-bag' | 'products';
 
 export const ArmNummerPage = () => {
   const [phase, setPhase] = useState<Phase>('input-arm');
