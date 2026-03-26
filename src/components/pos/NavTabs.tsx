@@ -9,10 +9,10 @@ interface NavTabsProps {
 }
 
 const tabs: { view: AppView; label: string; icon: typeof Beer }[] = [
-  { view: 'bar', label: 'DRANKEN', icon: Beer },
+  { view: 'bar', label: 'BAR', icon: Beer },
   { view: 'garderobe', label: 'GARDEROBE', icon: Shirt },
-  { view: 'betaling', label: 'BETALING', icon: CreditCard },
-  { view: 'arm-nummer', label: 'ARM NR', icon: Hash },
+  { view: 'betaling', label: 'PAY', icon: CreditCard },
+  { view: 'arm-nummer', label: 'NO-NFC', icon: Hash },
   { view: 'admin', label: 'ADMIN', icon: ShieldCheck },
 ];
 
