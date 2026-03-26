@@ -1,5 +1,11 @@
+import { useState, useCallback } from 'react';
 import { DbOrderItem } from '@/pages/Index';
 import { X, Nfc, CreditCard, Banknote, Send } from 'lucide-react';
+import { NfcOverlay } from '@/components/pos/NfcOverlay';
+import { useCreateSession, useUpdateSession, useAddDrinkLogs } from '@/hooks/useSessions';
+import { scanNfc, isNfcSupported } from '@/hooks/useNfc';
+import { FeedbackType } from '@/types/pos';
+import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 
 interface BetalingPageProps {
   items: DbOrderItem[];
@@ -19,9 +25,74 @@ export const BetalingPage = ({
   onCash,
 }: BetalingPageProps) => {
   const hasItems = items.length > 0;
+  const [nfcStatus, setNfcStatus] = useState<'scanning' | 'error' | null>(null);
+  const [nfcError, setNfcError] = useState('');
+  const [feedback, setFeedback] = useState<FeedbackType>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'pin' | 'cash' | null>(null);
+  const createSession = useCreateSession();
+  const updateSession = useUpdateSession();
+  const addDrinkLogs = useAddDrinkLogs();
+
+  const processPayment = useCallback(async (method: 'pin' | 'cash') => {
+    if (!hasItems) return;
+    setPaymentMethod(method);
+
+    const completePayment = async (nfcUid?: string) => {
+      try {
+        // Create or get session
+        const session = await createSession.mutateAsync({
+          nfc_uid: nfcUid,
+        });
+        // Add drink logs
+        const logs = items.flatMap((item) =>
+          Array.from({ length: item.quantity }, () => ({
+            session_id: session.id,
+            product_id: item.product.id,
+            price_at_time: item.product.price,
+          }))
+        );
+        await addDrinkLogs.mutateAsync(logs);
+        // Update session with total and mark paid
+        await updateSession.mutateAsync({
+          id: session.id,
+          total_amount: total,
+          actual_paid_amount: total,
+          status: 'paid',
+        });
+        setFeedback('success');
+        setTimeout(() => {
+          setFeedback(null);
+          if (method === 'pin') onPin();
+          else onCash();
+        }, 2000);
+      } catch {
+        setFeedback('error');
+        setTimeout(() => setFeedback(null), 2000);
+      }
+    };
+
+    // Try NFC scan first
+    if (isNfcSupported()) {
+      setNfcStatus('scanning');
+      try {
+        const result = await scanNfc(15000);
+        setNfcStatus(null);
+        await completePayment(result.uid);
+      } catch (err: any) {
+        setNfcStatus('error');
+        setNfcError(err.message === 'NFC_TIMEOUT' ? 'Geen bandje gedetecteerd' : 'NFC fout');
+      }
+    } else {
+      // No NFC hardware — proceed without
+      await completePayment();
+    }
+  }, [hasItems, items, total, createSession, updateSession, addDrinkLogs, onPin, onCash]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
+      <FeedbackOverlay type={feedback} />
+      <NfcOverlay status={nfcStatus} errorMessage={nfcError} onCancel={() => setNfcStatus(null)} />
+
       {/* Order overview */}
       <div className="flex-1 flex flex-col p-4 gap-3 overflow-y-auto">
         <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
@@ -77,10 +148,9 @@ export const BetalingPage = ({
 
       {/* Action buttons */}
       <div className="flex flex-col gap-0">
-        {/* PIN / CONTANT row */}
         <div className="flex">
           <button
-            onClick={onPin}
+            onClick={() => processPayment('pin')}
             disabled={!hasItems}
             className="pos-btn flex-1 bg-secondary text-secondary-foreground py-3 text-xs flex items-center justify-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110 border-r border-border"
           >
@@ -88,7 +158,7 @@ export const BetalingPage = ({
             PIN
           </button>
           <button
-            onClick={onCash}
+            onClick={() => processPayment('cash')}
             disabled={!hasItems}
             className="pos-btn flex-1 bg-secondary text-secondary-foreground py-3 text-xs flex items-center justify-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110"
           >
@@ -97,8 +167,8 @@ export const BetalingPage = ({
           </button>
         </div>
 
-        {/* SEND button */}
         <button
+          onClick={() => processPayment('pin')}
           disabled={!hasItems}
           className="pos-btn py-5 text-xl flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed font-extrabold uppercase"
           style={{

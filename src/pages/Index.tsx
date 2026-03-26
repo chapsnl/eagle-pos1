@@ -5,11 +5,14 @@ import { NavTabs } from '@/components/pos/NavTabs';
 import { OrderBar } from '@/components/pos/OrderBar';
 import { ProductGrid } from '@/components/pos/ProductGrid';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
+import { NfcOverlay } from '@/components/pos/NfcOverlay';
 import { GarderobePage } from './GarderobePage';
 import { BetalingPage } from './BetalingPage';
 import { ArmNummerPage } from './ArmNummerPage';
 import { AdminPage } from './AdminPage';
 import { Nfc } from 'lucide-react';
+import { useCreateSession, useAddDrinkLogs, useUpdateSession } from '@/hooks/useSessions';
+import { scanNfc, isNfcSupported } from '@/hooks/useNfc';
 
 export interface DbOrderItem {
   product: DbProduct;
@@ -20,6 +23,11 @@ const Index = () => {
   const [activeView, setActiveView] = useState<AppView>('bar');
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
+  const [nfcStatus, setNfcStatus] = useState<'scanning' | 'error' | null>(null);
+  const [nfcError, setNfcError] = useState('');
+  const createSession = useCreateSession();
+  const addDrinkLogs = useAddDrinkLogs();
+  const updateSession = useUpdateSession();
 
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
@@ -48,27 +56,60 @@ const Index = () => {
   }, []);
 
   const handlePin = useCallback(() => {
-    console.log('PIN payment:', total);
     showFeedback('success');
     setItems([]);
-  }, [total, showFeedback]);
+  }, [showFeedback]);
 
   const handleCash = useCallback(() => {
-    console.log('Cash payment:', total);
     showFeedback('success');
     setItems([]);
-  }, [total, showFeedback]);
+  }, [showFeedback]);
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     if (items.length === 0) return;
-    console.log('NFC SEND:', items, total);
-    showFeedback('success');
-    setItems([]);
-  }, [items, total, showFeedback]);
+
+    const completeOrder = async (nfcUid?: string) => {
+      try {
+        const session = await createSession.mutateAsync({ nfc_uid: nfcUid });
+        const logs = items.flatMap((item) =>
+          Array.from({ length: item.quantity }, () => ({
+            session_id: session.id,
+            product_id: item.product.id,
+            price_at_time: item.product.price,
+          }))
+        );
+        await addDrinkLogs.mutateAsync(logs);
+        await updateSession.mutateAsync({
+          id: session.id,
+          total_amount: session.total_amount + total,
+        });
+        showFeedback('success');
+        setItems([]);
+      } catch {
+        showFeedback('error');
+      }
+    };
+
+    if (isNfcSupported()) {
+      setNfcStatus('scanning');
+      try {
+        const result = await scanNfc(15000);
+        setNfcStatus(null);
+        await completeOrder(result.uid);
+      } catch (err: any) {
+        setNfcStatus('error');
+        setNfcError(err.message === 'NFC_TIMEOUT' ? 'Geen bandje gedetecteerd' : 'NFC fout');
+      }
+    } else {
+      // No NFC — still save to DB
+      await completeOrder();
+    }
+  }, [items, total, createSession, addDrinkLogs, updateSession, showFeedback]);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
+      <NfcOverlay status={nfcStatus} errorMessage={nfcError} onCancel={() => setNfcStatus(null)} />
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
 
       {activeView === 'bar' && (

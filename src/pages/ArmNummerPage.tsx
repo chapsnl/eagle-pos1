@@ -160,7 +160,11 @@ export const ArmNummerPage = () => {
               if (!product) return <div key={ci} style={{ flex: cell.span }} />;
               const textColor = getTextColor(product.category_color);
               return (
-                <button key={ci} onClick={() => addProduct(product)} style={{ flex: cell.span, backgroundColor: product.category_color, color: textColor }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 active:brightness-75 active:shadow-[inset_0_0_0_2px_hsl(var(--destructive)),0_0_12px_hsl(var(--destructive)/0.5)] p-1 min-w-0">
+                <button key={ci} onClick={() => addProduct(product)} style={{ flex: cell.span, backgroundColor: product.category_color, color: textColor }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 active:brightness-[0.6] p-1 min-w-0 transition-all duration-75"
+                  onPointerDown={(e) => { e.currentTarget.style.boxShadow = 'inset 0 0 0 3px #ff0000, 0 0 15px #ff0000'; }}
+                  onPointerUp={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
+                  onPointerLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
+                >
                   <span className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line" style={{ fontSize: cell.span === 2 ? 'clamp(1.2rem, 3.5vw, 2.8rem)' : 'clamp(0.7rem, 2vw, 1.5rem)' }}>
                     {cell.hideLabel ? '' : product.full_name}
                   </span>
