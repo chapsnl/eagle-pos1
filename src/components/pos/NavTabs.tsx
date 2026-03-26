@@ -1,5 +1,4 @@
 import { AppView } from '@/types/pos';
-import { StatusBar } from './StatusBar';
 
 interface NavTabsProps {
   activeView: AppView;
@@ -22,7 +21,7 @@ export const NavTabs = ({ activeView, onViewChange, itemCount = 0 }: NavTabsProp
         <button
           key={view}
           onClick={() => onViewChange(view)}
-          className="flex-1 py-1.5 text-[clamp(9px,2.2vw,12px)] font-extrabold uppercase tracking-wide relative"
+          className="flex-1 py-2.5 text-[clamp(11px,2.5vw,15px)] font-extrabold uppercase tracking-wide relative"
           style={activeView === view ? {
             backgroundColor: '#00cc13',
             color: '#ffffff',
@@ -34,16 +33,12 @@ export const NavTabs = ({ activeView, onViewChange, itemCount = 0 }: NavTabsProp
         >
           {label}
           {view === 'betaling' && itemCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
               {itemCount}
             </span>
           )}
         </button>
       ))}
-      <div className="flex items-center gap-2 px-2 shrink-0">
-        <span className="text-[8px] font-bold tracking-widest" style={{ color: '#00cc13' }}>EAGLE</span>
-        <StatusBar />
-      </div>
     </div>
   );
 };
