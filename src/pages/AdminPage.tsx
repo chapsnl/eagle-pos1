@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import { Lock, Trash2, ArrowRightLeft, Mail, DollarSign, RotateCcw, AlertTriangle, X, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, ArrowRightLeft, Mail, DollarSign, RotateCcw, AlertTriangle, X, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { useActiveSessions, useIncidentSessions } from '@/hooks/useSessions';
 
 export const AdminPage = () => {
-  const [pinInput, setPinInput] = useState('');
-  const [unlocked, setUnlocked] = useState(false);
 
   const handlePinSubmit = () => {
     if (pinInput === '2520') {
