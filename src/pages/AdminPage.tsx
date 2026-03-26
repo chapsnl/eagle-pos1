@@ -178,13 +178,30 @@ export const AdminPage = () => {
               ))}
             </div>
           )}
-          <button
-            onClick={() => { setNfcReadData(null); startNfcRead(); }}
-            className={`px-6 py-3 font-extrabold uppercase text-sm mx-auto ${nfcReadData ? 'block' : 'hidden'}`}
-            style={{ backgroundColor: '#00cc13', color: '#000', boxShadow: '0 0 16px #00cc1380' }}
-          >
-            Volgende Scan
-          </button>
+          <div className={`flex gap-3 justify-center ${nfcReadData ? '' : 'hidden'}`}>
+            <button
+              onClick={() => { setNfcReadData(null); startNfcRead(); }}
+              className="px-6 py-3 font-extrabold uppercase text-sm"
+              style={{ backgroundColor: '#00cc13', color: '#000', boxShadow: '0 0 16px #00cc1380' }}
+            >
+              Volgende Scan
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  const writer = new (window as any).NDEFReader();
+                  await writer.write({ records: [{ recordType: 'text', data: '' }] }, { overwrite: true });
+                  setNfcReadData(['Tag gewist!']);
+                } catch (err: any) {
+                  setNfcReadData(['Wissen mislukt: ' + err.message]);
+                }
+              }}
+              className="px-6 py-3 font-extrabold uppercase text-sm"
+              style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 16px #ef444480' }}
+            >
+              NFC Wissen
+            </button>
+          </div>
           <button
             onClick={stopNfcRead}
             className="mt-4 px-8 py-4 text-lg font-extrabold uppercase flex items-center justify-center gap-3 mx-auto"
