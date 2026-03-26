@@ -107,12 +107,6 @@ export const AdminPage = () => {
           onClick={() => console.log('Wissen')}
         />
 
-        <button
-          onClick={() => setUnlocked(false)}
-          className="pos-btn text-xs text-muted-foreground hover:text-destructive mt-8"
-        >
-          VERGRENDEL ADMIN
-        </button>
       </div>
     </div>
   );
