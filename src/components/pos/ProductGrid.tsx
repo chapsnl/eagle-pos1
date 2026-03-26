@@ -1,9 +1,6 @@
-import { Product } from '@/types/pos';
-import { products } from '@/data/products';
+import { useProducts, getTextColor, DbProduct } from '@/hooks/useProducts';
 
-const productMap = new Map(products.map((p) => [p.code, p]));
-
-// Same layout as ARM NR page
+// Grid layout referencing products by shorthand
 const gridLayout: { code: string; span: number; hideLabel?: boolean }[][] = [
   [
     { code: '1', span: 1 }, { code: 'DIV9', span: 1 }, { code: 'SHO', span: 1 }, { code: 'BAIL', span: 1 },
@@ -32,29 +29,34 @@ const gridLayout: { code: string; span: number; hideLabel?: boolean }[][] = [
 ];
 
 interface ProductGridProps {
-  onAddProduct: (product: Product) => void;
+  onAddProduct: (product: DbProduct) => void;
 }
 
 export const ProductGrid = ({ onAddProduct }: ProductGridProps) => {
+  const { data: products, isLoading } = useProducts();
+
+  if (isLoading || !products) {
+    return <div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>;
+  }
+
+  const productMap = new Map(products.map((p) => [p.shorthand, p]));
+
   return (
     <div className="flex-1 overflow-hidden flex flex-col">
       {gridLayout.map((row, ri) => (
-        <div
-          key={ri}
-          className="flex-1 flex"
-          style={{ minHeight: 0 }}
-        >
+        <div key={ri} className="flex-1 flex" style={{ minHeight: 0 }}>
           {row.map((cell, ci) => {
             const product = productMap.get(cell.code);
             if (!product) return <div key={ci} style={{ flex: cell.span }} />;
+            const textColor = getTextColor(product.category_color);
             return (
               <button
                 key={ci}
                 onClick={() => onAddProduct(product)}
                 style={{
                   flex: cell.span,
-                  backgroundColor: product.color,
-                  color: product.textColor,
+                  backgroundColor: product.category_color,
+                  color: textColor,
                 }}
                 className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 active:brightness-75 active:shadow-[inset_0_0_0_2px_hsl(var(--destructive)),0_0_12px_hsl(var(--destructive)/0.5)] p-1 min-w-0"
               >
@@ -62,7 +64,7 @@ export const ProductGrid = ({ onAddProduct }: ProductGridProps) => {
                   className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line"
                   style={{ fontSize: cell.span === 2 ? 'clamp(1.2rem, 3.5vw, 2.8rem)' : 'clamp(0.7rem, 2vw, 1.5rem)' }}
                 >
-                  {cell.hideLabel ? '' : product.name}
+                  {cell.hideLabel ? '' : product.full_name}
                 </span>
               </button>
             );
