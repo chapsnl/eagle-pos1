@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Product, OrderItem, FeedbackType } from '@/types/pos';
-import { products, categoryColors } from '@/data/products';
+import { products } from '@/data/products';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 
 export const ArmNummerPage = () => {
@@ -47,15 +47,16 @@ export const ArmNummerPage = () => {
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3">
-        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
+      <div className="flex-1 overflow-y-auto">
+        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6">
           {products.map((product) => (
             <button
               key={product.id}
               onClick={() => addProduct(product)}
-              className={`${categoryColors[product.category]} pos-btn rounded-lg p-2 flex flex-col items-center justify-center min-h-[56px] shadow-md hover:brightness-110 active:brightness-90`}
+              style={{ backgroundColor: product.color, color: product.textColor }}
+              className="pos-btn p-2 flex flex-col items-center justify-center min-h-[56px] border-[0.5px] border-black/10 hover:brightness-110 active:brightness-90"
             >
-              <span className="text-[10px] font-extrabold">{product.code}</span>
+              <span className="text-[10px] font-extrabold">{product.name}</span>
               <span className="text-xs font-extrabold">€{product.price.toFixed(2)}</span>
             </button>
           ))}
@@ -74,7 +75,7 @@ export const ArmNummerPage = () => {
         <button
           onClick={handleSubmit}
           disabled={!armNumber || items.length === 0}
-          className="pos-btn bg-primary text-primary-foreground rounded-lg px-6 py-3 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110"
+          className="pos-btn bg-primary text-primary-foreground px-6 py-3 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110"
         >
           BOEK
         </button>
