@@ -3,6 +3,7 @@ import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { Send } from 'lucide-react';
+import { useCreateSession, useUpdateSession, useAddDrinkLogs } from '@/hooks/useSessions';
 
 interface ArmOrderItem {
   product: DbProduct;
