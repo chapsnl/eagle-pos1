@@ -150,10 +150,9 @@ export const AdminPage = () => {
         if (!parsed) setNfcReadData({ raw: [`UID: ${uid}`, 'Geen besteldata gevonden'] });
         ac.abort();
       };
-      };
     } catch (err: any) {
       if (err.name !== 'AbortError') {
-        setNfcReadData(['Fout bij lezen: ' + err.message]);
+        setNfcReadData({ raw: ['Fout bij lezen: ' + err.message] });
       }
     }
   }, []);
