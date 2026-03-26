@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, Trash2, ArrowRightLeft, Mail, DollarSign } from 'lucide-react';
+import { Lock, Trash2, ArrowRightLeft, Mail, DollarSign, RotateCcw, AlertTriangle, X } from 'lucide-react';
 
 export const AdminPage = () => {
   const [pinInput, setPinInput] = useState('');
