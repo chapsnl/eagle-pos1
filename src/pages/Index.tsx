@@ -12,7 +12,7 @@ import { ArmNummerPage } from './ArmNummerPage';
 import { AdminPage } from './AdminPage';
 import { Send } from 'lucide-react';
 import { useCreateSession, useAddDrinkLogs, useUpdateSession } from '@/hooks/useSessions';
-import { scanNfcTag } from '@/hooks/useNfc';
+import { scanNfcTag, writeNfcTag } from '@/hooks/useNfc';
 
 export interface DbOrderItem {
   product: DbProduct;
@@ -77,14 +77,14 @@ const Index = () => {
     try {
       const result = await promise;
       nfcUid = result.uid;
-      setNfcStatus(null);
     } catch (err: any) {
       setNfcStatus(null);
       if (err.message === 'NFC_CANCELLED') return;
-      // Timeout — proceed without NFC (anonymous)
+      // Timeout — proceed without NFC
     }
 
     try {
+      // Create or find session in DB
       const session = await createSession.mutateAsync({ nfc_uid: nfcUid });
       const logs = items.flatMap((item) =>
         Array.from({ length: item.quantity }, () => ({
@@ -94,13 +94,33 @@ const Index = () => {
         }))
       );
       await addDrinkLogs.mutateAsync(logs);
+      const newTotal = session.total_amount + total;
       await updateSession.mutateAsync({
         id: session.id,
-        total_amount: session.total_amount + total,
+        total_amount: newTotal,
       });
+
+      // Write session data to NFC tag
+      if (nfcUid) {
+        setNfcStatus('scanning');
+        const writeData = JSON.stringify({
+          sid: session.id,
+          total: newTotal,
+        });
+        const { promise: writePromise, cancel: writeCancel } = writeNfcTag(writeData, 15000);
+        cancelRef.current = writeCancel;
+        try {
+          await writePromise;
+        } catch {
+          // Write failed but DB is saved — still show success
+        }
+      }
+
+      setNfcStatus(null);
       showFeedback('success');
       setItems([]);
     } catch {
+      setNfcStatus(null);
       showFeedback('error');
     }
   }, [items, total, createSession, addDrinkLogs, updateSession, showFeedback]);
