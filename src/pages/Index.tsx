@@ -6,7 +6,6 @@ import { OrderBar } from '@/components/pos/OrderBar';
 import { ProductGrid } from '@/components/pos/ProductGrid';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
-import { NfcHiddenInput } from '@/components/pos/NfcHiddenInput';
 import { GarderobePage } from './GarderobePage';
 import { BetalingPage } from './BetalingPage';
 import { ArmNummerPage } from './ArmNummerPage';
@@ -118,7 +117,6 @@ const Index = () => {
     <div className="h-screen flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
       <NfcOverlay status={nfcStatus} onCancel={handleCancelNfc} />
-      <NfcHiddenInput active={nfcStatus === 'scanning'} />
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
 
       {activeView === 'bar' && (
