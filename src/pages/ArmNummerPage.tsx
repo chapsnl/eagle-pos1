@@ -30,55 +30,56 @@ export const ArmNummerPage = () => {
   }, [armNumber, items]);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden h-full">
       <FeedbackOverlay type={feedback} />
       
-      <div className="p-4 bg-card border-b border-border">
-        <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">
-          Arm Nummer
+      {/* Arm nummer input + order summary bar */}
+      <div className="bg-card border-b border-border p-2 flex items-center gap-3">
+        <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+          ARM NR
         </label>
         <input
           type="number"
           inputMode="numeric"
           value={armNumber}
           onChange={(e) => setArmNumber(e.target.value)}
-          placeholder="Nummer invoeren..."
-          className="w-full max-w-xs bg-secondary text-foreground border border-border rounded-lg px-4 py-3 text-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground/30"
+          placeholder="..."
+          className="w-20 bg-secondary text-foreground border border-border px-3 py-2 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground/30"
         />
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6">
-          {products.map((product) => (
-            <button
-              key={product.id}
-              onClick={() => addProduct(product)}
-              style={{ backgroundColor: product.color, color: product.textColor }}
-              className="pos-btn p-2 flex flex-col items-center justify-center min-h-[56px] border-[0.5px] border-black/10 hover:brightness-110 active:brightness-90"
-            >
-              <span className="text-[10px] font-extrabold">{product.name}</span>
-              <span className="text-xs font-extrabold">€{product.price.toFixed(2)}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="bg-card border-t border-border p-3 flex items-center gap-3">
-        <div className="flex-1 text-sm">
+        <div className="flex-1 text-sm overflow-hidden">
           {items.map((i) => (
             <span key={i.product.id} className="mr-2 text-xs font-bold">
               {i.quantity > 1 && `${i.quantity}×`}{i.product.code}
             </span>
           ))}
         </div>
-        <span className="text-primary font-extrabold text-lg">€{total.toFixed(2)}</span>
+        <span className="text-primary font-extrabold text-lg whitespace-nowrap">€{total.toFixed(2)}</span>
         <button
           onClick={handleSubmit}
           disabled={!armNumber || items.length === 0}
-          className="pos-btn bg-primary text-primary-foreground px-6 py-3 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110"
+          className="pos-btn px-5 py-2 font-extrabold text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{ backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 14px #00cc1380' }}
         >
           BOEK
         </button>
+      </div>
+
+      {/* Full-screen product grid — no prices, large text */}
+      <div className="flex-1 overflow-hidden">
+        <div className="grid grid-cols-7 h-full">
+          {products.map((product) => (
+            <button
+              key={product.id}
+              onClick={() => addProduct(product)}
+              style={{ backgroundColor: product.color, color: product.textColor }}
+              className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 active:brightness-75 active:shadow-[inset_0_0_0_2px_hsl(var(--destructive)),0_0_12px_hsl(var(--destructive)/0.5)] p-1"
+            >
+              <span className="font-extrabold leading-[1.1] text-center uppercase" style={{ fontSize: 'clamp(0.7rem, 2.5vw, 1.6rem)' }}>
+                {product.name}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
