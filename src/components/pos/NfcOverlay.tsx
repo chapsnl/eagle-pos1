@@ -1,4 +1,4 @@
-import { Nfc, X, PenLine } from 'lucide-react';
+import { Nfc, PenLine } from 'lucide-react';
 
 interface NfcOverlayProps {
   status: 'scanning' | 'writing' | null;
@@ -29,12 +29,6 @@ export const NfcOverlay = ({ status, onCancel }: NfcOverlayProps) => {
           style={{ color: '#00cc13', filter: 'drop-shadow(0 0 20px #00cc1360)' }}
         />
       )}
-      <button
-        onClick={onCancel}
-        className="mt-8 flex items-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground font-bold uppercase text-sm rounded"
-      >
-        <X className="w-4 h-4" /> ANNULEREN
-      </button>
     </div>
   );
 };
