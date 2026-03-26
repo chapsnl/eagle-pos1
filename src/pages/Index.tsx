@@ -100,18 +100,39 @@ const Index = () => {
         total_amount: newTotal,
       });
 
-      // Write session data to NFC tag
+      // Write cumulative session data from DB to NFC tag
       if (nfcUid) {
-        setNfcStatus('scanning');
-      const orderSummary = items.map(i => `${i.quantity}x${i.product.shorthand}`).join(',');
-      const writeData = JSON.stringify({
-        items: orderSummary,
-        total: newTotal,
-        ...(session.wardrobe_number ? { wn: session.wardrobe_number } : {}),
-      });
-        const { promise: writePromise, cancel: writeCancel } = writeNfcTag(writeData, 15000);
-        cancelRef.current = writeCancel;
         try {
+          // Fetch ALL drink_logs for this session to write cumulative data
+          const { data: allLogs } = await supabase
+            .from('drink_logs')
+            .select('product_id, products(shorthand)')
+            .eq('session_id', session.id);
+
+          const agg: Record<string, { qty: number; shorthand: string }> = {};
+          for (const log of allLogs || []) {
+            const sh = (log as any).products?.shorthand || log.product_id;
+            if (!agg[sh]) agg[sh] = { qty: 0, shorthand: sh };
+            agg[sh].qty++;
+          }
+
+          // Re-fetch session for latest wardrobe_number
+          const { data: freshSession } = await supabase
+            .from('sessions')
+            .select('wardrobe_number')
+            .eq('id', session.id)
+            .single();
+
+          const orderSummary = Object.values(agg).map(a => `${a.qty}x${a.shorthand}`).join(',');
+          const writeData = JSON.stringify({
+            items: orderSummary,
+            total: newTotal,
+            ...(freshSession?.wardrobe_number ? { wn: freshSession.wardrobe_number } : {}),
+          });
+
+          setNfcStatus('scanning');
+          const { promise: writePromise, cancel: writeCancel } = writeNfcTag(writeData, 15000);
+          cancelRef.current = writeCancel;
           await writePromise;
         } catch {
           // Write failed but DB is saved — still show success
