@@ -30,8 +30,8 @@ export const GarderobePage = () => {
     const setter = activeField === 'coat' ? setCoatNumber : setBagNumber;
     const value = activeField === 'coat' ? coatNumber : bagNumber;
     if (key === 'DEL') {
-      setter(value.slice(0, -1));
-    } else {
+      setter('');
+    } else if (value.length < 3) {
       setter(value + key);
     }
   };
@@ -40,22 +40,24 @@ export const GarderobePage = () => {
     <div className="flex-1 flex flex-col items-center justify-center p-4 gap-4">
       <FeedbackOverlay type={feedback} />
 
-      <h2 className="text-xl font-extrabold uppercase tracking-[0.15em]" style={{ color: '#00cc13' }}>
+      <h2 className="font-extrabold uppercase tracking-[0.15em]" style={{ color: '#00cc13', fontSize: '29px' }}>
         Garderobe
       </h2>
 
       {/* Input fields */}
-      <div className="w-full max-w-lg flex flex-col gap-3">
+      <div className="flex flex-col gap-3 items-center">
         <div>
           <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">
             Jasnummer (C)
           </label>
           <div
             onClick={() => setActiveField('coat')}
-            className="w-full px-6 py-7 text-5xl font-extrabold text-center cursor-pointer"
+            className="px-8 py-6 font-extrabold text-center cursor-pointer"
             style={{
               backgroundColor: '#d1d5db',
               color: '#111',
+              fontSize: '64px',
+              minWidth: '220px',
               border: activeField === 'coat' ? '3px solid #00cc13' : '3px solid transparent',
               boxShadow: activeField === 'coat' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
             }}
@@ -69,10 +71,12 @@ export const GarderobePage = () => {
           </label>
           <div
             onClick={() => setActiveField('bag')}
-            className="w-full px-6 py-7 text-5xl font-extrabold text-center cursor-pointer"
+            className="px-8 py-6 font-extrabold text-center cursor-pointer"
             style={{
               backgroundColor: '#d1d5db',
               color: '#111',
+              fontSize: '64px',
+              minWidth: '220px',
               border: activeField === 'bag' ? '3px solid #00cc13' : '3px solid transparent',
               boxShadow: activeField === 'bag' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
             }}
@@ -110,7 +114,6 @@ export const GarderobePage = () => {
               {key}
             </button>
           ))}
-          {/* ENTER button full width */}
           <button
             onClick={handleSubmit}
             disabled={!coatNumber && !bagNumber}
