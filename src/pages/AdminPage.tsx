@@ -236,7 +236,7 @@ export const AdminPage = () => {
             className="mt-8 px-8 py-4 text-lg font-extrabold uppercase flex items-center justify-center gap-3 mx-auto"
             style={{
               backgroundColor: '#00cc13',
-              color: '#000',
+              color: '#fff',
               boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330',
             }}
           >
