@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
@@ -49,6 +49,8 @@ export const ArmNummerPage = () => {
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionTotal, setSessionTotal] = useState(0);
+  const lastArmLookupRef = useRef<string | null>(null);
+  const lastBagLookupRef = useRef<string | null>(null);
   const { data: products } = useProducts();
   const findActiveSessionByWardrobe = useFindActiveSessionByWardrobe();
   const updateSession = useUpdateSession();
@@ -66,7 +68,7 @@ export const ArmNummerPage = () => {
       }
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
-      setFeedback('success');
+      setFeedback((prev) => (prev === 'success' ? prev : 'success'));
       setTimeout(() => { setFeedback(null); setPhase('products'); }, 1000);
     } catch {
       setFeedback('error');
@@ -75,22 +77,40 @@ export const ArmNummerPage = () => {
   }, [findActiveSessionByWardrobe]);
 
   useEffect(() => {
-    if (phase === 'input-arm' && armNumber.length >= 3) {
-      setTimeout(() => {
-        void resolveSessionByWardrobe(`C${armNumber}`, () => setPhase('not-found'));
-      }, 300);
+    if (phase !== 'input-arm') return;
+    if (armNumber.length < 3) {
+      lastArmLookupRef.current = null;
+      return;
     }
+
+    const wardrobe = `C${armNumber}`;
+    if (lastArmLookupRef.current === wardrobe) return;
+    lastArmLookupRef.current = wardrobe;
+
+    const t = window.setTimeout(() => {
+      void resolveSessionByWardrobe(wardrobe, () => setPhase('not-found'));
+    }, 300);
+    return () => window.clearTimeout(t);
   }, [armNumber, phase, resolveSessionByWardrobe]);
 
   useEffect(() => {
-    if (phase === 'input-bag' && bagNumber.length >= 3) {
-      setTimeout(() => {
-        void resolveSessionByWardrobe(`B${bagNumber}`, () => {
-          setFeedback('error');
-          setTimeout(() => { setFeedback(null); setPhase('bag-not-found'); }, 1500);
-        });
-      }, 300);
+    if (phase !== 'input-bag') return;
+    if (bagNumber.length < 3) {
+      lastBagLookupRef.current = null;
+      return;
     }
+
+    const wardrobe = `B${bagNumber}`;
+    if (lastBagLookupRef.current === wardrobe) return;
+    lastBagLookupRef.current = wardrobe;
+
+    const t = window.setTimeout(() => {
+      void resolveSessionByWardrobe(wardrobe, () => {
+        setFeedback('error');
+        setTimeout(() => { setFeedback(null); setPhase('bag-not-found'); }, 1500);
+      });
+    }, 300);
+    return () => window.clearTimeout(t);
   }, [bagNumber, phase, resolveSessionByWardrobe]);
 
   const handleNumKey = (key: string) => {
