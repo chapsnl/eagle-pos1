@@ -323,10 +323,11 @@ const AdminButton = ({ icon, label, description, variant, onClick }: {
   <button
     onClick={onClick}
     className={`w-full text-left bg-card border border-border rounded-lg p-4 flex items-center gap-4 hover:brightness-110 transition-all active:scale-[0.98] ${
-      variant === 'destructive' ? 'hover:border-destructive' : variant === 'primary' ? 'hover:border-primary' : 'hover:border-muted-foreground'
+      variant === 'destructive' ? 'hover:border-destructive' : variant === 'primary' ? 'hover:border-primary' : variant === 'success' ? '' : 'hover:border-muted-foreground'
     }`}
+    style={variant === 'success' ? { borderColor: '#00cc1340' } : undefined}
   >
-    <div className={variant === 'destructive' ? 'text-destructive' : variant === 'primary' ? 'text-primary' : 'text-muted-foreground'}>
+    <div style={variant === 'success' ? { color: '#00cc13' } : undefined} className={variant === 'destructive' ? 'text-destructive' : variant === 'primary' ? 'text-primary' : variant === 'success' ? '' : 'text-muted-foreground'}>
       {icon}
     </div>
     <div>
