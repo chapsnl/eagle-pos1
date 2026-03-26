@@ -68,7 +68,9 @@
   }
 
   html, body, #root {
-    @apply h-full overflow-hidden;
+    height: 100dvh;
+    height: 100vh; /* fallback */
+    @apply overflow-hidden;
     padding-top: env(safe-area-inset-top, 0);
     padding-bottom: env(safe-area-inset-bottom, 0);
     padding-left: env(safe-area-inset-left, 0);
