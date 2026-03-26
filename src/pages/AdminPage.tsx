@@ -112,6 +112,92 @@ export const AdminPage = () => {
     setFeedback(null);
   }, []);
 
+  const startNfcRead = useCallback(async () => {
+    setNfcReadMode(true);
+    setNfcReadData(null);
+    try {
+      const reader = new (window as any).NDEFReader();
+      const ac = new AbortController();
+      nfcReadCancelRef.current = () => ac.abort();
+      await reader.scan({ signal: ac.signal });
+
+      reader.onreading = (event: any) => {
+        const uid = event.serialNumber?.replace(/:/g, '').toUpperCase() || 'Geen UID';
+        const records: string[] = [`UID: ${uid}`];
+        if (event.message?.records) {
+          for (const rec of event.message.records) {
+            try {
+              if (rec.recordType === 'text') {
+                const decoder = new TextDecoder(rec.encoding || 'utf-8');
+                const text = decoder.decode(rec.data);
+                records.push(`Text: ${text || '(leeg)'}`);
+              } else if (rec.recordType === 'url') {
+                const decoder = new TextDecoder();
+                records.push(`URL: ${decoder.decode(rec.data)}`);
+              } else {
+                records.push(`Record: ${rec.recordType}`);
+              }
+            } catch {
+              records.push(`Record: ${rec.recordType} (onleesbaar)`);
+            }
+          }
+        }
+        if (records.length === 1) records.push('Geen data records');
+        setNfcReadData(records);
+        ac.abort();
+      };
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        setNfcReadData(['Fout bij lezen: ' + err.message]);
+      }
+    }
+  }, []);
+
+  const stopNfcRead = useCallback(() => {
+    nfcReadCancelRef.current?.();
+    setNfcReadMode(false);
+    setNfcReadData(null);
+  }, []);
+
+  if (nfcReadMode) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center h-full relative">
+        <div className="text-center space-y-6">
+          <Nfc className="w-20 h-20 mx-auto" style={{ color: '#00cc13', filter: 'drop-shadow(0 0 12px #00cc1380)' }} />
+          <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em]" style={{ color: '#00cc13' }}>
+            NFC Uitlezen
+          </h2>
+          {!nfcReadData ? (
+            <p className="text-muted-foreground text-sm animate-pulse">Scan een bandje om de data te lezen...</p>
+          ) : (
+            <div className="bg-card border rounded-lg p-4 text-left space-y-2 max-w-sm mx-auto" style={{ borderColor: '#00cc1340' }}>
+              {nfcReadData.map((line, i) => (
+                <p key={i} className="text-sm font-mono" style={{ color: i === 0 ? '#00cc13' : undefined }}>
+                  {line}
+                </p>
+              ))}
+            </div>
+          )}
+          <button
+            onClick={() => { setNfcReadData(null); startNfcRead(); }}
+            className={`px-6 py-3 font-extrabold uppercase text-sm mx-auto ${nfcReadData ? 'block' : 'hidden'}`}
+            style={{ backgroundColor: '#00cc13', color: '#000', boxShadow: '0 0 16px #00cc1380' }}
+          >
+            Volgende Scan
+          </button>
+          <button
+            onClick={stopNfcRead}
+            className="mt-4 px-8 py-4 text-lg font-extrabold uppercase flex items-center justify-center gap-3 mx-auto"
+            style={{ backgroundColor: '#00cc13', color: '#000', boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330' }}
+          >
+            <Square className="w-6 h-6" />
+            STOP UITLEZEN
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (batchMode) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center h-full relative">
@@ -119,22 +205,22 @@ export const AdminPage = () => {
         <NfcOverlay status={nfcStatus} onCancel={() => {}} />
 
         <div className="text-center space-y-6">
-          <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-destructive">
+          <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em]" style={{ color: '#00cc13' }}>
             Batch-Erase Actief
           </h2>
           <p className="text-muted-foreground text-sm">
             Scan een bandje om te wissen. De scanner blijft automatisch draaien.
           </p>
-          <div className="text-5xl font-extrabold text-primary">{erasedCount}</div>
+          <div className="text-5xl font-extrabold" style={{ color: '#00cc13' }}>{erasedCount}</div>
           <p className="text-xs text-muted-foreground uppercase tracking-widest">bandjes gewist</p>
 
           <button
             onClick={stopBatchErase}
             className="mt-8 px-8 py-4 text-lg font-extrabold uppercase flex items-center justify-center gap-3 mx-auto"
             style={{
-              backgroundColor: '#ef4444',
-              color: '#fff',
-              boxShadow: '0 0 16px #ef444480, 0 0 32px #ef444430',
+              backgroundColor: '#00cc13',
+              color: '#000',
+              boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330',
             }}
           >
             <Square className="w-6 h-6" />
