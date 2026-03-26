@@ -73,7 +73,7 @@ const Index = () => {
             onClick={handleSend}
             disabled={items.length === 0}
             className="pos-btn py-4 text-xl flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110 active:brightness-75"
-            style={{ backgroundColor: '#aacd6c', color: '#12100e' }}
+            style={{ backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340, inset 0 1px 0 #ffffff20' }}
           >
             <Nfc className="w-6 h-6" />
             SEND — €{total.toFixed(2)}
