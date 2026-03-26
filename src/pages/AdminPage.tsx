@@ -226,14 +226,6 @@ export const AdminPage = () => {
           onClick={() => console.log('Incident')}
         />
 
-        <AdminButton
-          icon={<X className="w-5 h-5" />}
-          label="WISSEN"
-          description="Huidige bestelling wissen"
-          variant="destructive"
-          onClick={() => console.log('Wissen')}
-        />
-
       </div>
     </div>
   );
