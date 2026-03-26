@@ -27,6 +27,23 @@ export const useCreateSession = () => {
   });
 };
 
+export const useFindActiveSessionByWardrobe = () => {
+  return useMutation({
+    mutationFn: async (wardrobeNumber: string) => {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('wardrobe_number', wardrobeNumber)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
 export const useUpdateSession = () => {
   const qc = useQueryClient();
   return useMutation({
