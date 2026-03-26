@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { DbOrderItem } from '@/pages/Index';
 import { X, Nfc, CreditCard, Banknote, Send } from 'lucide-react';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
@@ -6,6 +6,14 @@ import { useCreateSession, useUpdateSession, useAddDrinkLogs } from '@/hooks/use
 import { scanNfcTag } from '@/hooks/useNfc';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
+import { useProducts } from '@/hooks/useProducts';
+
+interface NfcOrderData {
+  uid: string;
+  items: { shorthand: string; qty: number }[];
+  total: number;
+  wn?: string;
+}
 
 interface BetalingPageProps {
   items: DbOrderItem[];
@@ -32,6 +40,53 @@ export const BetalingPage = ({
   const createSession = useCreateSession();
   const updateSession = useUpdateSession();
   const addDrinkLogs = useAddDrinkLogs();
+  const { data: productsData } = useProducts();
+
+  // NFC read data for idle scan
+  const [nfcOrderData, setNfcOrderData] = useState<NfcOrderData | null>(null);
+  const [idleScanning, setIdleScanning] = useState(false);
+
+  // Start idle NFC scan when no items
+  const startIdleScan = useCallback(() => {
+    if (hasItems) return;
+    setIdleScanning(true);
+    setNfcOrderData(null);
+
+    const { promise, cancel } = scanNfcTag(60000);
+    cancelRef.current = cancel;
+
+    promise
+      .then((result) => {
+        setIdleScanning(false);
+        if (result.message) {
+          try {
+            const json = JSON.parse(result.message);
+            if (json.items && typeof json.items === 'string') {
+              const parsedItems = json.items.split(',').map((entry: string) => {
+                const match = entry.match(/^(\d+)x(.+)$/);
+                return match ? { qty: parseInt(match[1]), shorthand: match[2] } : { qty: 1, shorthand: entry };
+              });
+              setNfcOrderData({ uid: result.uid, items: parsedItems, total: json.total ?? 0, wn: json.wn });
+              return;
+            }
+          } catch { /* not JSON */ }
+        }
+        setNfcOrderData(null);
+      })
+      .catch(() => {
+        setIdleScanning(false);
+      });
+  }, [hasItems]);
+
+  // Auto-start idle scan when no items
+  useEffect(() => {
+    if (!hasItems && !idleScanning && !nfcOrderData && !nfcStatus) {
+      startIdleScan();
+    }
+    return () => {
+      if (!hasItems) cancelRef.current?.();
+    };
+  }, [hasItems, idleScanning, nfcOrderData, nfcStatus, startIdleScan]);
 
   const processPayment = useCallback(async (method: 'pin' | 'cash') => {
     if (!hasItems) return;
@@ -96,26 +151,74 @@ export const BetalingPage = ({
           Bestelling ({items.length} items)
         </h2>
 
-        {items.length === 0 ? (
+        {items.length === 0 && !nfcOrderData ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 animate-[nfcPulse_3s_ease-in-out_infinite]">
             <span className="text-2xl font-extrabold uppercase tracking-[0.2em]" style={{ color: '#00cc13' }}>
               Scan NFC
             </span>
             <Nfc className="w-32 h-32" style={{ color: '#00cc13', filter: 'drop-shadow(0 0 20px #00cc1360)' }} />
           </div>
+        ) : items.length === 0 && nfcOrderData ? (
+          /* Show NFC tag data */
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="bg-card border rounded-lg p-5 text-left max-w-sm w-full" style={{ borderColor: '#00cc1340' }}>
+              <p className="text-xs font-mono mb-3 break-all" style={{ color: '#00cc13' }}>UID: {nfcOrderData.uid}</p>
+              <div className="space-y-2">
+                {nfcOrderData.items.map((item, i) => {
+                  const product = productsData?.find(p => p.shorthand === item.shorthand);
+                  return (
+                    <div key={i} className="flex justify-between items-center" style={{ fontSize: '1rem' }}>
+                      <span className="font-bold">{product?.full_name || item.shorthand}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-muted-foreground">{item.qty}x</span>
+                        <span style={{ color: '#00cc13' }}>€{((product?.price ?? 0) * item.qty).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="border-t border-border mt-3 pt-3 flex justify-between items-center">
+                <span className="font-extrabold uppercase" style={{ fontSize: '1rem' }}>Totaal</span>
+                <span className="font-extrabold text-xl" style={{ color: '#00cc13' }}>€{Number(nfcOrderData.total).toFixed(2)}</span>
+              </div>
+              {nfcOrderData.wn && (
+                <div className="border-t border-border mt-3 pt-3 space-y-1">
+                  {nfcOrderData.wn.match(/C(\d+)/)?.[1] && (
+                    <div className="flex justify-between items-center" style={{ fontSize: '1rem' }}>
+                      <span className="font-bold">Coat Number</span>
+                      <span style={{ color: '#00cc13' }}>{nfcOrderData.wn.match(/C(\d+)/)![1]}</span>
+                    </div>
+                  )}
+                  {nfcOrderData.wn.match(/B(\d+)/)?.[1] && (
+                    <div className="flex justify-between items-center" style={{ fontSize: '1rem' }}>
+                      <span className="font-bold">Bag Number</span>
+                      <span style={{ color: '#00cc13' }}>{nfcOrderData.wn.match(/B(\d+)/)![1]}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => { setNfcOrderData(null); startIdleScan(); }}
+              className="mt-4 px-6 py-3 font-extrabold uppercase text-sm"
+              style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }}
+            >
+              Volgende Scan
+            </button>
+          </div>
         ) : (
           <div className="flex flex-col gap-1">
             {items.map((item) => (
               <div key={item.product.id} className="flex items-center justify-between bg-secondary px-3 py-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold uppercase">
+                  <span className="font-bold uppercase" style={{ fontSize: '1rem' }}>
                     {item.quantity > 1 && `${item.quantity}× `}
                     {item.product.full_name}
                   </span>
                   <span className="text-xs text-muted-foreground">[{item.product.shorthand}]</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-extrabold" style={{ color: '#00cc13' }}>
+                  <span className="font-extrabold" style={{ color: '#00cc13', fontSize: '1rem' }}>
                     €{(item.product.price * item.quantity).toFixed(2)}
                   </span>
                   <button onClick={() => onRemoveItem(item.product.id)} className="text-muted-foreground hover:text-destructive">
@@ -129,7 +232,7 @@ export const BetalingPage = ({
 
         {hasItems && (
           <div className="flex items-center justify-between px-3 py-2 border-t border-border">
-            <span className="text-sm font-bold uppercase tracking-widest">Totaal</span>
+            <span className="font-bold uppercase tracking-widest" style={{ fontSize: '1rem' }}>Totaal</span>
             <span className="text-2xl font-extrabold" style={{ color: '#00cc13' }}>€{total.toFixed(2)}</span>
           </div>
         )}

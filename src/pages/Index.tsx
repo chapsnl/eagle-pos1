@@ -107,6 +107,7 @@ const Index = () => {
       const writeData = JSON.stringify({
         items: orderSummary,
         total: newTotal,
+        ...(session.wardrobe_number ? { wn: session.wardrobe_number } : {}),
       });
         const { promise: writePromise, cancel: writeCancel } = writeNfcTag(writeData, 15000);
         cancelRef.current = writeCancel;
