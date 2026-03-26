@@ -12,7 +12,7 @@ import { ArmNummerPage } from './ArmNummerPage';
 import { AdminPage } from './AdminPage';
 import { Send } from 'lucide-react';
 import { useCreateSession, useAddDrinkLogs, useUpdateSession } from '@/hooks/useSessions';
-import { waitForNfcScan } from '@/hooks/useNfc';
+import { scanNfcTag } from '@/hooks/useNfc';
 
 export interface DbOrderItem {
   product: DbProduct;
@@ -23,7 +23,7 @@ const Index = () => {
   const [activeView, setActiveView] = useState<AppView>('bar');
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
-  const [nfcStatus, setNfcStatus] = useState<'scanning' | null>(null);
+  const [nfcStatus, setNfcStatus] = useState<'scanning' | 'writing' | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
   const createSession = useCreateSession();
   const addDrinkLogs = useAddDrinkLogs();
@@ -68,43 +68,40 @@ const Index = () => {
   const handleSend = useCallback(async () => {
     if (items.length === 0) return;
 
-    const completeOrder = async (nfcUid?: string) => {
-      try {
-        const session = await createSession.mutateAsync({ nfc_uid: nfcUid });
-        const logs = items.flatMap((item) =>
-          Array.from({ length: item.quantity }, () => ({
-            session_id: session.id,
-            product_id: item.product.id,
-            price_at_time: item.product.price,
-          }))
-        );
-        await addDrinkLogs.mutateAsync(logs);
-        await updateSession.mutateAsync({
-          id: session.id,
-          total_amount: session.total_amount + total,
-        });
-        showFeedback('success');
-        setItems([]);
-      } catch {
-        showFeedback('error');
-      }
-    };
-
-    // Start NFC scan
+    // Start NFC scan to read UID
     setNfcStatus('scanning');
-    const { promise, cancel } = waitForNfcScan(30000);
+    const { promise, cancel } = scanNfcTag(30000);
     cancelRef.current = cancel;
 
+    let nfcUid: string | undefined;
     try {
       const result = await promise;
+      nfcUid = result.uid;
       setNfcStatus(null);
-      await completeOrder(result.uid);
     } catch (err: any) {
       setNfcStatus(null);
-      if (err.message !== 'NFC_CANCELLED') {
-        // Timeout — save without NFC
-        await completeOrder();
-      }
+      if (err.message === 'NFC_CANCELLED') return;
+      // Timeout — proceed without NFC (anonymous)
+    }
+
+    try {
+      const session = await createSession.mutateAsync({ nfc_uid: nfcUid });
+      const logs = items.flatMap((item) =>
+        Array.from({ length: item.quantity }, () => ({
+          session_id: session.id,
+          product_id: item.product.id,
+          price_at_time: item.product.price,
+        }))
+      );
+      await addDrinkLogs.mutateAsync(logs);
+      await updateSession.mutateAsync({
+        id: session.id,
+        total_amount: session.total_amount + total,
+      });
+      showFeedback('success');
+      setItems([]);
+    } catch {
+      showFeedback('error');
     }
   }, [items, total, createSession, addDrinkLogs, updateSession, showFeedback]);
 

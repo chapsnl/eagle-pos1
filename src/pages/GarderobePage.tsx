@@ -4,7 +4,7 @@ import { NfcOverlay } from '@/components/pos/NfcOverlay';
 import { FeedbackType } from '@/types/pos';
 import { Send } from 'lucide-react';
 import { useCreateSession } from '@/hooks/useSessions';
-import { waitForNfcScan } from '@/hooks/useNfc';
+import { writeNfcTag, scanNfcTag } from '@/hooks/useNfc';
 
 const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
 
@@ -13,7 +13,7 @@ export const GarderobePage = () => {
   const [bagNumber, setBagNumber] = useState('');
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [activeField, setActiveField] = useState<'coat' | 'bag' | null>(null);
-  const [nfcStatus, setNfcStatus] = useState<'scanning' | null>(null);
+  const [nfcStatus, setNfcStatus] = useState<'scanning' | 'writing' | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
   const createSession = useCreateSession();
 
@@ -26,17 +26,39 @@ export const GarderobePage = () => {
     if (!coatNumber && !bagNumber) return;
     const wardrobeNumber = `${coatNumber ? 'C' + coatNumber : ''}${bagNumber ? 'B' + bagNumber : ''}`;
 
+    // Step 1: Read the tag UID first
     setNfcStatus('scanning');
-    const { promise, cancel } = waitForNfcScan(30000);
-    cancelRef.current = cancel;
+    const { promise: scanPromise, cancel: cancelScan } = scanNfcTag(30000);
+    cancelRef.current = cancelScan;
+
+    let uid: string;
+    try {
+      const result = await scanPromise;
+      uid = result.uid;
+    } catch (err: any) {
+      setNfcStatus(null);
+      if (err.message !== 'NFC_CANCELLED') {
+        setFeedback('error');
+        setTimeout(() => setFeedback(null), 2000);
+      }
+      return;
+    }
+
+    // Step 2: Write the wardrobe number to the tag
+    setNfcStatus('writing');
+    const { promise: writePromise, cancel: cancelWrite } = writeNfcTag(wardrobeNumber, 30000);
+    cancelRef.current = cancelWrite;
 
     try {
-      const result = await promise;
+      await writePromise;
       setNfcStatus(null);
+
+      // Step 3: Save to database
       await createSession.mutateAsync({
-        nfc_uid: result.uid,
+        nfc_uid: uid,
         wardrobe_number: wardrobeNumber,
       });
+
       setFeedback('success');
       setTimeout(() => {
         setFeedback(null);
