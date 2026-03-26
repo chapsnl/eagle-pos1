@@ -124,7 +124,7 @@ export const ArmNummerPage = () => {
                     className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line"
                     style={{ fontSize: cell.span === 2 ? 'clamp(1.2rem, 3.5vw, 2.8rem)' : 'clamp(0.7rem, 2vw, 1.5rem)' }}
                   >
-                    {product.name}
+                    {cell.hideLabel ? '' : product.name}
                   </span>
                 </button>
               );
