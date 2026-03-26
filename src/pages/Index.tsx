@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Product, OrderItem, FeedbackType, AppView } from '@/types/pos';
+import { DbProduct } from '@/hooks/useProducts';
+import { FeedbackType, AppView } from '@/types/pos';
 import { NavTabs } from '@/components/pos/NavTabs';
 import { OrderBar } from '@/components/pos/OrderBar';
 import { ProductGrid } from '@/components/pos/ProductGrid';
@@ -10,14 +11,19 @@ import { ArmNummerPage } from './ArmNummerPage';
 import { AdminPage } from './AdminPage';
 import { Nfc } from 'lucide-react';
 
+export interface DbOrderItem {
+  product: DbProduct;
+  quantity: number;
+}
+
 const Index = () => {
   const [activeView, setActiveView] = useState<AppView>('bar');
-  const [items, setItems] = useState<OrderItem[]>([]);
+  const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
 
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
-  const addProduct = useCallback((product: Product) => {
+  const addProduct = useCallback((product: DbProduct) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.product.id === product.id);
       if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
