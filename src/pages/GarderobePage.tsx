@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
+import { NfcHiddenInput } from '@/components/pos/NfcHiddenInput';
 import { FeedbackType } from '@/types/pos';
 import { Send } from 'lucide-react';
 import { useCreateSession } from '@/hooks/useSessions';
