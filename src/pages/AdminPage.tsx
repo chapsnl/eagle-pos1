@@ -154,9 +154,9 @@ export const AdminPage = () => {
 
         {/* Confirmation dialog */}
         <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-          <DialogContent className="bg-card border-border">
+          <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
             <DialogHeader>
-              <DialogTitle className="text-destructive font-extrabold uppercase">
+              <DialogTitle className="font-extrabold uppercase" style={{ color: '#00cc13' }}>
                 Batch-Erase Starten
               </DialogTitle>
               <DialogDescription className="text-sm">
@@ -173,7 +173,7 @@ export const AdminPage = () => {
               <button
                 onClick={startBatchErase}
                 className="flex-1 py-3 font-extrabold uppercase text-sm"
-                style={{ backgroundColor: '#ef4444', color: '#fff' }}
+                style={{ backgroundColor: '#00cc13', color: '#000' }}
               >
                 Ja, Start Wissen
               </button>
@@ -195,8 +195,16 @@ export const AdminPage = () => {
           icon={<Trash2 className="w-5 h-5" />}
           label="BATCH-ERASE"
           description="Continu NFC-bandjes wissen"
-          variant="destructive"
+          variant="success"
           onClick={() => setShowConfirm(true)}
+        />
+
+        <AdminButton
+          icon={<Nfc className="w-5 h-5" />}
+          label="NFC UITLEZEN"
+          description="Lees data van een NFC-bandje"
+          variant="success"
+          onClick={startNfcRead}
         />
 
         <AdminButton
