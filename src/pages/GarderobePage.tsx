@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
 import { FeedbackType } from '@/types/pos';
 import { Send } from 'lucide-react';
 import { useCreateSession } from '@/hooks/useSessions';
-import { scanNfc, isNfcSupported } from '@/hooks/useNfc';
+import { waitForNfcScan } from '@/hooks/useNfc';
 
 const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
 
@@ -13,8 +13,8 @@ export const GarderobePage = () => {
   const [bagNumber, setBagNumber] = useState('');
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [activeField, setActiveField] = useState<'coat' | 'bag' | null>(null);
-  const [nfcStatus, setNfcStatus] = useState<'scanning' | 'error' | null>(null);
-  const [nfcError, setNfcError] = useState('');
+  const [nfcStatus, setNfcStatus] = useState<'scanning' | null>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
   const createSession = useCreateSession();
 
   useEffect(() => {
@@ -26,45 +26,37 @@ export const GarderobePage = () => {
     if (!coatNumber && !bagNumber) return;
     const wardrobeNumber = `${coatNumber ? 'C' + coatNumber : ''}${bagNumber ? 'B' + bagNumber : ''}`;
 
-    // NFC scan required
-    if (isNfcSupported()) {
-      setNfcStatus('scanning');
-      try {
-        const result = await scanNfc(15000);
-        setNfcStatus(null);
-        // Create or update session with NFC UID and wardrobe number
-        await createSession.mutateAsync({
-          nfc_uid: result.uid,
-          wardrobe_number: wardrobeNumber,
-        });
-        setFeedback('success');
-        setTimeout(() => {
-          setFeedback(null);
-          setCoatNumber('');
-          setBagNumber('');
-          setActiveField(null);
-        }, 2000);
-      } catch (err: any) {
-        setNfcStatus('error');
-        setNfcError(err.message === 'NFC_TIMEOUT' ? 'Geen bandje gedetecteerd' : 'NFC fout');
-      }
-    } else {
-      // Fallback: no NFC hardware — create session without NFC UID
-      try {
-        await createSession.mutateAsync({ wardrobe_number: wardrobeNumber });
-        setFeedback('success');
-        setTimeout(() => {
-          setFeedback(null);
-          setCoatNumber('');
-          setBagNumber('');
-          setActiveField(null);
-        }, 2000);
-      } catch {
+    setNfcStatus('scanning');
+    const { promise, cancel } = waitForNfcScan(30000);
+    cancelRef.current = cancel;
+
+    try {
+      const result = await promise;
+      setNfcStatus(null);
+      await createSession.mutateAsync({
+        nfc_uid: result.uid,
+        wardrobe_number: wardrobeNumber,
+      });
+      setFeedback('success');
+      setTimeout(() => {
+        setFeedback(null);
+        setCoatNumber('');
+        setBagNumber('');
+        setActiveField(null);
+      }, 2000);
+    } catch (err: any) {
+      setNfcStatus(null);
+      if (err.message !== 'NFC_CANCELLED') {
         setFeedback('error');
         setTimeout(() => setFeedback(null), 2000);
       }
     }
   }, [coatNumber, bagNumber, createSession]);
+
+  const handleCancelNfc = useCallback(() => {
+    cancelRef.current?.();
+    setNfcStatus(null);
+  }, []);
 
   const handleNumKey = (key: string) => {
     if (!activeField) return;
@@ -82,7 +74,7 @@ export const GarderobePage = () => {
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       <FeedbackOverlay type={feedback} />
-      <NfcOverlay status={nfcStatus} errorMessage={nfcError} onCancel={() => setNfcStatus(null)} />
+      <NfcOverlay status={nfcStatus} onCancel={handleCancelNfc} />
 
       <h2 className="font-extrabold uppercase tracking-[0.15em] text-center pt-3 pb-2" style={{ color: '#00cc13', fontSize: '29px' }}>
         Garderobe

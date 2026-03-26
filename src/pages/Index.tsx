@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { DbProduct } from '@/hooks/useProducts';
 import { FeedbackType, AppView } from '@/types/pos';
 import { NavTabs } from '@/components/pos/NavTabs';
@@ -10,9 +10,9 @@ import { GarderobePage } from './GarderobePage';
 import { BetalingPage } from './BetalingPage';
 import { ArmNummerPage } from './ArmNummerPage';
 import { AdminPage } from './AdminPage';
-import { Nfc } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { useCreateSession, useAddDrinkLogs, useUpdateSession } from '@/hooks/useSessions';
-import { scanNfc, isNfcSupported } from '@/hooks/useNfc';
+import { waitForNfcScan } from '@/hooks/useNfc';
 
 export interface DbOrderItem {
   product: DbProduct;
@@ -23,8 +23,8 @@ const Index = () => {
   const [activeView, setActiveView] = useState<AppView>('bar');
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
-  const [nfcStatus, setNfcStatus] = useState<'scanning' | 'error' | null>(null);
-  const [nfcError, setNfcError] = useState('');
+  const [nfcStatus, setNfcStatus] = useState<'scanning' | null>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
   const createSession = useCreateSession();
   const addDrinkLogs = useAddDrinkLogs();
   const updateSession = useUpdateSession();
@@ -90,26 +90,33 @@ const Index = () => {
       }
     };
 
-    if (isNfcSupported()) {
-      setNfcStatus('scanning');
-      try {
-        const result = await scanNfc(15000);
-        setNfcStatus(null);
-        await completeOrder(result.uid);
-      } catch (err: any) {
-        setNfcStatus('error');
-        setNfcError(err.message === 'NFC_TIMEOUT' ? 'Geen bandje gedetecteerd' : 'NFC fout');
+    // Start NFC scan
+    setNfcStatus('scanning');
+    const { promise, cancel } = waitForNfcScan(30000);
+    cancelRef.current = cancel;
+
+    try {
+      const result = await promise;
+      setNfcStatus(null);
+      await completeOrder(result.uid);
+    } catch (err: any) {
+      setNfcStatus(null);
+      if (err.message !== 'NFC_CANCELLED') {
+        // Timeout — save without NFC
+        await completeOrder();
       }
-    } else {
-      // No NFC — still save to DB
-      await completeOrder();
     }
   }, [items, total, createSession, addDrinkLogs, updateSession, showFeedback]);
+
+  const handleCancelNfc = useCallback(() => {
+    cancelRef.current?.();
+    setNfcStatus(null);
+  }, []);
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
-      <NfcOverlay status={nfcStatus} errorMessage={nfcError} onCancel={() => setNfcStatus(null)} />
+      <NfcOverlay status={nfcStatus} onCancel={handleCancelNfc} />
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
 
       {activeView === 'bar' && (
@@ -122,7 +129,7 @@ const Index = () => {
             className="pos-btn py-4 text-xl flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110 active:brightness-75"
             style={{ backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340, inset 0 1px 0 #ffffff20' }}
           >
-            <Nfc className="w-6 h-6" />
+            <Send className="w-6 h-6" />
             SEND — €{total.toFixed(2)}
           </button>
         </>
