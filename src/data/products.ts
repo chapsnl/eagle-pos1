@@ -1,6 +1,6 @@
 import { Product } from '@/types/pos';
 
-const dark = (hex: string) => ['#12100e', '#357cff'].includes(hex);
+const dark = (hex: string) => ['#12100e', '#357cff', '#497df7'].includes(hex);
 
 const p = (id: number, code: string, name: string, price: number, hex: string): Product => ({
   id: String(id),
@@ -18,8 +18,8 @@ export const products: Product[] = [
   p(2, 'GROL', 'Grolsch', 6.50, '#f4b738'),
   p(3, 'COAF', 'Corona/Affligem', 3.00, '#f4b738'),
   p(4, 'HE0%', 'Heineken 0%', 3.00, '#f4b738'),
-  p(5, 'JUIC', 'Juices', 4.50, '#357cff'),
-  p(6, 'SOFT', 'Soft\nDrinks', 4.00, '#357cff'),
+  p(5, 'JUIC', 'Juices', 4.50, '#497df7'),
+  p(6, 'SOFT', 'Soft\nDrinks', 4.00, '#497df7'),
   p(7, 'ABSO', 'Absolute', 6.00, '#bb706b'),
   p(8, 'BOMB', 'Bombay', 3.00, '#8f8255'),
   p(9, 'APPC', 'Apple Cider', 3.00, '#f4b738'),
@@ -31,7 +31,7 @@ export const products: Product[] = [
   p(15, 'JIMB', 'Jim Beam', 3.00, '#ef5931'),
   p(16, 'BSPI', 'Black Spiced', 3.00, '#aacd6c'),
   p(17, 'BACA', 'Bacardi', 3.00, '#aacd6c'),
-  p(18, 'REDB', 'Redbull', 3.00, '#357cff'),
+  p(18, 'REDB', 'Redbull', 3.00, '#497df7'),
   p(19, 'BAIL', 'Baileys', 3.00, '#e4e2e2'),
   p(20, 'MALI', 'Malibu', 3.00, '#e4e2e2'),
   p(21, 'TEQU', 'Tequila', 3.00, '#e4e2e2'),
