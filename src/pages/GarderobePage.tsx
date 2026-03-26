@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
+import { NfcHiddenInput } from '@/components/pos/NfcHiddenInput';
 import { FeedbackType } from '@/types/pos';
 import { Send } from 'lucide-react';
 import { useCreateSession } from '@/hooks/useSessions';
@@ -75,6 +76,7 @@ export const GarderobePage = () => {
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       <FeedbackOverlay type={feedback} />
       <NfcOverlay status={nfcStatus} onCancel={handleCancelNfc} />
+      <NfcHiddenInput active={nfcStatus === 'scanning'} />
 
       <h2 className="font-extrabold uppercase tracking-[0.15em] text-center pt-3 pb-2" style={{ color: '#00cc13', fontSize: '29px' }}>
         Garderobe
