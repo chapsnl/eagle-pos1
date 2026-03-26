@@ -30,10 +30,10 @@ export const BetalingPage = ({
 
         {items.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 animate-[nfcPulse_3s_ease-in-out_infinite]">
-            <Nfc className="w-32 h-32" style={{ color: '#00cc13', filter: 'drop-shadow(0 0 12px #00cc1360)' }} />
             <span className="text-2xl font-extrabold uppercase tracking-[0.2em]" style={{ color: '#00cc13' }}>
               Scan NFC
             </span>
+            <Nfc className="w-32 h-32" style={{ color: '#00cc13', filter: 'drop-shadow(0 0 12px #00cc1360)' }} />
           </div>
         ) : (
           <div className="flex flex-col gap-1">
