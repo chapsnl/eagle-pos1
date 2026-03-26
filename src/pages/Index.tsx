@@ -103,10 +103,11 @@ const Index = () => {
       // Write session data to NFC tag
       if (nfcUid) {
         setNfcStatus('scanning');
-        const writeData = JSON.stringify({
-          sid: session.id,
-          total: newTotal,
-        });
+      const orderSummary = items.map(i => `${i.quantity}x${i.product.shorthand}`).join(',');
+      const writeData = JSON.stringify({
+        items: orderSummary,
+        total: newTotal,
+      });
         const { promise: writePromise, cancel: writeCancel } = writeNfcTag(writeData, 15000);
         cancelRef.current = writeCancel;
         try {

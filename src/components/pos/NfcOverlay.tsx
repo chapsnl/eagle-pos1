@@ -1,4 +1,4 @@
-import { Nfc, PenLine } from 'lucide-react';
+import { Nfc } from 'lucide-react';
 
 interface NfcOverlayProps {
   status: 'scanning' | 'writing' | null;
@@ -18,17 +18,17 @@ export const NfcOverlay = ({ status, onCancel }: NfcOverlayProps) => {
       >
         {isWriting ? 'Schrijven...' : 'Scan NFC'}
       </span>
-      {isWriting ? (
-        <PenLine
-          className="w-32 h-32 mt-4 animate-[nfcPulse_3s_ease-in-out_infinite]"
-          style={{ color: '#00cc13', filter: 'drop-shadow(0 0 20px #00cc1360)' }}
-        />
-      ) : (
-        <Nfc
-          className="w-32 h-32 mt-4 animate-[nfcPulse_3s_ease-in-out_infinite]"
-          style={{ color: '#00cc13', filter: 'drop-shadow(0 0 20px #00cc1360)' }}
-        />
-      )}
+      <Nfc
+        className="w-32 h-32 mt-4 animate-[nfcPulse_3s_ease-in-out_infinite]"
+        style={{ color: '#00cc13', filter: 'drop-shadow(0 0 20px #00cc1360)' }}
+      />
+      <button
+        onClick={onCancel}
+        className="mt-8 px-8 py-3 font-extrabold uppercase text-sm"
+        style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 16px #ef444480' }}
+      >
+        CANCEL
+      </button>
     </div>
   );
 };
