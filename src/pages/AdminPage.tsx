@@ -139,7 +139,7 @@ export const AdminPage = () => {
                       const match = entry.match(/^(\d+)x(.+)$/);
                       return match ? { qty: parseInt(match[1]), shorthand: match[2] } : { qty: 1, shorthand: entry };
                     });
-                    setNfcReadData({ uid, items, total: json.total ?? 0 });
+                    setNfcReadData({ uid, items, total: json.total ?? 0, wn: json.wn });
                     parsed = true;
                   }
                 }
