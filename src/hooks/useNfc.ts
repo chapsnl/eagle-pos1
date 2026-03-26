@@ -5,6 +5,7 @@
 
 export interface NfcScanResult {
   uid: string;
+  message?: string;
 }
 
 /**
