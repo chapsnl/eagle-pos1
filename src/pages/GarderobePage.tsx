@@ -44,8 +44,7 @@ export const GarderobePage = () => {
       return;
     }
 
-    // Step 2: Write the wardrobe number to the tag
-    setNfcStatus('writing');
+    // Step 2: Write the wardrobe number to the tag (no UI change, keep scanning overlay)
     const { promise: writePromise, cancel: cancelWrite } = writeNfcTag(wardrobeNumber, 30000);
     cancelRef.current = cancelWrite;
 
