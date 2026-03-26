@@ -14,7 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      drink_logs: {
+        Row: {
+          id: string
+          price_at_time: number
+          product_id: string
+          session_id: string
+          timestamp: string
+        }
+        Insert: {
+          id?: string
+          price_at_time: number
+          product_id: string
+          session_id: string
+          timestamp?: string
+        }
+        Update: {
+          id?: string
+          price_at_time?: number
+          product_id?: string
+          session_id?: string
+          timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drink_logs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drink_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category_color: string
+          full_name: string
+          id: string
+          price: number
+          shorthand: string
+          stock_count: number
+        }
+        Insert: {
+          category_color?: string
+          full_name?: string
+          id?: string
+          price?: number
+          shorthand: string
+          stock_count?: number
+        }
+        Update: {
+          category_color?: string
+          full_name?: string
+          id?: string
+          price?: number
+          shorthand?: string
+          stock_count?: number
+        }
+        Relationships: []
+      }
+      sessions: {
+        Row: {
+          actual_paid_amount: number | null
+          created_at: string
+          id: string
+          is_event_numbered: boolean
+          nfc_uid: string | null
+          status: Database["public"]["Enums"]["session_status"]
+          total_amount: number
+          wardrobe_number: string | null
+        }
+        Insert: {
+          actual_paid_amount?: number | null
+          created_at?: string
+          id?: string
+          is_event_numbered?: boolean
+          nfc_uid?: string | null
+          status?: Database["public"]["Enums"]["session_status"]
+          total_amount?: number
+          wardrobe_number?: string | null
+        }
+        Update: {
+          actual_paid_amount?: number | null
+          created_at?: string
+          id?: string
+          is_event_numbered?: boolean
+          nfc_uid?: string | null
+          status?: Database["public"]["Enums"]["session_status"]
+          total_amount?: number
+          wardrobe_number?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +121,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      session_status: "active" | "paid" | "incident" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +248,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      session_status: ["active", "paid", "incident", "archived"],
+    },
   },
 } as const
