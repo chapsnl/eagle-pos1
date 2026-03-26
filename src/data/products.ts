@@ -24,7 +24,7 @@ export const products: Product[] = [
   p(9, 'APPC', 'Apple Cider', 3.00, '#f4b738'),
   p(10, 'WHIB', 'White Beer', 3.00, '#f4b738'),
   p(11, 'JENE', 'Jenever', 3.00, '#e4e2e2'),
-  p(12, 'WINE', 'Wine/Martini', 3.00, '#e4e2e2'),
+  p(12, 'WINE', 'Wine\nMartini', 3.00, '#e4e2e2'),
   p(13, 'JAME', 'Jamesson', 3.00, '#ef5931'),
   p(14, 'JACD', 'Jack Daniels', 3.00, '#ef5931'),
   p(15, 'JIMB', 'Jim Beam', 3.00, '#ef5931'),
