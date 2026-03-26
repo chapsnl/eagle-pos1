@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, Trash2, ArrowRightLeft, Mail, DollarSign } from 'lucide-react';
+import { Lock, Trash2, ArrowRightLeft, Mail, DollarSign, RotateCcw, AlertTriangle, X } from 'lucide-react';
 
 export const AdminPage = () => {
   const [pinInput, setPinInput] = useState('');
@@ -80,6 +80,29 @@ export const AdminPage = () => {
           description="Voorraad + Debt List versturen, dagsaldo resetten"
           variant="primary"
           onClick={() => console.log('Close shift')}
+        />
+
+        <AdminButton
+          icon={<RotateCcw className="w-5 h-5" />}
+          label="CORRIGEER"
+          description="Annuleren of fooi toevoegen"
+          onClick={() => console.log('Correct')}
+        />
+
+        <AdminButton
+          icon={<AlertTriangle className="w-5 h-5" />}
+          label="INCIDENT"
+          description="Probleem-sessie vlaggen"
+          variant="destructive"
+          onClick={() => console.log('Incident')}
+        />
+
+        <AdminButton
+          icon={<X className="w-5 h-5" />}
+          label="WISSEN"
+          description="Huidige bestelling wissen"
+          variant="destructive"
+          onClick={() => console.log('Wissen')}
         />
 
         <button

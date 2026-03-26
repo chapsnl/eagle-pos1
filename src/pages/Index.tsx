@@ -91,8 +91,6 @@ const Index = () => {
           onClear={clearOrder}
           onPin={handlePin}
           onCash={handleCash}
-          onCorrect={() => console.log('Correct')}
-          onIncident={() => console.log('Incident')}
         />
       )}
 

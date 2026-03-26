@@ -1,5 +1,5 @@
 import { OrderItem } from '@/types/pos';
-import { X, Nfc, CreditCard, Banknote, AlertTriangle, RotateCcw } from 'lucide-react';
+import { X, Nfc, CreditCard, Banknote, Send } from 'lucide-react';
 
 interface BetalingPageProps {
   items: OrderItem[];
@@ -8,8 +8,6 @@ interface BetalingPageProps {
   onClear: () => void;
   onPin: () => void;
   onCash: () => void;
-  onCorrect: () => void;
-  onIncident: () => void;
 }
 
 export const BetalingPage = ({
@@ -19,8 +17,6 @@ export const BetalingPage = ({
   onClear,
   onPin,
   onCash,
-  onCorrect,
-  onIncident,
 }: BetalingPageProps) => {
   const hasItems = items.length > 0;
 
@@ -33,9 +29,10 @@ export const BetalingPage = ({
         </h2>
 
         {items.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center">
-            <span className="text-muted-foreground text-sm uppercase tracking-widest">
-              Geen selectie
+          <div className="flex-1 flex flex-col items-center justify-center gap-3">
+            <Nfc className="w-16 h-16" style={{ color: '#00cc13', filter: 'drop-shadow(0 0 12px #00cc1360)' }} />
+            <span className="text-2xl font-extrabold uppercase tracking-[0.2em]" style={{ color: '#00cc13' }}>
+              Scan NFC
             </span>
           </div>
         ) : (
@@ -55,7 +52,7 @@ export const BetalingPage = ({
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-extrabold text-primary">
+                  <span className="text-sm font-extrabold" style={{ color: '#00cc13' }}>
                     €{(item.product.price * item.quantity).toFixed(2)}
                   </span>
                   <button
@@ -73,22 +70,13 @@ export const BetalingPage = ({
         {hasItems && (
           <div className="flex items-center justify-between px-3 py-2 border-t border-border">
             <span className="text-sm font-bold uppercase tracking-widest">Totaal</span>
-            <span className="text-2xl font-extrabold text-primary">€{total.toFixed(2)}</span>
+            <span className="text-2xl font-extrabold" style={{ color: '#00cc13' }}>€{total.toFixed(2)}</span>
           </div>
         )}
       </div>
 
       {/* Action buttons */}
-      <div className="bg-card border-t border-border flex flex-col gap-0">
-        {/* SEND - prominent */}
-        <button
-          disabled={!hasItems}
-          className="pos-btn bg-primary text-primary-foreground py-5 text-xl flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110"
-        >
-          <Nfc className="w-6 h-6" />
-          SEND
-        </button>
-
+      <div className="flex flex-col gap-0">
         {/* PIN / CONTANT row */}
         <div className="flex">
           <button
@@ -109,31 +97,19 @@ export const BetalingPage = ({
           </button>
         </div>
 
-        {/* CORRIGEER / INCIDENT / WISSEN row */}
-        <div className="flex">
-          <button
-            onClick={onCorrect}
-            className="pos-btn flex-1 bg-muted text-muted-foreground py-2.5 text-[10px] flex items-center justify-center gap-1 hover:brightness-110 border-r border-border"
-          >
-            <RotateCcw className="w-3 h-3" />
-            CORRIGEER
-          </button>
-          <button
-            onClick={onIncident}
-            className="pos-btn flex-1 bg-destructive text-destructive-foreground py-2.5 text-[10px] flex items-center justify-center gap-1 hover:brightness-110 border-r border-border"
-          >
-            <AlertTriangle className="w-3 h-3" />
-            INCIDENT
-          </button>
-          <button
-            onClick={onClear}
-            disabled={!hasItems}
-            className="pos-btn flex-1 bg-muted text-muted-foreground py-2.5 text-[10px] flex items-center justify-center gap-1 hover:brightness-110 disabled:opacity-30"
-          >
-            <X className="w-3 h-3" />
-            WISSEN
-          </button>
-        </div>
+        {/* SEND button */}
+        <button
+          disabled={!hasItems}
+          className="pos-btn py-5 text-xl flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed font-extrabold uppercase"
+          style={{
+            backgroundColor: '#00cc13',
+            color: '#fff',
+            boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330',
+          }}
+        >
+          <Send className="w-6 h-6" />
+          SEND
+        </button>
       </div>
     </div>
   );
