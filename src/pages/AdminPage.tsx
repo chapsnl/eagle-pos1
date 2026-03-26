@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Trash2, ArrowRightLeft, Mail, DollarSign, RotateCcw, AlertTriangle, Users, ChevronDown, ChevronUp, Square, Nfc } from 'lucide-react';
+import { useProducts } from '@/hooks/useProducts';
 import { useActiveSessions, useIncidentSessions } from '@/hooks/useSessions';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
@@ -23,8 +24,9 @@ export const AdminPage = () => {
   const cancelRef = useRef<(() => void) | null>(null);
   const batchModeRef = useRef(false);
   const [nfcReadMode, setNfcReadMode] = useState(false);
-  const [nfcReadData, setNfcReadData] = useState<string[] | null>(null);
+  const [nfcReadData, setNfcReadData] = useState<{ uid: string; items: { shorthand: string; qty: number }[]; total: number } | { raw: string[] } | null>(null);
   const nfcReadCancelRef = useRef<(() => void) | null>(null);
+  const { data: productsData } = useProducts();
 
   // Keep ref in sync
   useEffect(() => {
@@ -123,32 +125,34 @@ export const AdminPage = () => {
 
       reader.onreading = (event: any) => {
         const uid = event.serialNumber?.replace(/:/g, '').toUpperCase() || 'Geen UID';
-        const records: string[] = [`UID: ${uid}`];
+        let parsed = false;
         if (event.message?.records) {
           for (const rec of event.message.records) {
             try {
               if (rec.recordType === 'text') {
                 const decoder = new TextDecoder(rec.encoding || 'utf-8');
                 const text = decoder.decode(rec.data);
-                records.push(`Text: ${text || '(leeg)'}`);
-              } else if (rec.recordType === 'url') {
-                const decoder = new TextDecoder();
-                records.push(`URL: ${decoder.decode(rec.data)}`);
-              } else {
-                records.push(`Record: ${rec.recordType}`);
+                if (text) {
+                  const json = JSON.parse(text);
+                  if (json.items && typeof json.items === 'string') {
+                    const items = json.items.split(',').map((entry: string) => {
+                      const match = entry.match(/^(\d+)x(.+)$/);
+                      return match ? { qty: parseInt(match[1]), shorthand: match[2] } : { qty: 1, shorthand: entry };
+                    });
+                    setNfcReadData({ uid, items, total: json.total ?? 0 });
+                    parsed = true;
+                  }
+                }
               }
-            } catch {
-              records.push(`Record: ${rec.recordType} (onleesbaar)`);
-            }
+            } catch { /* not JSON, fall through */ }
           }
         }
-        if (records.length === 1) records.push('Geen data records');
-        setNfcReadData(records);
+        if (!parsed) setNfcReadData({ raw: [`UID: ${uid}`, 'Geen besteldata gevonden'] });
         ac.abort();
       };
     } catch (err: any) {
       if (err.name !== 'AbortError') {
-        setNfcReadData(['Fout bij lezen: ' + err.message]);
+        setNfcReadData({ raw: ['Fout bij lezen: ' + err.message] });
       }
     }
   }, []);
@@ -169,13 +173,35 @@ export const AdminPage = () => {
           </h2>
           {!nfcReadData ? (
             <p className="text-muted-foreground text-sm animate-pulse">Scan een bandje om de data te lezen...</p>
-          ) : (
-            <div className="bg-card border rounded-lg p-4 text-left space-y-2 max-w-sm mx-auto" style={{ borderColor: '#00cc1340' }}>
-              {nfcReadData.map((line, i) => (
-                <p key={i} className="text-sm font-mono" style={{ color: i === 0 ? '#00cc13' : undefined }}>
+          ) : 'raw' in nfcReadData ? (
+            <div className="bg-card border rounded-lg p-4 text-left space-y-2 max-w-xs mx-auto break-words" style={{ borderColor: '#00cc1340' }}>
+              {nfcReadData.raw.map((line, i) => (
+                <p key={i} className="text-sm font-mono break-all" style={{ color: i === 0 ? '#00cc13' : undefined }}>
                   {line}
                 </p>
               ))}
+            </div>
+          ) : (
+            <div className="bg-card border rounded-lg p-4 text-left max-w-xs mx-auto" style={{ borderColor: '#00cc1340' }}>
+              <p className="text-xs font-mono mb-3 break-all" style={{ color: '#00cc13' }}>UID: {nfcReadData.uid}</p>
+              <div className="space-y-2">
+                {nfcReadData.items.map((item, i) => {
+                  const product = productsData?.find(p => p.shorthand === item.shorthand);
+                  return (
+                    <div key={i} className="flex justify-between items-center text-sm">
+                      <span className="font-bold">{product?.full_name || item.shorthand}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-muted-foreground">{item.qty}x</span>
+                        <span style={{ color: '#00cc13' }}>€{((product?.price ?? 0) * item.qty).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="border-t border-border mt-3 pt-3 flex justify-between items-center">
+                <span className="font-extrabold uppercase text-sm">Totaal</span>
+                <span className="font-extrabold text-lg" style={{ color: '#00cc13' }}>€{Number(nfcReadData.total).toFixed(2)}</span>
+              </div>
             </div>
           )}
           <div className={`flex gap-3 justify-center ${nfcReadData ? '' : 'hidden'}`}>
@@ -191,9 +217,9 @@ export const AdminPage = () => {
                 try {
                   const writer = new (window as any).NDEFReader();
                   await writer.write({ records: [{ recordType: 'text', data: '' }] }, { overwrite: true });
-                  setNfcReadData(['Tag gewist!']);
+                  setNfcReadData({ raw: ['Tag gewist!'] });
                 } catch (err: any) {
-                  setNfcReadData(['Wissen mislukt: ' + err.message]);
+                  setNfcReadData({ raw: ['Wissen mislukt: ' + err.message] });
                 }
               }}
               className="px-6 py-3 font-extrabold uppercase text-sm"
