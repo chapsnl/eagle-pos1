@@ -22,6 +22,9 @@ export const AdminPage = () => {
   const [erasedCount, setErasedCount] = useState(0);
   const cancelRef = useRef<(() => void) | null>(null);
   const batchModeRef = useRef(false);
+  const [nfcReadMode, setNfcReadMode] = useState(false);
+  const [nfcReadData, setNfcReadData] = useState<string[] | null>(null);
+  const nfcReadCancelRef = useRef<(() => void) | null>(null);
 
   // Keep ref in sync
   useEffect(() => {
