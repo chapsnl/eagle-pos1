@@ -20,7 +20,7 @@ export const useCreateSession = () => {
 export const useUpdateSession = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; status?: string; total_amount?: number; actual_paid_amount?: number }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; status?: 'active' | 'paid' | 'incident' | 'archived'; total_amount?: number; actual_paid_amount?: number }) => {
       const { error } = await supabase
         .from('sessions')
         .update(updates)
