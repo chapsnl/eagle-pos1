@@ -2,7 +2,7 @@ import { DbOrderItem } from '@/pages/Index';
 import { X, Nfc, CreditCard, Banknote, Send } from 'lucide-react';
 
 interface BetalingPageProps {
-  items: OrderItem[];
+  items: DbOrderItem[];
   total: number;
   onRemoveItem: (productId: string) => void;
   onClear: () => void;
