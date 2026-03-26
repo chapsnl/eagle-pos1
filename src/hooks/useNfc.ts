@@ -50,11 +50,23 @@ export const scanNfcTag = (timeoutMs = 30000): { promise: Promise<NfcScanResult>
         reader.onreading = (event: any) => {
           if (settled) return;
           const uid = event.serialNumber?.replace(/:/g, '').toUpperCase() || '';
-          console.log('[NFC] Tag read, UID:', uid);
+          let message: string | undefined;
+          if (event.message?.records) {
+            for (const rec of event.message.records) {
+              try {
+                if (rec.recordType === 'text') {
+                  const decoder = new TextDecoder(rec.encoding || 'utf-8');
+                  message = decoder.decode(rec.data);
+                  break;
+                }
+              } catch { /* ignore */ }
+            }
+          }
+          console.log('[NFC] Tag read, UID:', uid, 'message:', message);
           settled = true;
           clearTimeout(timer);
           abortController?.abort();
-          resolve({ uid });
+          resolve({ uid, message });
         };
 
         reader.onreadingerror = () => {
