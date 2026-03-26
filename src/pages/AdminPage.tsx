@@ -173,13 +173,35 @@ export const AdminPage = () => {
           </h2>
           {!nfcReadData ? (
             <p className="text-muted-foreground text-sm animate-pulse">Scan een bandje om de data te lezen...</p>
-          ) : (
-            <div className="bg-card border rounded-lg p-4 text-left space-y-2 max-w-sm mx-auto" style={{ borderColor: '#00cc1340' }}>
-              {nfcReadData.map((line, i) => (
-                <p key={i} className="text-sm font-mono" style={{ color: i === 0 ? '#00cc13' : undefined }}>
+          ) : 'raw' in nfcReadData ? (
+            <div className="bg-card border rounded-lg p-4 text-left space-y-2 max-w-xs mx-auto break-words" style={{ borderColor: '#00cc1340' }}>
+              {nfcReadData.raw.map((line, i) => (
+                <p key={i} className="text-sm font-mono break-all" style={{ color: i === 0 ? '#00cc13' : undefined }}>
                   {line}
                 </p>
               ))}
+            </div>
+          ) : (
+            <div className="bg-card border rounded-lg p-4 text-left max-w-xs mx-auto" style={{ borderColor: '#00cc1340' }}>
+              <p className="text-xs font-mono mb-3 break-all" style={{ color: '#00cc13' }}>UID: {nfcReadData.uid}</p>
+              <div className="space-y-2">
+                {nfcReadData.items.map((item, i) => {
+                  const product = productsData?.find(p => p.shorthand === item.shorthand);
+                  return (
+                    <div key={i} className="flex justify-between items-center text-sm">
+                      <span className="font-bold">{product?.full_name || item.shorthand}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-muted-foreground">{item.qty}x</span>
+                        <span style={{ color: '#00cc13' }}>€{((product?.price ?? 0) * item.qty).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="border-t border-border mt-3 pt-3 flex justify-between items-center">
+                <span className="font-extrabold uppercase text-sm">Totaal</span>
+                <span className="font-extrabold text-lg" style={{ color: '#00cc13' }}>€{Number(nfcReadData.total).toFixed(2)}</span>
+              </div>
             </div>
           )}
           <div className={`flex gap-3 justify-center ${nfcReadData ? '' : 'hidden'}`}>
@@ -195,9 +217,9 @@ export const AdminPage = () => {
                 try {
                   const writer = new (window as any).NDEFReader();
                   await writer.write({ records: [{ recordType: 'text', data: '' }] }, { overwrite: true });
-                  setNfcReadData(['Tag gewist!']);
+                  setNfcReadData({ raw: ['Tag gewist!'] });
                 } catch (err: any) {
-                  setNfcReadData(['Wissen mislukt: ' + err.message]);
+                  setNfcReadData({ raw: ['Wissen mislukt: ' + err.message] });
                 }
               }}
               className="px-6 py-3 font-extrabold uppercase text-sm"
