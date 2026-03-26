@@ -58,7 +58,24 @@ export const ProductGrid = ({ onAddProduct }: ProductGridProps) => {
                   backgroundColor: product.category_color,
                   color: textColor,
                 }}
-                className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 active:brightness-75 active:shadow-[inset_0_0_0_2px_hsl(var(--destructive)),0_0_12px_hsl(var(--destructive)/0.5)] p-1 min-w-0"
+className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 active:brightness-[0.6] p-1 min-w-0 transition-all duration-75"
+                style={{
+                  ...({
+                    flex: cell.span,
+                    backgroundColor: product.category_color,
+                    color: textColor,
+                  }),
+                }}
+                onPointerDown={(e) => {
+                  const el = e.currentTarget;
+                  el.style.boxShadow = 'inset 0 0 0 3px #ff0000, 0 0 15px #ff0000';
+                }}
+                onPointerUp={(e) => {
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+                onPointerLeave={(e) => {
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
               >
                 <span
                   className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line"
