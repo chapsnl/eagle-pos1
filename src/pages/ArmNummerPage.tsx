@@ -5,7 +5,7 @@ import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 
 // Grid layout matching the physical button board
 // Each row: [productCode, colSpan]
-const gridLayout: { code: string; span: number }[][] = [
+const gridLayout: { code: string; span: number; hideLabel?: boolean }[][] = [
   [
     { code: '1', span: 1 }, { code: 'DIV9', span: 1 }, { code: 'SHO', span: 1 }, { code: 'BAIL', span: 1 },
     { code: 'JAME', span: 2 }, { code: 'ABSO', span: 2 }, { code: 'HEIN', span: 2 },
