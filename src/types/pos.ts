@@ -3,10 +3,9 @@ export interface Product {
   code: string;
   name: string;
   price: number;
-  category: ProductCategory;
+  color: string;
+  textColor: string;
 }
-
-export type ProductCategory = 'beer' | 'spirits' | 'spirits-alt' | 'soft' | 'mix';
 
 export interface OrderItem {
   product: Product;
