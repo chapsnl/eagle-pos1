@@ -45,14 +45,14 @@ export const GarderobePage = () => {
       </h2>
 
       {/* Input fields */}
-      <div className="w-full max-w-md flex gap-4">
-        <div className="flex-1">
+      <div className="w-full max-w-lg flex flex-col gap-3">
+        <div>
           <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">
             Jasnummer (C)
           </label>
           <div
             onClick={() => setActiveField('coat')}
-            className="w-full px-4 py-5 text-3xl font-extrabold text-center cursor-pointer"
+            className="w-full px-6 py-7 text-5xl font-extrabold text-center cursor-pointer"
             style={{
               backgroundColor: '#d1d5db',
               color: '#111',
@@ -63,13 +63,13 @@ export const GarderobePage = () => {
             {coatNumber || <span style={{ color: '#9ca3af' }}>—</span>}
           </div>
         </div>
-        <div className="flex-1">
+        <div>
           <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">
             Tasnummer (B)
           </label>
           <div
             onClick={() => setActiveField('bag')}
-            className="w-full px-4 py-5 text-3xl font-extrabold text-center cursor-pointer"
+            className="w-full px-6 py-7 text-5xl font-extrabold text-center cursor-pointer"
             style={{
               backgroundColor: '#d1d5db',
               color: '#111',
