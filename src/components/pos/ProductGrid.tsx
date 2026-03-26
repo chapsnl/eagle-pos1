@@ -71,7 +71,7 @@ export const ProductGrid = ({ onAddProduct }: ProductGridProps) => {
               >
                 <span
                   className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line"
-                  style={{ fontSize: cell.span === 2 ? 'clamp(1.2rem, 3.5vw, 2.8rem)' : 'clamp(0.7rem, 2vw, 1.5rem)' }}
+                  style={{ fontSize: cell.span === 2 ? 'clamp(1.01rem, 3.2vw, 2.61rem)' : 'clamp(0.51rem, 1.7vw, 1.31rem)' }}
                 >
                   {cell.hideLabel ? '' : product.full_name}
                 </span>
