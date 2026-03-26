@@ -23,11 +23,11 @@ const gridLayout: { code: string; span: number }[][] = [
     { code: 'BSPI', span: 2 }, { code: 'WHIB', span: 2 }, { code: 'HE0%', span: 2 },
   ],
   [
-    { code: '', span: 1 }, { code: '', span: 1 }, { code: 'JAEG', span: 1 }, { code: 'LICO', span: 1 },
+    { code: 'COAT', span: 2 }, { code: 'JAEG', span: 1 }, { code: 'LICO', span: 1 },
     { code: 'BACA', span: 2 }, { code: 'JENE', span: 2 }, { code: 'JUIC', span: 2 },
   ],
   [
-    { code: '', span: 1 }, { code: '', span: 1 }, { code: 'SEXT', span: 1 }, { code: 'STFF', span: 1 },
+    { code: 'BAG', span: 2 }, { code: 'SEXT', span: 1 }, { code: 'STFF', span: 1 },
     { code: 'REDB', span: 2 }, { code: 'WINE', span: 2 }, { code: 'SOFT', span: 2 },
   ],
 ];
