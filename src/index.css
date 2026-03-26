@@ -117,6 +117,11 @@
     to { transform: translateY(0); opacity: 1; }
   }
 
+  @keyframes nfcPulse {
+    0%, 100% { opacity: 0.4; filter: drop-shadow(0 0 8px #00cc1330); transform: scale(0.97); }
+    50% { opacity: 1; filter: drop-shadow(0 0 24px #00cc1380); transform: scale(1.03); }
+  }
+
   .animate-slide-down {
     animation: slideDown 0.2s ease-out;
   }
