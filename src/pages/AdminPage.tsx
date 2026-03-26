@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Trash2, ArrowRightLeft, Mail, DollarSign, RotateCcw, AlertTriangle, X, Users, ChevronDown, ChevronUp, Square } from 'lucide-react';
+import { Trash2, ArrowRightLeft, Mail, DollarSign, RotateCcw, AlertTriangle, Users, ChevronDown, ChevronUp, Square, Nfc } from 'lucide-react';
 import { useActiveSessions, useIncidentSessions } from '@/hooks/useSessions';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
