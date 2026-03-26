@@ -6,6 +6,7 @@ import { OrderBar } from '@/components/pos/OrderBar';
 import { ProductGrid } from '@/components/pos/ProductGrid';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
+import { NfcHiddenInput } from '@/components/pos/NfcHiddenInput';
 import { GarderobePage } from './GarderobePage';
 import { BetalingPage } from './BetalingPage';
 import { ArmNummerPage } from './ArmNummerPage';
