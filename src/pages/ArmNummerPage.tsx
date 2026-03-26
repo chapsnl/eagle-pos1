@@ -5,7 +5,7 @@ import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 
 // Grid layout matching the physical button board
 // Each row: [productCode, colSpan]
-const gridLayout: { code: string; span: number }[][] = [
+const gridLayout: { code: string; span: number; hideLabel?: boolean }[][] = [
   [
     { code: '1', span: 1 }, { code: 'DIV9', span: 1 }, { code: 'SHO', span: 1 }, { code: 'BAIL', span: 1 },
     { code: 'JAME', span: 2 }, { code: 'ABSO', span: 2 }, { code: 'HEIN', span: 2 },
@@ -23,11 +23,11 @@ const gridLayout: { code: string; span: number }[][] = [
     { code: 'BSPI', span: 2 }, { code: 'WHIB', span: 2 }, { code: 'HE0%', span: 2 },
   ],
   [
-    { code: '8', span: 1 }, { code: '10', span: 1 }, { code: 'TSHI', span: 1 }, { code: 'SAMB', span: 1 },
+    { code: '8', span: 1, hideLabel: true }, { code: '10', span: 1, hideLabel: true }, { code: 'TSHI', span: 1 }, { code: 'SAMB', span: 1 },
     { code: 'BSPI', span: 2 }, { code: 'WHIB', span: 2 }, { code: 'HE0%', span: 2 },
   ],
   [
-    { code: '8', span: 1 }, { code: '10', span: 1 }, { code: 'TSHI', span: 1 }, { code: 'SAMB', span: 1 },
+    { code: '8', span: 1, hideLabel: true }, { code: '10', span: 1, hideLabel: true }, { code: 'TSHI', span: 1 }, { code: 'SAMB', span: 1 },
     { code: 'BSPI', span: 2 }, { code: 'WHIB', span: 2 }, { code: 'HE0%', span: 2 },
   ],
 ];
@@ -124,7 +124,7 @@ export const ArmNummerPage = () => {
                     className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line"
                     style={{ fontSize: cell.span === 2 ? 'clamp(1.2rem, 3.5vw, 2.8rem)' : 'clamp(0.7rem, 2vw, 1.5rem)' }}
                   >
-                    {product.name}
+                    {cell.hideLabel ? '' : product.name}
                   </span>
                 </button>
               );
