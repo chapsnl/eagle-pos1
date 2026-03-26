@@ -1,8 +1,146 @@
-import { useState } from 'react';
-import { Trash2, ArrowRightLeft, Mail, DollarSign, RotateCcw, AlertTriangle, X, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Trash2, ArrowRightLeft, Mail, DollarSign, RotateCcw, AlertTriangle, X, Users, ChevronDown, ChevronUp, Square } from 'lucide-react';
 import { useActiveSessions, useIncidentSessions } from '@/hooks/useSessions';
+import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
+import { NfcOverlay } from '@/components/pos/NfcOverlay';
+import { FeedbackType } from '@/types/pos';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 export const AdminPage = () => {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [batchMode, setBatchMode] = useState(false);
+  const [nfcStatus, setNfcStatus] = useState<'scanning' | 'writing' | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackType>(null);
+  const [erasedCount, setErasedCount] = useState(0);
+  const cancelRef = useRef<(() => void) | null>(null);
+  const batchModeRef = useRef(false);
+
+  // Keep ref in sync
+  useEffect(() => {
+    batchModeRef.current = batchMode;
+  }, [batchMode]);
+
+  const eraseNextTag = useCallback(async () => {
+    if (!batchModeRef.current) return;
+
+    setNfcStatus('scanning');
+
+    try {
+      const reader = new (window as any).NDEFReader();
+      const ac = new AbortController();
+      cancelRef.current = () => ac.abort();
+
+      // Wait for a tag
+      await reader.scan({ signal: ac.signal });
+
+      const uid: string = await new Promise((resolve, reject) => {
+        reader.onreading = (event: any) => {
+          const id = event.serialNumber?.replace(/:/g, '').toUpperCase() || '';
+          resolve(id);
+        };
+        reader.onreadingerror = () => reject(new Error('Read error'));
+        ac.signal.addEventListener('abort', () => reject(new Error('CANCELLED')));
+      });
+
+      if (!batchModeRef.current) return;
+
+      // Write empty record to wipe the tag
+      const writer = new (window as any).NDEFReader();
+      const wAc = new AbortController();
+      cancelRef.current = () => wAc.abort();
+      await writer.write(
+        { records: [{ recordType: 'text', data: '' }] },
+        { signal: wAc.signal, overwrite: true }
+      );
+
+      if (!batchModeRef.current) return;
+
+      // Archive session in DB if exists
+      try {
+        await supabase.functions.invoke('batch-erase', {
+          body: { nfc_uid: uid },
+        });
+      } catch {
+        // OK if no session found
+      }
+
+      setNfcStatus(null);
+      setErasedCount((c) => c + 1);
+      setFeedback('success');
+
+      // After 2s show success, loop to next
+      setTimeout(() => {
+        setFeedback(null);
+        if (batchModeRef.current) {
+          eraseNextTag();
+        }
+      }, 2000);
+    } catch (err: any) {
+      if (err.message === 'CANCELLED') return;
+      setNfcStatus(null);
+      // On error, retry after a short delay
+      if (batchModeRef.current) {
+        setTimeout(() => eraseNextTag(), 500);
+      }
+    }
+  }, []);
+
+  const startBatchErase = useCallback(() => {
+    setShowConfirm(false);
+    setBatchMode(true);
+    setErasedCount(0);
+    // Small delay to let state settle
+    setTimeout(() => eraseNextTag(), 100);
+  }, [eraseNextTag]);
+
+  const stopBatchErase = useCallback(() => {
+    setBatchMode(false);
+    batchModeRef.current = false;
+    cancelRef.current?.();
+    setNfcStatus(null);
+    setFeedback(null);
+  }, []);
+
+  if (batchMode) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center h-full relative">
+        <FeedbackOverlay type={feedback} />
+        <NfcOverlay status={nfcStatus} onCancel={() => {}} />
+
+        <div className="text-center space-y-6">
+          <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-destructive">
+            Batch-Erase Actief
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Scan een bandje om te wissen. De scanner blijft automatisch draaien.
+          </p>
+          <div className="text-5xl font-extrabold text-primary">{erasedCount}</div>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest">bandjes gewist</p>
+
+          <button
+            onClick={stopBatchErase}
+            className="mt-8 px-8 py-4 text-lg font-extrabold uppercase flex items-center justify-center gap-3 mx-auto"
+            style={{
+              backgroundColor: '#ef4444',
+              color: '#fff',
+              boxShadow: '0 0 16px #ef444480, 0 0 32px #ef444430',
+            }}
+          >
+            <Square className="w-6 h-6" />
+            STOP BATCH-ERASE
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-y-auto p-4">
@@ -10,6 +148,35 @@ export const AdminPage = () => {
         <h2 className="text-xl font-extrabold uppercase tracking-[0.15em] text-primary mb-6">
           Admin Panel
         </h2>
+
+        {/* Confirmation dialog */}
+        <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+          <DialogContent className="bg-card border-border">
+            <DialogHeader>
+              <DialogTitle className="text-destructive font-extrabold uppercase">
+                Batch-Erase Starten
+              </DialogTitle>
+              <DialogDescription className="text-sm">
+                Weet je zeker dat je bandjes wilt wissen? Alle data gaat verloren.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-3 sm:gap-3">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 py-3 font-extrabold uppercase text-sm bg-secondary text-secondary-foreground"
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={startBatchErase}
+                className="flex-1 py-3 font-extrabold uppercase text-sm"
+                style={{ backgroundColor: '#ef4444', color: '#fff' }}
+              >
+                Ja, Start Wissen
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Active sessions overview */}
         <ActiveSessionsSection />
@@ -23,14 +190,10 @@ export const AdminPage = () => {
 
         <AdminButton
           icon={<Trash2 className="w-5 h-5" />}
-          label="BATCH ERASE"
+          label="BATCH-ERASE"
           description="Continu NFC-bandjes wissen"
           variant="destructive"
-          onClick={() => {
-            if (window.confirm('Weet je zeker door te gaan naar Batch Erase?')) {
-              console.log('Batch erase started');
-            }
-          }}
+          onClick={() => setShowConfirm(true)}
         />
 
         <AdminButton
