@@ -1,7 +1,8 @@
 /**
- * Sunmi NFC helper – listens for keyboard-emulated NFC UIDs.
- * The Sunmi L2s Pro sends NFC tag UIDs as rapid keystrokes followed by Enter.
- * We capture these via a global keydown listener or the global onRfTagDetected callback.
+ * Sunmi NFC helper – supports multiple input methods:
+ * 1. Fully Kiosk Broadcast Receiver (com.sunmi.scanner.ACTION_DATA_CODE_RECEIVED)
+ * 2. Keyboard emulation fallback (rapid keystrokes + Enter)
+ * 3. Direct window.onRfTagDetected callback
  */
 
 export interface NfcScanResult {
@@ -13,10 +14,44 @@ type NfcCallback = (uid: string) => void;
 let _pendingCallback: NfcCallback | null = null;
 let _keyBuffer = '';
 let _keyTimer: ReturnType<typeof setTimeout> | null = null;
+let _fullyRegistered = false;
 
-/**
- * Global handler that Sunmi / Fully Kiosk can call directly.
- */
+/* ── Fully Kiosk Broadcast Receiver ── */
+function setupFullyKiosk() {
+  const fully = (window as any).fully;
+  if (!fully || _fullyRegistered) return;
+
+  try {
+    fully.registerBroadcastReceiver('com.sunmi.scanner.ACTION_DATA_CODE_RECEIVED');
+    console.log('[NFC] Fully Kiosk broadcast receiver registered');
+    _fullyRegistered = true;
+  } catch (e) {
+    console.log('[NFC] Fully Kiosk not available, using keyboard fallback');
+  }
+}
+
+// Fully Kiosk broadcast handler
+(window as any).onBroadcastReceive = (action: string, extras: string) => {
+  console.log('[NFC] Broadcast received:', action, extras);
+  if (action === 'com.sunmi.scanner.ACTION_DATA_CODE_RECEIVED' && _pendingCallback) {
+    try {
+      const parsed = typeof extras === 'string' ? JSON.parse(extras) : extras;
+      const uid = (parsed.data || parsed.Data || '').toString().trim();
+      if (uid) {
+        console.log('[NFC] Broadcast UID:', uid);
+        const cb = _pendingCallback;
+        _pendingCallback = null;
+        _keyBuffer = '';
+        if (_keyTimer) clearTimeout(_keyTimer);
+        cb(uid);
+      }
+    } catch (e) {
+      console.log('[NFC] Error parsing broadcast extras:', e);
+    }
+  }
+};
+
+/* ── Direct callback (legacy / Fully Kiosk alternative) ── */
 (window as any).onRfTagDetected = (uid: string) => {
   console.log('[NFC] onRfTagDetected called with:', uid);
   if (_pendingCallback && uid) {
@@ -28,60 +63,49 @@ let _keyTimer: ReturnType<typeof setTimeout> | null = null;
   }
 };
 
-/**
- * Keyboard listener: captures rapid keystrokes ending with Enter.
- * Sunmi sends the UID as digits/hex chars very fast, then presses Enter.
- */
+/* ── Keyboard emulation fallback ── */
 const handleKeyDown = (e: KeyboardEvent) => {
-  // Always buffer hex chars when scanning is active
   if (!_pendingCallback) return;
 
   if (e.key === 'Enter') {
     e.preventDefault();
     e.stopPropagation();
-    console.log('[NFC] Enter detected, buffer:', _keyBuffer, 'length:', _keyBuffer.length);
     if (_keyBuffer.length >= 2) {
       const uid = _keyBuffer;
       _keyBuffer = '';
       if (_keyTimer) clearTimeout(_keyTimer);
       const cb = _pendingCallback;
       _pendingCallback = null;
-      console.log('[NFC] UID captured:', uid);
+      console.log('[NFC] Keyboard UID captured:', uid);
       cb(uid);
     }
     _keyBuffer = '';
     return;
   }
 
-  // Accept hex characters, digits, and common NFC chars
   if (/^[0-9a-fA-F]$/.test(e.key)) {
     e.preventDefault();
     e.stopPropagation();
     _keyBuffer += e.key;
-    console.log('[NFC] Key buffered:', e.key, 'buffer now:', _keyBuffer);
-    // Reset buffer if no more keys arrive within 500ms (generous for Sunmi)
     if (_keyTimer) clearTimeout(_keyTimer);
     _keyTimer = setTimeout(() => {
-      console.log('[NFC] Buffer timeout, clearing:', _keyBuffer);
       _keyBuffer = '';
     }, 500);
   }
 };
 
-// Install global keyboard listener once, use capture phase to get events first
 document.addEventListener('keydown', handleKeyDown, true);
 
-/**
- * Start listening for an NFC scan. Resolves when a UID is received
- * via keyboard emulation or the global onRfTagDetected callback.
- */
+/* ── Public API ── */
 export const waitForNfcScan = (timeoutMs = 30000): { promise: Promise<NfcScanResult>; cancel: () => void } => {
   let rejectFn: (err: Error) => void;
   let timer: ReturnType<typeof setTimeout>;
 
-  // Clear any previous state
   _keyBuffer = '';
   if (_keyTimer) clearTimeout(_keyTimer);
+
+  // Try to register Fully Kiosk broadcast on first scan
+  setupFullyKiosk();
 
   const cancel = () => {
     _pendingCallback = null;
@@ -107,7 +131,7 @@ export const waitForNfcScan = (timeoutMs = 30000): { promise: Promise<NfcScanRes
       resolve({ uid });
     };
 
-    console.log('[NFC] Scan started, waiting for input...');
+    console.log('[NFC] Scan started, waiting for broadcast/keyboard/callback...');
   });
 
   return { promise, cancel };
