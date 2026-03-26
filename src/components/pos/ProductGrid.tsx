@@ -44,8 +44,8 @@ export const ProductGrid = ({ onAddProduct }: ProductGridProps) => {
 
   const handleTouchEnd = useCallback(() => {
     if (Math.abs(touchDeltaX.current) > 50) {
-      if (touchDeltaX.current < 0 && page === 0) setPage(1);
-      if (touchDeltaX.current > 0 && page === 1) setPage(0);
+      if (touchDeltaX.current < 0) setPage((p) => Math.min(p + 1, 1));
+      if (touchDeltaX.current > 0) setPage((p) => Math.max(p - 1, 0));
     }
     touchStartX.current = null;
     touchDeltaX.current = 0;
