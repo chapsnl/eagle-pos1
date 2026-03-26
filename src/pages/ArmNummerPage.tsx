@@ -3,6 +3,7 @@ import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { Send } from 'lucide-react';
+import { useCreateSession, useUpdateSession, useAddDrinkLogs } from '@/hooks/useSessions';
 
 interface ArmOrderItem {
   product: DbProduct;
@@ -48,17 +49,33 @@ export const ArmNummerPage = () => {
   const [bagNumber, setBagNumber] = useState('');
   const [items, setItems] = useState<ArmOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const { data: products } = useProducts();
+  const createSession = useCreateSession();
+  const updateSession = useUpdateSession();
+  const addDrinkLogs = useAddDrinkLogs();
 
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
 
   useEffect(() => {
     if (phase === 'input-arm' && armNumber.length >= 3) {
-      setTimeout(() => {
+      setTimeout(async () => {
         if (lookupNumber(armNumber)) {
-          setFeedback('success');
-          setTimeout(() => { setFeedback(null); setPhase('products'); }, 1000);
+          // Create session with wardrobe number
+          try {
+            const wardrobeNum = `C${armNumber}`;
+            const session = await createSession.mutateAsync({
+              wardrobe_number: wardrobeNum,
+              is_event_numbered: true,
+            });
+            setSessionId(session.id);
+            setFeedback('success');
+            setTimeout(() => { setFeedback(null); setPhase('products'); }, 1000);
+          } catch {
+            setFeedback('error');
+            setTimeout(() => setFeedback(null), 2000);
+          }
         } else {
           setPhase('not-found');
         }
@@ -68,9 +85,20 @@ export const ArmNummerPage = () => {
 
   useEffect(() => {
     if (phase === 'input-bag' && bagNumber.length >= 3) {
-      setTimeout(() => {
-        setFeedback('success');
-        setTimeout(() => { setFeedback(null); setPhase('products'); }, 1000);
+      setTimeout(async () => {
+        try {
+          const wardrobeNum = `B${bagNumber}`;
+          const session = await createSession.mutateAsync({
+            wardrobe_number: wardrobeNum,
+            is_event_numbered: true,
+          });
+          setSessionId(session.id);
+          setFeedback('success');
+          setTimeout(() => { setFeedback(null); setPhase('products'); }, 1000);
+        } catch {
+          setFeedback('error');
+          setTimeout(() => setFeedback(null), 2000);
+        }
       }, 300);
     }
   }, [bagNumber, phase]);
@@ -93,15 +121,33 @@ export const ArmNummerPage = () => {
     });
   }, []);
 
-  const handleSubmit = useCallback(() => {
-    if (items.length === 0) return;
-    console.log('Arm nummer order:', armNumber || bagNumber, items);
-    setFeedback('success');
-    setTimeout(() => {
-      setFeedback(null);
-      setArmNumber(''); setBagNumber(''); setItems([]); setPhase('input-arm');
-    }, 2000);
-  }, [armNumber, bagNumber, items]);
+  const handleSubmit = useCallback(async () => {
+    if (items.length === 0 || !sessionId) return;
+    try {
+      // Save drink logs linked to the session
+      const logs = items.flatMap((item) =>
+        Array.from({ length: item.quantity }, () => ({
+          session_id: sessionId,
+          product_id: item.product.id,
+          price_at_time: item.product.price,
+        }))
+      );
+      await addDrinkLogs.mutateAsync(logs);
+      // Update session total
+      await updateSession.mutateAsync({
+        id: sessionId,
+        total_amount: total,
+      });
+      setFeedback('success');
+      setTimeout(() => {
+        setFeedback(null);
+        setArmNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setPhase('input-arm');
+      }, 2000);
+    } catch {
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+    }
+  }, [armNumber, bagNumber, items, sessionId, total, addDrinkLogs, updateSession]);
 
   if (phase === 'input-arm' || phase === 'input-bag') {
     const value = phase === 'input-arm' ? armNumber : bagNumber;
