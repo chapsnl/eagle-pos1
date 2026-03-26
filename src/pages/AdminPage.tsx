@@ -24,7 +24,7 @@ export const AdminPage = () => {
   const cancelRef = useRef<(() => void) | null>(null);
   const batchModeRef = useRef(false);
   const [nfcReadMode, setNfcReadMode] = useState(false);
-  const [nfcReadData, setNfcReadData] = useState<{ uid: string; items: { shorthand: string; qty: number }[]; total: number } | { raw: string[] } | null>(null);
+  const [nfcReadData, setNfcReadData] = useState<{ uid: string; items: { shorthand: string; qty: number }[]; total: number; wn?: string } | { raw: string[] } | null>(null);
   const nfcReadCancelRef = useRef<(() => void) | null>(null);
   const { data: productsData } = useProducts();
 
