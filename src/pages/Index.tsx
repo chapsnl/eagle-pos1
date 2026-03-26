@@ -111,7 +111,7 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-[100dvh] flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
       <NfcOverlay status={nfcStatus} onCancel={handleCancelNfc} />
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
