@@ -31,7 +31,7 @@ export const products: Product[] = [
   p(15, 'JIMB', 'Jim Beam', 3.00, '#ef5931'),
   p(16, 'BSPI', 'Black Spiced', 3.00, '#aacd6c'),
   p(17, 'BACA', 'Bacardi', 3.00, '#aacd6c'),
-  p(18, 'REDB', 'Redbull', 3.00, '#357cff'),
+  p(18, 'REDB', 'Redbull', 3.00, '#497df7'),
   p(19, 'BAIL', 'Baileys', 3.00, '#e4e2e2'),
   p(20, 'MALI', 'Malibu', 3.00, '#e4e2e2'),
   p(21, 'TEQU', 'Tequila', 3.00, '#e4e2e2'),
