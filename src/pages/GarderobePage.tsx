@@ -26,13 +26,11 @@ export const GarderobePage = () => {
     if (!coatNumber && !bagNumber) return;
     const wardrobeNumber = `${coatNumber ? 'C' + coatNumber : ''}${bagNumber ? 'B' + bagNumber : ''}`;
 
-    // NFC scan required
     if (isNfcSupported()) {
       setNfcStatus('scanning');
       try {
         const result = await scanNfc(15000);
         setNfcStatus(null);
-        // Create or update session with NFC UID and wardrobe number
         await createSession.mutateAsync({
           nfc_uid: result.uid,
           wardrobe_number: wardrobeNumber,
@@ -49,7 +47,6 @@ export const GarderobePage = () => {
         setNfcError(err.message === 'NFC_TIMEOUT' ? 'Geen bandje gedetecteerd' : 'NFC fout');
       }
     } else {
-      // Fallback: no NFC hardware — create session without NFC UID
       try {
         await createSession.mutateAsync({ wardrobe_number: wardrobeNumber });
         setFeedback('success');
@@ -80,15 +77,15 @@ export const GarderobePage = () => {
   const showNumpad = activeField !== null;
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col" style={{ height: '100dvh' }}>
       <FeedbackOverlay type={feedback} />
       <NfcOverlay status={nfcStatus} errorMessage={nfcError} onCancel={() => setNfcStatus(null)} />
 
-      <h2 className="font-extrabold uppercase tracking-[0.15em] text-center pt-3 pb-2" style={{ color: '#00cc13', fontSize: '29px' }}>
+      <h2 className="font-extrabold uppercase tracking-[0.15em] text-center pt-2 pb-1 shrink-0" style={{ color: '#00cc13', fontSize: '29px' }}>
         Garderobe
       </h2>
 
-      <div className="flex-1 flex flex-col items-center justify-center gap-3 px-4">
+      <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-2 px-4">
         <div className="w-full" style={{ maxWidth: '280px' }}>
           <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">
             Jasnummer (C)
@@ -99,8 +96,8 @@ export const GarderobePage = () => {
             style={{
               backgroundColor: '#d1d5db',
               color: '#111',
-              fontSize: showNumpad ? 'clamp(40px, 8vw, 64px)' : 'clamp(56px, 12vw, 96px)',
-              padding: showNumpad ? 'clamp(12px, 2vh, 20px) 16px' : 'clamp(24px, 5vh, 48px) 16px',
+              fontSize: showNumpad ? 'clamp(32px, 6vw, 48px)' : 'clamp(48px, 10vw, 80px)',
+              padding: showNumpad ? 'clamp(8px, 1.5vh, 14px) 16px' : 'clamp(16px, 3vh, 32px) 16px',
               border: activeField === 'coat' ? '3px solid #00cc13' : '3px solid transparent',
               boxShadow: activeField === 'coat' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
               transition: 'all 0.2s ease',
@@ -119,8 +116,8 @@ export const GarderobePage = () => {
             style={{
               backgroundColor: '#d1d5db',
               color: '#111',
-              fontSize: showNumpad ? 'clamp(40px, 8vw, 64px)' : 'clamp(56px, 12vw, 96px)',
-              padding: showNumpad ? 'clamp(12px, 2vh, 20px) 16px' : 'clamp(24px, 5vh, 48px) 16px',
+              fontSize: showNumpad ? 'clamp(32px, 6vw, 48px)' : 'clamp(48px, 10vw, 80px)',
+              padding: showNumpad ? 'clamp(8px, 1.5vh, 14px) 16px' : 'clamp(16px, 3vh, 32px) 16px',
               border: activeField === 'bag' ? '3px solid #00cc13' : '3px solid transparent',
               boxShadow: activeField === 'bag' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
               transition: 'all 0.2s ease',
@@ -141,14 +138,14 @@ export const GarderobePage = () => {
       </div>
 
       {showNumpad && (
-        <div className="px-4 pb-2">
+        <div className="px-4 pb-1 shrink-0">
           <div className="w-full max-w-md mx-auto grid grid-cols-3 gap-0">
             {NUM_KEYS.map((key, i) => (
               <button
                 key={i}
                 onClick={() => key && handleNumKey(key)}
                 disabled={!key}
-                className="py-3 text-2xl font-extrabold uppercase disabled:invisible"
+                className="py-2 text-xl font-extrabold uppercase disabled:invisible"
                 style={{
                   backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
                   color: key === 'DEL' ? '#fff' : '#e5e5e5',
@@ -162,18 +159,18 @@ export const GarderobePage = () => {
         </div>
       )}
 
-      <div className="px-4 pb-3 pt-1">
+      <div className="px-4 pb-2 pt-1 shrink-0">
         <button
           onClick={handleSubmit}
           disabled={!coatNumber && !bagNumber}
-          className="w-full py-4 text-xl font-extrabold uppercase disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+          className="w-full py-3 text-lg font-extrabold uppercase disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           style={{
             backgroundColor: '#00cc13',
             color: '#fff',
             boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330',
           }}
         >
-          <Send className="w-6 h-6" />
+          <Send className="w-5 h-5" />
           SEND
         </button>
       </div>
