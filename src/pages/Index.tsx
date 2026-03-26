@@ -8,6 +8,7 @@ import { GarderobePage } from './GarderobePage';
 import { BetalingPage } from './BetalingPage';
 import { ArmNummerPage } from './ArmNummerPage';
 import { AdminPage } from './AdminPage';
+import { Nfc } from 'lucide-react';
 
 const Index = () => {
   const [activeView, setActiveView] = useState<AppView>('bar');
@@ -52,6 +53,13 @@ const Index = () => {
     setItems([]);
   }, [total, showFeedback]);
 
+  const handleSend = useCallback(() => {
+    if (items.length === 0) return;
+    console.log('NFC SEND:', items, total);
+    showFeedback('success');
+    setItems([]);
+  }, [items, total, showFeedback]);
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
@@ -61,6 +69,15 @@ const Index = () => {
         <>
           <OrderBar items={items} total={total} onRemoveItem={removeItem} onClear={clearOrder} />
           <ProductGrid onAddProduct={addProduct} />
+          <button
+            onClick={handleSend}
+            disabled={items.length === 0}
+            className="pos-btn py-4 text-xl flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110 active:brightness-75"
+            style={{ backgroundColor: '#aacd6c', color: '#12100e' }}
+          >
+            <Nfc className="w-6 h-6" />
+            SEND — €{total.toFixed(2)}
+          </button>
         </>
       )}
 
