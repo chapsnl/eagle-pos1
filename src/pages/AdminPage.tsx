@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Lock, Trash2, ArrowRightLeft, Mail, DollarSign, RotateCcw, AlertTriangle, X } from 'lucide-react';
+import { Lock, Trash2, ArrowRightLeft, Mail, DollarSign, RotateCcw, AlertTriangle, X, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { useActiveSessions, useIncidentSessions } from '@/hooks/useSessions';
 
 export const AdminPage = () => {
   const [pinInput, setPinInput] = useState('');
@@ -47,6 +48,9 @@ export const AdminPage = () => {
         <h2 className="text-xl font-extrabold uppercase tracking-[0.15em] text-primary mb-6">
           Admin Panel
         </h2>
+
+        {/* Active sessions overview */}
+        <ActiveSessionsSection />
 
         <AdminCard
           icon={<DollarSign className="w-5 h-5" />}
@@ -112,6 +116,78 @@ export const AdminPage = () => {
           VERGRENDEL ADMIN
         </button>
       </div>
+    </div>
+  );
+};
+
+const ActiveSessionsSection = () => {
+  const { data: sessions, isLoading } = useActiveSessions();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  return (
+    <div className="bg-card border border-border rounded-lg overflow-hidden">
+      <div className="p-4 flex items-center gap-3 border-b border-border">
+        <Users className="w-5 h-5 text-primary" />
+        <div className="flex-1">
+          <h3 className="text-sm font-extrabold uppercase">OPENSTAANDE BEZOEKERS</h3>
+          <p className="text-xs text-muted-foreground">Actieve sessies</p>
+        </div>
+        <span className="text-lg font-extrabold text-primary">{sessions?.length ?? 0}</span>
+      </div>
+
+      {isLoading && (
+        <div className="p-4 text-xs text-muted-foreground">Laden...</div>
+      )}
+
+      {sessions && sessions.length === 0 && (
+        <div className="p-4 text-xs text-muted-foreground">Geen actieve sessies</div>
+      )}
+
+      {sessions && sessions.map((session) => {
+        const isExpanded = expandedId === session.id;
+        const label = session.wardrobe_number || (session.nfc_uid ? `UID: ${session.nfc_uid.slice(0, 8)}…` : 'Anoniem');
+        const drinkLogs = (session as any).drink_logs ?? [];
+
+        return (
+          <div key={session.id} className="border-t border-border">
+            <button
+              onClick={() => setExpandedId(isExpanded ? null : session.id)}
+              className="w-full flex items-center justify-between px-4 py-3 hover:bg-secondary/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold">{label}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-extrabold" style={{ color: '#00cc13' }}>
+                  €{Number(session.total_amount).toFixed(2)}
+                </span>
+                {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+              </div>
+            </button>
+            {isExpanded && (
+              <div className="px-4 pb-3">
+                <div className="text-xs text-muted-foreground mb-2">
+                  Start: {new Date(session.created_at).toLocaleTimeString('nl-NL')}
+                </div>
+                {drinkLogs.length === 0 ? (
+                  <div className="text-xs text-muted-foreground">Geen drankjes</div>
+                ) : (
+                  <div className="space-y-1">
+                    {drinkLogs.map((log: any) => (
+                      <div key={log.id} className="flex items-center justify-between text-xs">
+                        <span className="font-bold uppercase">
+                          {log.products?.full_name ?? log.product_id}
+                        </span>
+                        <span style={{ color: '#00cc13' }}>€{Number(log.price_at_time).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
