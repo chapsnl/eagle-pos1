@@ -3,7 +3,7 @@ import { DbOrderItem } from '@/pages/Index';
 import { X, Nfc, CreditCard, Banknote, Send } from 'lucide-react';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
 import { useCreateSession, useUpdateSession, useAddDrinkLogs } from '@/hooks/useSessions';
-import { waitForNfcScan } from '@/hooks/useNfc';
+import { scanNfcTag } from '@/hooks/useNfc';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 
@@ -25,7 +25,7 @@ export const BetalingPage = ({
   onCash,
 }: BetalingPageProps) => {
   const hasItems = items.length > 0;
-  const [nfcStatus, setNfcStatus] = useState<'scanning' | null>(null);
+  const [nfcStatus, setNfcStatus] = useState<'scanning' | 'writing' | null>(null);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [paymentMethod, setPaymentMethod] = useState<'pin' | 'cash' | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
@@ -37,50 +37,47 @@ export const BetalingPage = ({
     if (!hasItems) return;
     setPaymentMethod(method);
 
-    const completePayment = async (nfcUid?: string) => {
-      try {
-        const session = await createSession.mutateAsync({ nfc_uid: nfcUid });
-        const logs = items.flatMap((item) =>
-          Array.from({ length: item.quantity }, () => ({
-            session_id: session.id,
-            product_id: item.product.id,
-            price_at_time: item.product.price,
-          }))
-        );
-        await addDrinkLogs.mutateAsync(logs);
-        await updateSession.mutateAsync({
-          id: session.id,
-          total_amount: total,
-          actual_paid_amount: total,
-          status: 'paid',
-        });
-        setFeedback('success');
-        setTimeout(() => {
-          setFeedback(null);
-          if (method === 'pin') onPin();
-          else onCash();
-        }, 2000);
-      } catch {
-        setFeedback('error');
-        setTimeout(() => setFeedback(null), 2000);
-      }
-    };
-
     // Start NFC scan
     setNfcStatus('scanning');
-    const { promise, cancel } = waitForNfcScan(30000);
+    const { promise, cancel } = scanNfcTag(30000);
     cancelRef.current = cancel;
 
+    let nfcUid: string | undefined;
     try {
       const result = await promise;
+      nfcUid = result.uid;
       setNfcStatus(null);
-      await completePayment(result.uid);
     } catch (err: any) {
       setNfcStatus(null);
-      if (err.message !== 'NFC_CANCELLED') {
-        // Timeout — proceed without NFC
-        await completePayment();
-      }
+      if (err.message === 'NFC_CANCELLED') return;
+      // Timeout — proceed without NFC
+    }
+
+    try {
+      const session = await createSession.mutateAsync({ nfc_uid: nfcUid });
+      const logs = items.flatMap((item) =>
+        Array.from({ length: item.quantity }, () => ({
+          session_id: session.id,
+          product_id: item.product.id,
+          price_at_time: item.product.price,
+        }))
+      );
+      await addDrinkLogs.mutateAsync(logs);
+      await updateSession.mutateAsync({
+        id: session.id,
+        total_amount: total,
+        actual_paid_amount: total,
+        status: 'paid',
+      });
+      setFeedback('success');
+      setTimeout(() => {
+        setFeedback(null);
+        if (method === 'pin') onPin();
+        else onCash();
+      }, 2000);
+    } catch {
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
     }
   }, [hasItems, items, total, createSession, updateSession, addDrinkLogs, onPin, onCash]);
 
@@ -94,7 +91,6 @@ export const BetalingPage = ({
       <FeedbackOverlay type={feedback} />
       <NfcOverlay status={nfcStatus} onCancel={handleCancelNfc} />
 
-      {/* Order overview */}
       <div className="flex-1 flex flex-col p-4 gap-3 overflow-y-auto">
         <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
           Bestelling ({items.length} items)
@@ -110,27 +106,19 @@ export const BetalingPage = ({
         ) : (
           <div className="flex flex-col gap-1">
             {items.map((item) => (
-              <div
-                key={item.product.id}
-                className="flex items-center justify-between bg-secondary px-3 py-2"
-              >
+              <div key={item.product.id} className="flex items-center justify-between bg-secondary px-3 py-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold uppercase">
                     {item.quantity > 1 && `${item.quantity}× `}
                     {item.product.full_name}
                   </span>
-                  <span className="text-xs text-muted-foreground">
-                    [{item.product.shorthand}]
-                  </span>
+                  <span className="text-xs text-muted-foreground">[{item.product.shorthand}]</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-extrabold" style={{ color: '#00cc13' }}>
                     €{(item.product.price * item.quantity).toFixed(2)}
                   </span>
-                  <button
-                    onClick={() => onRemoveItem(item.product.id)}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
+                  <button onClick={() => onRemoveItem(item.product.id)} className="text-muted-foreground hover:text-destructive">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -147,7 +135,6 @@ export const BetalingPage = ({
         )}
       </div>
 
-      {/* Action buttons */}
       <div className="flex flex-col gap-0">
         <div className="flex">
           <button
@@ -155,31 +142,23 @@ export const BetalingPage = ({
             disabled={!hasItems}
             className="pos-btn flex-1 bg-secondary text-secondary-foreground py-3 text-xs flex items-center justify-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110 border-r border-border"
           >
-            <CreditCard className="w-4 h-4" />
-            PIN
+            <CreditCard className="w-4 h-4" /> PIN
           </button>
           <button
             onClick={() => processPayment('cash')}
             disabled={!hasItems}
             className="pos-btn flex-1 bg-secondary text-secondary-foreground py-3 text-xs flex items-center justify-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110"
           >
-            <Banknote className="w-4 h-4" />
-            CONTANT
+            <Banknote className="w-4 h-4" /> CONTANT
           </button>
         </div>
-
         <button
           onClick={() => processPayment('pin')}
           disabled={!hasItems}
           className="pos-btn py-5 text-xl flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed font-extrabold uppercase"
-          style={{
-            backgroundColor: '#00cc13',
-            color: '#fff',
-            boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330',
-          }}
+          style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330' }}
         >
-          <Send className="w-6 h-6" />
-          SEND
+          <Send className="w-6 h-6" /> SEND
         </button>
       </div>
     </div>

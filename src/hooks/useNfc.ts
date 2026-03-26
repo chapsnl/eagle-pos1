@@ -1,105 +1,133 @@
 /**
- * Sunmi NFC helper – Global keyboard wedge method.
- * Captures keyboard-emulated UID input at window level and
- * resolves when Enter is received.
+ * Native Web NFC helper using NDEFReader API.
+ * Supports both reading UIDs and writing data to NTAG216 chips.
  */
 
 export interface NfcScanResult {
   uid: string;
 }
 
-type NfcCallback = (uid: string) => void;
+/**
+ * Read an NFC tag's serial number (UID).
+ * Returns a promise that resolves with the UID when a tag is tapped.
+ */
+export const scanNfcTag = (timeoutMs = 30000): { promise: Promise<NfcScanResult>; cancel: () => void } => {
+  let abortController: AbortController | null = new AbortController();
+  let timer: ReturnType<typeof setTimeout>;
+  let settled = false;
 
-let _pendingCallback: NfcCallback | null = null;
-let _cancelFn: (() => void) | null = null;
-let _cleanupListener: (() => void) | null = null;
-let _buffer = '';
+  const cancel = () => {
+    if (settled) return;
+    settled = true;
+    abortController?.abort();
+    abortController = null;
+    clearTimeout(timer);
+  };
 
-const cleanupListener = () => {
-  if (_cleanupListener) {
-    _cleanupListener();
-    _cleanupListener = null;
-  }
-  _buffer = '';
-};
-
-const resolveUid = (uid: string) => {
-  const trimmed = uid.trim();
-  if (!trimmed || !_pendingCallback) return;
-  console.log('[NFC] UID received via global keypress:', trimmed);
-  const cb = _pendingCallback;
-  _pendingCallback = null;
-  cleanupListener();
-  cb(trimmed);
-};
-
-const startGlobalKeypressListener = () => {
-  const onKeypress = (event: KeyboardEvent) => {
-    if (!_pendingCallback) return;
-
-    if (event.key === 'Enter' || event.key === '\r') {
-      event.preventDefault();
-      const uid = _buffer;
-      _buffer = '';
-      if (uid.length >= 2) resolveUid(uid);
+  const promise = new Promise<NfcScanResult>((resolve, reject) => {
+    if (!('NDEFReader' in window)) {
+      settled = true;
+      reject(new Error('NFC_NOT_SUPPORTED'));
       return;
     }
 
-    if (/^\d$/.test(event.key)) {
-      _buffer += event.key;
-    }
-  };
-
-  window.addEventListener('keypress', onKeypress, true);
-  return () => window.removeEventListener('keypress', onKeypress, true);
-};
-
-/**
- * Backward-compatible submit entrypoint.
- */
-export const submitNfcUid = (uid: string) => {
-  resolveUid(uid);
-};
-
-/**
- * Start listening for an NFC scan via global keyboard wedge.
- */
-export const waitForNfcScan = (timeoutMs = 30000): { promise: Promise<NfcScanResult>; cancel: () => void } => {
-  _cancelFn?.();
-
-  let rejectFn: ((err: Error) => void) | null = null;
-  let timer: ReturnType<typeof setTimeout>;
-
-  const cancel = () => {
-    _pendingCallback = null;
-    cleanupListener();
-    clearTimeout(timer);
-    rejectFn?.(new Error('NFC_CANCELLED'));
-    rejectFn = null;
-  };
-
-  _cancelFn = cancel;
-
-  const promise = new Promise<NfcScanResult>((resolve, reject) => {
-    rejectFn = reject;
-
     timer = setTimeout(() => {
-      _pendingCallback = null;
-      cleanupListener();
-      reject(new Error('NFC_TIMEOUT'));
-      rejectFn = null;
+      if (!settled) {
+        settled = true;
+        abortController?.abort();
+        reject(new Error('NFC_TIMEOUT'));
+      }
     }, timeoutMs);
 
-    _pendingCallback = (uid: string) => {
-      clearTimeout(timer);
-      rejectFn = null;
-      resolve({ uid });
-    };
+    const reader = new (window as any).NDEFReader();
 
-    cleanupListener();
-    _cleanupListener = startGlobalKeypressListener();
+    reader
+      .scan({ signal: abortController!.signal })
+      .then(() => {
+        console.log('[NFC] Scan started, waiting for tag...');
 
-    console.log('[NFC] Global keypress scan started, waiting for Enter-terminated UID...');
+        reader.onreading = (event: any) => {
+          if (settled) return;
+          const uid = event.serialNumber?.replace(/:/g, '').toUpperCase() || '';
+          console.log('[NFC] Tag read, UID:', uid);
+          settled = true;
+          clearTimeout(timer);
+          abortController?.abort();
+          resolve({ uid });
+        };
+
+        reader.onreadingerror = () => {
+          console.warn('[NFC] Read error');
+        };
+      })
+      .catch((err: Error) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          reject(err);
+        }
+      });
+  });
+
+  return { promise, cancel };
+};
+
+/**
+ * Write text data to an NFC tag (NTAG216).
+ * The tag must be tapped during the write window.
+ */
+export const writeNfcTag = (data: string, timeoutMs = 30000): { promise: Promise<void>; cancel: () => void } => {
+  let abortController: AbortController | null = new AbortController();
+  let timer: ReturnType<typeof setTimeout>;
+  let settled = false;
+
+  const cancel = () => {
+    if (settled) return;
+    settled = true;
+    abortController?.abort();
+    abortController = null;
+    clearTimeout(timer);
+  };
+
+  const promise = new Promise<void>((resolve, reject) => {
+    if (!('NDEFReader' in window)) {
+      settled = true;
+      reject(new Error('NFC_NOT_SUPPORTED'));
+      return;
+    }
+
+    timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        abortController?.abort();
+        reject(new Error('NFC_TIMEOUT'));
+      }
+    }, timeoutMs);
+
+    const writer = new (window as any).NDEFReader();
+
+    console.log('[NFC] Write started, waiting for tag to write:', data);
+
+    writer
+      .write(
+        { records: [{ recordType: 'text', data }] },
+        { signal: abortController!.signal, overwrite: true }
+      )
+      .then(() => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          console.log('[NFC] Write successful');
+          resolve();
+        }
+      })
+      .catch((err: Error) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          reject(err);
+        }
+      });
   });
 
   return { promise, cancel };
