@@ -1,34 +1,26 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { submitNfcUid } from '@/hooks/useNfc';
 
 interface NfcHiddenInputProps {
-  /** Whether the input should be active and capturing */
   active: boolean;
 }
 
-/**
- * Invisible input that stays focused to capture Sunmi Keyboard Wedge input.
- * Uses inputmode="none" to prevent the Android keyboard from appearing.
- */
 export const NfcHiddenInput = ({ active }: NfcHiddenInputProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [buffer, setBuffer] = useState('');
 
-  // Keep focus on the hidden input at all times
   useEffect(() => {
     if (!active) return;
 
-    const focus = () => {
+    const focusInput = () => {
       if (document.activeElement !== inputRef.current) {
         inputRef.current?.focus({ preventScroll: true });
       }
     };
 
-    focus();
-    const interval = setInterval(focus, 300);
+    focusInput();
+    const interval = setInterval(focusInput, 250);
 
-    // Also re-focus on any click/touch
-    const refocus = () => setTimeout(focus, 50);
+    const refocus = () => setTimeout(focusInput, 0);
     document.addEventListener('click', refocus, true);
     document.addEventListener('touchend', refocus, true);
 
@@ -39,21 +31,29 @@ export const NfcHiddenInput = ({ active }: NfcHiddenInputProps) => {
     };
   }, [active]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const val = inputRef.current?.value || '';
-      if (val.length >= 2) {
-        submitNfcUid(val);
-        setBuffer('');
-        if (inputRef.current) inputRef.current.value = '';
-      }
-    }
+  const clearInput = useCallback(() => {
+    if (inputRef.current) inputRef.current.value = '';
   }, []);
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setBuffer(e.target.value);
-  }, []);
+  const flushIfComplete = useCallback((raw: string) => {
+    const cleaned = raw.replace(/[\r\n]+/g, '').trim();
+    if (!cleaned) return;
+    submitNfcUid(cleaned);
+    clearInput();
+  }, [clearInput]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    flushIfComplete(inputRef.current?.value ?? '');
+  }, [flushIfComplete]);
+
+  const handleInput = useCallback((e: React.FormEvent<HTMLInputElement>) => {
+    const value = (e.currentTarget as HTMLInputElement).value;
+    if (value.includes('\n') || value.includes('\r')) {
+      flushIfComplete(value);
+    }
+  }, [flushIfComplete]);
 
   if (!active) return null;
 
@@ -62,24 +62,25 @@ export const NfcHiddenInput = ({ active }: NfcHiddenInputProps) => {
       ref={inputRef}
       type="text"
       inputMode="none"
+      autoFocus
       autoComplete="off"
       autoCorrect="off"
       autoCapitalize="off"
       spellCheck={false}
-      value={buffer}
-      onChange={handleChange}
       onKeyDown={handleKeyDown}
+      onInput={handleInput}
+      onBlur={() => inputRef.current?.focus({ preventScroll: true })}
+      tabIndex={0}
+      aria-hidden="true"
       style={{
         position: 'fixed',
         top: 0,
         left: 0,
-        width: '1px',
-        height: '1px',
+        width: 1,
+        height: 1,
         opacity: 0,
-        pointerEvents: 'none',
-        zIndex: 9999,
+        zIndex: 1000,
       }}
-      tabIndex={-1}
     />
   );
 };
