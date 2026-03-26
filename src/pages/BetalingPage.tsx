@@ -3,16 +3,18 @@ import { DbOrderItem } from '@/pages/Index';
 import { X, Nfc, CreditCard, Banknote, Send } from 'lucide-react';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
 import { useCreateSession, useUpdateSession, useAddDrinkLogs } from '@/hooks/useSessions';
-import { scanNfcTag } from '@/hooks/useNfc';
+import { scanNfcTag, writeNfcTag } from '@/hooks/useNfc';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { useProducts } from '@/hooks/useProducts';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NfcOrderData {
   uid: string;
   items: { shorthand: string; qty: number }[];
   total: number;
   wn?: string;
+  source: 'nfc' | 'db';
 }
 
 interface BetalingPageProps {
@@ -22,6 +24,40 @@ interface BetalingPageProps {
   onClear: () => void;
   onPin: () => void;
   onCash: () => void;
+}
+
+/** Fetch session + drink_logs from DB by nfc_uid, return aggregated order */
+async function fetchDbOrder(nfcUid: string): Promise<{ items: { shorthand: string; qty: number }[]; total: number; wn?: string } | null> {
+  const { data: session } = await supabase
+    .from('sessions')
+    .select('id, total_amount, wardrobe_number')
+    .eq('nfc_uid', nfcUid)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!session) return null;
+
+  const { data: logs } = await supabase
+    .from('drink_logs')
+    .select('product_id, price_at_time, products(shorthand)')
+    .eq('session_id', session.id);
+
+  if (!logs || logs.length === 0) return null;
+
+  const agg: Record<string, { qty: number; shorthand: string }> = {};
+  for (const log of logs) {
+    const sh = (log as any).products?.shorthand || log.product_id;
+    if (!agg[sh]) agg[sh] = { qty: 0, shorthand: sh };
+    agg[sh].qty++;
+  }
+
+  return {
+    items: Object.values(agg),
+    total: Number(session.total_amount),
+    wn: session.wardrobe_number || undefined,
+  };
 }
 
 export const BetalingPage = ({
@@ -42,57 +78,106 @@ export const BetalingPage = ({
   const addDrinkLogs = useAddDrinkLogs();
   const { data: productsData } = useProducts();
 
-  // NFC read data for idle scan
   const [nfcOrderData, setNfcOrderData] = useState<NfcOrderData | null>(null);
-  const [idleScanning, setIdleScanning] = useState(false);
+  const idleScanningRef = useRef(false);
+  const mountedRef = useRef(true);
 
-  // Start idle NFC scan when no items
-  const startIdleScan = useCallback(() => {
-    if (hasItems) return;
-    setIdleScanning(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  const startIdleScan = useCallback(async () => {
+    if (hasItems || idleScanningRef.current) return;
+    idleScanningRef.current = true;
     setNfcOrderData(null);
 
-    const { promise, cancel } = scanNfcTag(60000);
-    cancelRef.current = cancel;
+    try {
+      const { promise, cancel } = scanNfcTag(120000);
+      cancelRef.current = cancel;
+      const result = await promise;
 
-    promise
-      .then((result) => {
-        setIdleScanning(false);
-        if (result.message) {
+      if (!mountedRef.current) return;
+
+      // Always do DB lookup first (source of truth)
+      const dbOrder = await fetchDbOrder(result.uid);
+
+      if (dbOrder) {
+        // DB has data — use it as source of truth
+        setNfcOrderData({ uid: result.uid, ...dbOrder, source: 'db' });
+
+        // Compare with NFC data and update NFC if different
+        const nfcSummary = result.message ? (() => {
+          try { return JSON.parse(result.message!); } catch { return null; }
+        })() : null;
+
+        const dbSummary = dbOrder.items.map(i => `${i.qty}x${i.shorthand}`).join(',');
+        const dbPayload = JSON.stringify({
+          items: dbSummary,
+          total: dbOrder.total,
+          ...(dbOrder.wn ? { wn: dbOrder.wn } : {}),
+        });
+
+        const nfcNeedsUpdate = !nfcSummary ||
+          nfcSummary.items !== dbSummary ||
+          nfcSummary.total !== dbOrder.total ||
+          (nfcSummary.wn || '') !== (dbOrder.wn || '');
+
+        if (nfcNeedsUpdate) {
           try {
-            const json = JSON.parse(result.message);
-            if (json.items && typeof json.items === 'string') {
-              const parsedItems = json.items.split(',').map((entry: string) => {
-                const match = entry.match(/^(\d+)x(.+)$/);
-                return match ? { qty: parseInt(match[1]), shorthand: match[2] } : { qty: 1, shorthand: entry };
-              });
-              setNfcOrderData({ uid: result.uid, items: parsedItems, total: json.total ?? 0, wn: json.wn });
-              return;
-            }
-          } catch { /* not JSON */ }
+            const { promise: wp, cancel: wc } = writeNfcTag(dbPayload, 10000);
+            cancelRef.current = wc;
+            await wp;
+            console.log('[Pay] NFC updated with DB data');
+          } catch {
+            console.warn('[Pay] Failed to update NFC with DB data');
+          }
         }
-        setNfcOrderData(null);
-      })
-      .catch(() => {
-        setIdleScanning(false);
-      });
+      } else if (result.message) {
+        // No DB session, fall back to NFC data
+        try {
+          const json = JSON.parse(result.message);
+          if (json.items && typeof json.items === 'string') {
+            const parsedItems = json.items.split(',').map((entry: string) => {
+              const match = entry.match(/^(\d+)x(.+)$/);
+              return match ? { qty: parseInt(match[1]), shorthand: match[2] } : { qty: 1, shorthand: entry };
+            });
+            setNfcOrderData({ uid: result.uid, items: parsedItems, total: json.total ?? 0, wn: json.wn, source: 'nfc' });
+          }
+        } catch { /* not JSON */ }
+      }
+    } catch {
+      // timeout or error — will restart via effect
+    } finally {
+      if (mountedRef.current) {
+        idleScanningRef.current = false;
+      }
+    }
   }, [hasItems]);
 
   // Auto-start idle scan when no items
   useEffect(() => {
-    if (!hasItems && !idleScanning && !nfcOrderData && !nfcStatus) {
+    if (!hasItems && !nfcOrderData && !nfcStatus) {
       startIdleScan();
     }
     return () => {
-      if (!hasItems) cancelRef.current?.();
+      cancelRef.current?.();
+      idleScanningRef.current = false;
     };
-  }, [hasItems, idleScanning, nfcOrderData, nfcStatus, startIdleScan]);
+  }, [hasItems, nfcOrderData, nfcStatus, startIdleScan]);
+
+  // Restart idle scan when nfcOrderData is cleared
+  useEffect(() => {
+    if (!hasItems && !nfcOrderData && !nfcStatus && !idleScanningRef.current) {
+      const t = setTimeout(() => startIdleScan(), 300);
+      return () => clearTimeout(t);
+    }
+  }, [hasItems, nfcOrderData, nfcStatus, startIdleScan]);
 
   const processPayment = useCallback(async (method: 'pin' | 'cash') => {
     if (!hasItems) return;
     setPaymentMethod(method);
 
-    // Start NFC scan
     setNfcStatus('scanning');
     const { promise, cancel } = scanNfcTag(30000);
     cancelRef.current = cancel;
@@ -105,7 +190,6 @@ export const BetalingPage = ({
     } catch (err: any) {
       setNfcStatus(null);
       if (err.message === 'NFC_CANCELLED') return;
-      // Timeout — proceed without NFC
     }
 
     try {
@@ -159,10 +243,12 @@ export const BetalingPage = ({
             <Nfc className="w-32 h-32" style={{ color: '#00cc13', filter: 'drop-shadow(0 0 20px #00cc1360)' }} />
           </div>
         ) : items.length === 0 && nfcOrderData ? (
-          /* Show NFC tag data */
           <div className="flex-1 flex flex-col items-center justify-center">
             <div className="bg-card border rounded-lg p-5 text-left max-w-sm w-full" style={{ borderColor: '#00cc1340' }}>
               <p className="text-xs font-mono mb-3 break-all" style={{ color: '#00cc13' }}>UID: {nfcOrderData.uid}</p>
+              {nfcOrderData.source === 'db' && (
+                <p className="text-xs text-muted-foreground mb-2">📊 Data uit database</p>
+              )}
               <div className="space-y-2">
                 {nfcOrderData.items.map((item, i) => {
                   const product = productsData?.find(p => p.shorthand === item.shorthand);
@@ -185,13 +271,13 @@ export const BetalingPage = ({
                 <div className="border-t border-border mt-3 pt-3 space-y-1">
                   {nfcOrderData.wn.match(/C(\d+)/)?.[1] && (
                     <div className="flex justify-between items-center" style={{ fontSize: '1rem' }}>
-                      <span className="font-bold">Coat Number</span>
+                      <span className="font-bold">Jasnummer</span>
                       <span style={{ color: '#00cc13' }}>{nfcOrderData.wn.match(/C(\d+)/)![1]}</span>
                     </div>
                   )}
                   {nfcOrderData.wn.match(/B(\d+)/)?.[1] && (
                     <div className="flex justify-between items-center" style={{ fontSize: '1rem' }}>
-                      <span className="font-bold">Bag Number</span>
+                      <span className="font-bold">Tasnummer</span>
                       <span style={{ color: '#00cc13' }}>{nfcOrderData.wn.match(/B(\d+)/)![1]}</span>
                     </div>
                   )}
@@ -199,7 +285,7 @@ export const BetalingPage = ({
               )}
             </div>
             <button
-              onClick={() => { setNfcOrderData(null); startIdleScan(); }}
+              onClick={() => { setNfcOrderData(null); }}
               className="mt-4 px-6 py-3 font-extrabold uppercase text-sm"
               style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }}
             >

@@ -123,8 +123,48 @@ export const AdminPage = () => {
       nfcReadCancelRef.current = () => ac.abort();
       await reader.scan({ signal: ac.signal });
 
-      reader.onreading = (event: any) => {
+      reader.onreading = async (event: any) => {
         const uid = event.serialNumber?.replace(/:/g, '').toUpperCase() || 'Geen UID';
+        ac.abort();
+
+        // DB lookup first (source of truth)
+        try {
+          const { data: session } = await supabase
+            .from('sessions')
+            .select('id, total_amount, wardrobe_number')
+            .eq('nfc_uid', uid)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (session) {
+            const { data: logs } = await supabase
+              .from('drink_logs')
+              .select('product_id, products(shorthand)')
+              .eq('session_id', session.id);
+
+            if (logs && logs.length > 0) {
+              const agg: Record<string, { qty: number; shorthand: string }> = {};
+              for (const log of logs) {
+                const sh = (log as any).products?.shorthand || log.product_id;
+                if (!agg[sh]) agg[sh] = { qty: 0, shorthand: sh };
+                agg[sh].qty++;
+              }
+              setNfcReadData({
+                uid,
+                items: Object.values(agg),
+                total: Number(session.total_amount),
+                wn: session.wardrobe_number || undefined,
+              });
+              return;
+            }
+          }
+        } catch {
+          // DB lookup failed, fall back to NFC data
+        }
+
+        // Fall back to NFC data
         let parsed = false;
         if (event.message?.records) {
           for (const rec of event.message.records) {
@@ -144,11 +184,10 @@ export const AdminPage = () => {
                   }
                 }
               }
-            } catch { /* not JSON, fall through */ }
+            } catch { /* not JSON */ }
           }
         }
         if (!parsed) setNfcReadData({ raw: [`UID: ${uid}`, 'Geen besteldata gevonden'] });
-        ac.abort();
       };
     } catch (err: any) {
       if (err.name !== 'AbortError') {
