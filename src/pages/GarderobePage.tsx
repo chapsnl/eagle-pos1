@@ -76,6 +76,7 @@ export const GarderobePage = () => {
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       <FeedbackOverlay type={feedback} />
       <NfcOverlay status={nfcStatus} onCancel={handleCancelNfc} />
+      <NfcHiddenInput active={nfcStatus === 'scanning'} />
 
       <h2 className="font-extrabold uppercase tracking-[0.15em] text-center pt-3 pb-2" style={{ color: '#00cc13', fontSize: '29px' }}>
         Garderobe

@@ -118,6 +118,7 @@ const Index = () => {
     <div className="h-screen flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
       <NfcOverlay status={nfcStatus} onCancel={handleCancelNfc} />
+      <NfcHiddenInput active={nfcStatus === 'scanning'} />
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
 
       {activeView === 'bar' && (
