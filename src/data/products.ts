@@ -11,6 +11,7 @@ const p = (id: number, code: string, name: string, price: number, hex: string): 
   textColor: dark(hex) ? '#ffffff' : '#12100e',
 });
 
+
 // Sorted by popularity (1 = most used)
 export const products: Product[] = [
   p(1, 'HEIN', 'Heineken', 5.50, '#f4b738'),
