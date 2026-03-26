@@ -16,7 +16,7 @@ const p = (id: number, code: string, name: string, price: number, hex: string): 
 export const products: Product[] = [
   p(1, 'HEIN', 'Heineken', 5.50, '#f4b738'),
   p(2, 'GROL', 'Grolsch', 6.50, '#f4b738'),
-  p(3, 'COAF', 'Corona/Affligem', 3.00, '#f4b738'),
+  p(3, 'COAF', 'Corona Affligem', 3.00, '#f4b738'),
   p(4, 'HE0%', 'Heineken 0%', 3.00, '#f4b738'),
   p(5, 'JUIC', 'Juices', 4.50, '#497df7'),
   p(6, 'SOFT', 'Soft\nDrinks', 4.00, '#497df7'),
