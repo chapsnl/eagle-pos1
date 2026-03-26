@@ -182,13 +182,13 @@ export const AdminPage = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-card border rounded-lg p-4 text-left max-w-xs mx-auto" style={{ borderColor: '#00cc1340' }}>
+            <div className="bg-card border rounded-lg p-5 text-left max-w-sm mx-auto" style={{ borderColor: '#00cc1340' }}>
               <p className="text-xs font-mono mb-3 break-all" style={{ color: '#00cc13' }}>UID: {nfcReadData.uid}</p>
               <div className="space-y-2">
                 {nfcReadData.items.map((item, i) => {
                   const product = productsData?.find(p => p.shorthand === item.shorthand);
                   return (
-                    <div key={i} className="flex justify-between items-center text-sm">
+                    <div key={i} className="flex justify-between items-center" style={{ fontSize: '1rem' }}>
                       <span className="font-bold">{product?.full_name || item.shorthand}</span>
                       <div className="flex items-center gap-3">
                         <span className="text-muted-foreground">{item.qty}x</span>
@@ -199,9 +199,25 @@ export const AdminPage = () => {
                 })}
               </div>
               <div className="border-t border-border mt-3 pt-3 flex justify-between items-center">
-                <span className="font-extrabold uppercase text-sm">Totaal</span>
-                <span className="font-extrabold text-lg" style={{ color: '#00cc13' }}>€{Number(nfcReadData.total).toFixed(2)}</span>
+                <span className="font-extrabold uppercase" style={{ fontSize: '1rem' }}>Totaal</span>
+                <span className="font-extrabold text-xl" style={{ color: '#00cc13' }}>€{Number(nfcReadData.total).toFixed(2)}</span>
               </div>
+              {nfcReadData.wn && (
+                <div className="border-t border-border mt-3 pt-3 space-y-1">
+                  {nfcReadData.wn.match(/C(\d+)/)?.[1] && (
+                    <div className="flex justify-between items-center" style={{ fontSize: '1rem' }}>
+                      <span className="font-bold">Coat Number</span>
+                      <span style={{ color: '#00cc13' }}>{nfcReadData.wn.match(/C(\d+)/)![1]}</span>
+                    </div>
+                  )}
+                  {nfcReadData.wn.match(/B(\d+)/)?.[1] && (
+                    <div className="flex justify-between items-center" style={{ fontSize: '1rem' }}>
+                      <span className="font-bold">Bag Number</span>
+                      <span style={{ color: '#00cc13' }}>{nfcReadData.wn.match(/B(\d+)/)![1]}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
           <div className={`flex gap-3 justify-center ${nfcReadData ? '' : 'hidden'}`}>
