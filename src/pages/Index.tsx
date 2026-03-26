@@ -12,7 +12,7 @@ import { ArmNummerPage } from './ArmNummerPage';
 import { AdminPage } from './AdminPage';
 import { Send } from 'lucide-react';
 import { useCreateSession, useAddDrinkLogs, useUpdateSession } from '@/hooks/useSessions';
-import { scanNfcTag } from '@/hooks/useNfc';
+import { scanNfcTag, writeNfcTag } from '@/hooks/useNfc';
 
 export interface DbOrderItem {
   product: DbProduct;
