@@ -2,7 +2,7 @@ import { DbOrderItem } from '@/pages/Index';
 import { X } from 'lucide-react';
 
 interface OrderBarProps {
-  items: OrderItem[];
+  items: DbOrderItem[];
   total: number;
   onRemoveItem: (productId: string) => void;
   onClear: () => void;
