@@ -8,7 +8,7 @@ interface NavTabsProps {
 
 const tabs: { view: AppView; label: string }[] = [
   { view: 'bar', label: 'BAR' },
-  { view: 'garderobe', label: 'GARDEROBE' },
+  { view: 'garderobe', label: 'COAT CHECK' },
   { view: 'betaling', label: 'PAY' },
   { view: 'arm-nummer', label: 'NO-NFC' },
   { view: 'admin', label: 'ADMIN' },
