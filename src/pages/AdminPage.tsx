@@ -182,7 +182,7 @@ export const AdminPage = () => {
             <button
               onClick={() => { setNfcReadData(null); startNfcRead(); }}
               className="px-6 py-3 font-extrabold uppercase text-sm"
-              style={{ backgroundColor: '#00cc13', color: '#000', boxShadow: '0 0 16px #00cc1380' }}
+              style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }}
             >
               Volgende Scan
             </button>
@@ -205,7 +205,7 @@ export const AdminPage = () => {
           <button
             onClick={stopNfcRead}
             className="mt-4 px-8 py-4 text-lg font-extrabold uppercase flex items-center justify-center gap-3 mx-auto"
-            style={{ backgroundColor: '#00cc13', color: '#000', boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330' }}
+            style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330' }}
           >
             <Square className="w-6 h-6" />
             STOP UITLEZEN
@@ -276,7 +276,7 @@ export const AdminPage = () => {
               <button
                 onClick={startBatchErase}
                 className="flex-1 py-3 font-extrabold uppercase text-sm"
-                style={{ backgroundColor: '#00cc13', color: '#000' }}
+                style={{ backgroundColor: '#00cc13', color: '#fff' }}
               >
                 Ja, Start Wissen
               </button>
