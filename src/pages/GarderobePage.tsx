@@ -1,7 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
+import { NfcOverlay } from '@/components/pos/NfcOverlay';
 import { FeedbackType } from '@/types/pos';
 import { Send } from 'lucide-react';
+import { useCreateSession } from '@/hooks/useSessions';
+import { scanNfc, isNfcSupported } from '@/hooks/useNfc';
 
 const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
 
@@ -10,25 +13,58 @@ export const GarderobePage = () => {
   const [bagNumber, setBagNumber] = useState('');
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [activeField, setActiveField] = useState<'coat' | 'bag' | null>(null);
+  const [nfcStatus, setNfcStatus] = useState<'scanning' | 'error' | null>(null);
+  const [nfcError, setNfcError] = useState('');
+  const createSession = useCreateSession();
 
-  // Auto-close numpad when 3 digits entered
   useEffect(() => {
     if (activeField === 'coat' && coatNumber.length >= 3) setActiveField(null);
     if (activeField === 'bag' && bagNumber.length >= 3) setActiveField(null);
   }, [coatNumber, bagNumber, activeField]);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!coatNumber && !bagNumber) return;
-    const code = `${coatNumber ? 'C' + coatNumber : ''}${bagNumber ? 'B' + bagNumber : ''}`;
-    console.log('Garderobe code:', code);
-    setFeedback('success');
-    setTimeout(() => {
-      setFeedback(null);
-      setCoatNumber('');
-      setBagNumber('');
-      setActiveField(null);
-    }, 2000);
-  }, [coatNumber, bagNumber]);
+    const wardrobeNumber = `${coatNumber ? 'C' + coatNumber : ''}${bagNumber ? 'B' + bagNumber : ''}`;
+
+    // NFC scan required
+    if (isNfcSupported()) {
+      setNfcStatus('scanning');
+      try {
+        const result = await scanNfc(15000);
+        setNfcStatus(null);
+        // Create or update session with NFC UID and wardrobe number
+        await createSession.mutateAsync({
+          nfc_uid: result.uid,
+          wardrobe_number: wardrobeNumber,
+        });
+        setFeedback('success');
+        setTimeout(() => {
+          setFeedback(null);
+          setCoatNumber('');
+          setBagNumber('');
+          setActiveField(null);
+        }, 2000);
+      } catch (err: any) {
+        setNfcStatus('error');
+        setNfcError(err.message === 'NFC_TIMEOUT' ? 'Geen bandje gedetecteerd' : 'NFC fout');
+      }
+    } else {
+      // Fallback: no NFC hardware — create session without NFC UID
+      try {
+        await createSession.mutateAsync({ wardrobe_number: wardrobeNumber });
+        setFeedback('success');
+        setTimeout(() => {
+          setFeedback(null);
+          setCoatNumber('');
+          setBagNumber('');
+          setActiveField(null);
+        }, 2000);
+      } catch {
+        setFeedback('error');
+        setTimeout(() => setFeedback(null), 2000);
+      }
+    }
+  }, [coatNumber, bagNumber, createSession]);
 
   const handleNumKey = (key: string) => {
     if (!activeField) return;
@@ -46,12 +82,12 @@ export const GarderobePage = () => {
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
       <FeedbackOverlay type={feedback} />
+      <NfcOverlay status={nfcStatus} errorMessage={nfcError} onCancel={() => setNfcStatus(null)} />
 
       <h2 className="font-extrabold uppercase tracking-[0.15em] text-center pt-3 pb-2" style={{ color: '#00cc13', fontSize: '29px' }}>
         Garderobe
       </h2>
 
-      {/* Fields area - grows to fill available space */}
       <div className="flex-1 flex flex-col items-center justify-center gap-3 px-4">
         <div className="w-full" style={{ maxWidth: '280px' }}>
           <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1 block">
@@ -94,7 +130,6 @@ export const GarderobePage = () => {
           </div>
         </div>
 
-        {/* Preview */}
         {(coatNumber || bagNumber) && (
           <div className="text-center">
             <span className="text-xs text-muted-foreground">Preview: </span>
@@ -105,7 +140,6 @@ export const GarderobePage = () => {
         )}
       </div>
 
-      {/* Numpad */}
       {showNumpad && (
         <div className="px-4 pb-2">
           <div className="w-full max-w-md mx-auto grid grid-cols-3 gap-0">
@@ -128,7 +162,6 @@ export const GarderobePage = () => {
         </div>
       )}
 
-      {/* SEND button - always at bottom */}
       <div className="px-4 pb-3 pt-1">
         <button
           onClick={handleSubmit}
