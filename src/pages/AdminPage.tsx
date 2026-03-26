@@ -125,28 +125,31 @@ export const AdminPage = () => {
 
       reader.onreading = (event: any) => {
         const uid = event.serialNumber?.replace(/:/g, '').toUpperCase() || 'Geen UID';
-        const records: string[] = [`UID: ${uid}`];
+        let parsed = false;
         if (event.message?.records) {
           for (const rec of event.message.records) {
             try {
               if (rec.recordType === 'text') {
                 const decoder = new TextDecoder(rec.encoding || 'utf-8');
                 const text = decoder.decode(rec.data);
-                records.push(`Text: ${text || '(leeg)'}`);
-              } else if (rec.recordType === 'url') {
-                const decoder = new TextDecoder();
-                records.push(`URL: ${decoder.decode(rec.data)}`);
-              } else {
-                records.push(`Record: ${rec.recordType}`);
+                if (text) {
+                  const json = JSON.parse(text);
+                  if (json.items && typeof json.items === 'string') {
+                    const items = json.items.split(',').map((entry: string) => {
+                      const match = entry.match(/^(\d+)x(.+)$/);
+                      return match ? { qty: parseInt(match[1]), shorthand: match[2] } : { qty: 1, shorthand: entry };
+                    });
+                    setNfcReadData({ uid, items, total: json.total ?? 0 });
+                    parsed = true;
+                  }
+                }
               }
-            } catch {
-              records.push(`Record: ${rec.recordType} (onleesbaar)`);
-            }
+            } catch { /* not JSON, fall through */ }
           }
         }
-        if (records.length === 1) records.push('Geen data records');
-        setNfcReadData(records);
+        if (!parsed) setNfcReadData({ raw: [`UID: ${uid}`, 'Geen besteldata gevonden'] });
         ac.abort();
+      };
       };
     } catch (err: any) {
       if (err.name !== 'AbortError') {
