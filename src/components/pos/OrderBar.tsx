@@ -1,8 +1,8 @@
-import { OrderItem } from '@/types/pos';
+import { DbOrderItem } from '@/pages/Index';
 import { X } from 'lucide-react';
 
 interface OrderBarProps {
-  items: OrderItem[];
+  items: DbOrderItem[];
   total: number;
   onRemoveItem: (productId: string) => void;
   onClear: () => void;
@@ -26,7 +26,7 @@ export const OrderBar = ({ items, total, onRemoveItem, onClear }: OrderBarProps)
             onClick={() => onRemoveItem(item.product.id)}
             className="flex items-center gap-1.5 bg-secondary rounded-md px-2.5 py-1.5 text-xs font-bold uppercase shrink-0 hover:bg-destructive/20 transition-colors group"
           >
-            <span>{item.quantity > 1 && `${item.quantity}×`}{item.product.code}</span>
+            <span>{item.quantity > 1 && `${item.quantity}×`}{item.product.shorthand}</span>
             <X className="w-3 h-3 opacity-40 group-hover:opacity-100" />
           </button>
         ))}

@@ -1,8 +1,8 @@
-import { OrderItem } from '@/types/pos';
+import { DbOrderItem } from '@/pages/Index';
 import { X, Nfc, CreditCard, Banknote, Send } from 'lucide-react';
 
 interface BetalingPageProps {
-  items: OrderItem[];
+  items: DbOrderItem[];
   total: number;
   onRemoveItem: (productId: string) => void;
   onClear: () => void;
@@ -45,10 +45,10 @@ export const BetalingPage = ({
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold uppercase">
                     {item.quantity > 1 && `${item.quantity}× `}
-                    {item.product.name}
+                    {item.product.full_name}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    [{item.product.code}]
+                    [{item.product.shorthand}]
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
