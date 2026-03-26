@@ -41,7 +41,7 @@ export const products: Product[] = [
   p(26, 'TTOP', 'Tank Top', 20.00, '#12100e'),
   p(27, 'AMAR', 'Amaretto', 3.00, '#e4e2e2'),
   p(28, 'TSHI', 'T-Shirt', 17.50, '#12100e'),
-  p(29, 'JAEG', 'Jagermeister', 3.00, '#e4e2e2'),
+  p(29, 'JAEG', 'Jager\nMeister', 3.00, '#e4e2e2'),
   p(30, 'SEXT', 'Seks Toys', 3.00, '#12100e'),
   p(31, 'DIV9', 'DIV 9%', 3.00, '#12100e'),
   p(32, '18', '18', 18.00, '#e4e2e2'),
