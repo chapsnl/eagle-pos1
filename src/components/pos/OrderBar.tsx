@@ -1,4 +1,4 @@
-import { OrderItem } from '@/types/pos';
+import { DbOrderItem } from '@/pages/Index';
 import { X } from 'lucide-react';
 
 interface OrderBarProps {
