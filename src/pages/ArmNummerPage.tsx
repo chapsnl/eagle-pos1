@@ -121,7 +121,7 @@ export const ArmNummerPage = () => {
                   className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 active:brightness-75 active:shadow-[inset_0_0_0_2px_hsl(var(--destructive)),0_0_12px_hsl(var(--destructive)/0.5)] p-1 min-w-0"
                 >
                   <span
-                    className="font-extrabold leading-[1.05] text-center uppercase"
+                    className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line"
                     style={{ fontSize: cell.span === 2 ? 'clamp(0.9rem, 2.8vw, 2rem)' : 'clamp(0.55rem, 1.6vw, 1.1rem)' }}
                   >
                     {product.name}
