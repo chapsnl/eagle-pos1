@@ -87,8 +87,7 @@ export const ArmNummerPage = () => {
       setTimeout(() => {
         void resolveSessionByWardrobe(`B${bagNumber}`, () => {
           setFeedback('error');
-          setTimeout(() => setFeedback(null), 1500);
-          setBagNumber('');
+          setTimeout(() => { setFeedback(null); setPhase('bag-not-found'); }, 1500);
         });
       }, 300);
     }
