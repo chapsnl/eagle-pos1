@@ -3,9 +3,9 @@ import { Product, OrderItem, FeedbackType, AppView } from '@/types/pos';
 import { NavTabs } from '@/components/pos/NavTabs';
 import { OrderBar } from '@/components/pos/OrderBar';
 import { ProductGrid } from '@/components/pos/ProductGrid';
-import { ActionBar } from '@/components/pos/ActionBar';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { GarderobePage } from './GarderobePage';
+import { BetalingPage } from './BetalingPage';
 import { ArmNummerPage } from './ArmNummerPage';
 import { AdminPage } from './AdminPage';
 
@@ -55,24 +55,30 @@ const Index = () => {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
-      <NavTabs activeView={activeView} onViewChange={setActiveView} />
+      <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
 
       {activeView === 'bar' && (
         <>
           <OrderBar items={items} total={total} onRemoveItem={removeItem} onClear={clearOrder} />
           <ProductGrid onAddProduct={addProduct} />
-          <ActionBar
-            total={total}
-            hasItems={items.length > 0}
-            onPin={handlePin}
-            onCash={handleCash}
-            onCorrect={() => console.log('Correct')}
-            onIncident={() => console.log('Incident')}
-          />
         </>
       )}
 
       {activeView === 'garderobe' && <GarderobePage />}
+
+      {activeView === 'betaling' && (
+        <BetalingPage
+          items={items}
+          total={total}
+          onRemoveItem={removeItem}
+          onClear={clearOrder}
+          onPin={handlePin}
+          onCash={handleCash}
+          onCorrect={() => console.log('Correct')}
+          onIncident={() => console.log('Incident')}
+        />
+      )}
+
       {activeView === 'arm-nummer' && <ArmNummerPage />}
       {activeView === 'admin' && <AdminPage />}
     </div>
