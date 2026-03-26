@@ -39,7 +39,7 @@ const gridLayout: { code: string; span: number; hideLabel?: boolean }[][] = [
 
 const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
 
-type Phase = 'input-arm' | 'not-found' | 'input-bag' | 'products';
+type Phase = 'input-arm' | 'not-found' | 'input-bag' | 'bag-not-found' | 'products';
 
 export const ArmNummerPage = () => {
   const [phase, setPhase] = useState<Phase>('input-arm');
@@ -87,8 +87,7 @@ export const ArmNummerPage = () => {
       setTimeout(() => {
         void resolveSessionByWardrobe(`B${bagNumber}`, () => {
           setFeedback('error');
-          setTimeout(() => setFeedback(null), 1500);
-          setBagNumber('');
+          setTimeout(() => { setFeedback(null); setPhase('bag-not-found'); }, 1500);
         });
       }, 300);
     }
@@ -171,6 +170,18 @@ export const ArmNummerPage = () => {
         <div className="text-center font-extrabold uppercase tracking-[0.1em]" style={{ color: '#ef4444', fontSize: 'clamp(24px, 5vw, 40px)' }}>NIET GEVONDEN</div>
         <div className="text-center text-muted-foreground text-lg font-bold">Arm #{armNumber} niet gevonden.<br />Probeer met tasnummer.</div>
         <button onClick={() => setPhase('input-bag')} className="px-8 py-4 text-xl font-extrabold uppercase" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330' }}>TAS NUMMER INVOEREN</button>
+      </div>
+    );
+  }
+
+  if (phase === 'bag-not-found') {
+    return (
+      <div className="flex-1 flex flex-col h-full overflow-hidden items-center justify-center gap-6 px-4">
+        <FeedbackOverlay type={feedback} />
+        <div className="text-center font-extrabold uppercase tracking-[0.1em]" style={{ color: '#ef4444', fontSize: 'clamp(24px, 5vw, 40px)' }}>NIET GEVONDEN</div>
+        <div className="text-center text-muted-foreground text-lg font-bold">Tas #{bagNumber} niet gevonden.</div>
+        <button onClick={() => { setBagNumber(''); setPhase('input-bag'); }} className="px-8 py-4 text-xl font-extrabold uppercase mb-3" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330' }}>OPNIEUW PROBEREN</button>
+        <button onClick={() => { setArmNumber(''); setBagNumber(''); setPhase('input-arm'); }} className="px-8 py-4 text-xl font-extrabold uppercase" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 16px #ef444480, 0 0 32px #ef444430' }}>JAS INVOER?</button>
       </div>
     );
   }
