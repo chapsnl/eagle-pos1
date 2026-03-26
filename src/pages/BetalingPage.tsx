@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { DbOrderItem } from '@/pages/Index';
 import { X, Nfc, CreditCard, Banknote, Send } from 'lucide-react';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
 import { useCreateSession, useUpdateSession, useAddDrinkLogs } from '@/hooks/useSessions';
-import { scanNfc, isNfcSupported } from '@/hooks/useNfc';
+import { waitForNfcScan } from '@/hooks/useNfc';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 
@@ -25,10 +25,10 @@ export const BetalingPage = ({
   onCash,
 }: BetalingPageProps) => {
   const hasItems = items.length > 0;
-  const [nfcStatus, setNfcStatus] = useState<'scanning' | 'error' | null>(null);
-  const [nfcError, setNfcError] = useState('');
+  const [nfcStatus, setNfcStatus] = useState<'scanning' | null>(null);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [paymentMethod, setPaymentMethod] = useState<'pin' | 'cash' | null>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
   const createSession = useCreateSession();
   const updateSession = useUpdateSession();
   const addDrinkLogs = useAddDrinkLogs();
@@ -39,11 +39,7 @@ export const BetalingPage = ({
 
     const completePayment = async (nfcUid?: string) => {
       try {
-        // Create or get session
-        const session = await createSession.mutateAsync({
-          nfc_uid: nfcUid,
-        });
-        // Add drink logs
+        const session = await createSession.mutateAsync({ nfc_uid: nfcUid });
         const logs = items.flatMap((item) =>
           Array.from({ length: item.quantity }, () => ({
             session_id: session.id,
@@ -52,7 +48,6 @@ export const BetalingPage = ({
           }))
         );
         await addDrinkLogs.mutateAsync(logs);
-        // Update session with total and mark paid
         await updateSession.mutateAsync({
           id: session.id,
           total_amount: total,
@@ -71,27 +66,33 @@ export const BetalingPage = ({
       }
     };
 
-    // Try NFC scan first
-    if (isNfcSupported()) {
-      setNfcStatus('scanning');
-      try {
-        const result = await scanNfc(15000);
-        setNfcStatus(null);
-        await completePayment(result.uid);
-      } catch (err: any) {
-        setNfcStatus('error');
-        setNfcError(err.message === 'NFC_TIMEOUT' ? 'Geen bandje gedetecteerd' : 'NFC fout');
+    // Start NFC scan
+    setNfcStatus('scanning');
+    const { promise, cancel } = waitForNfcScan(30000);
+    cancelRef.current = cancel;
+
+    try {
+      const result = await promise;
+      setNfcStatus(null);
+      await completePayment(result.uid);
+    } catch (err: any) {
+      setNfcStatus(null);
+      if (err.message !== 'NFC_CANCELLED') {
+        // Timeout — proceed without NFC
+        await completePayment();
       }
-    } else {
-      // No NFC hardware — proceed without
-      await completePayment();
     }
   }, [hasItems, items, total, createSession, updateSession, addDrinkLogs, onPin, onCash]);
+
+  const handleCancelNfc = useCallback(() => {
+    cancelRef.current?.();
+    setNfcStatus(null);
+  }, []);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
-      <NfcOverlay status={nfcStatus} errorMessage={nfcError} onCancel={() => setNfcStatus(null)} />
+      <NfcOverlay status={nfcStatus} onCancel={handleCancelNfc} />
 
       {/* Order overview */}
       <div className="flex-1 flex flex-col p-4 gap-3 overflow-y-auto">
