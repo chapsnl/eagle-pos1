@@ -1,6 +1,6 @@
 import { Product } from '@/types/pos';
 
-const dark = (hex: string) => ['#12100e', '#357cff'].includes(hex);
+const dark = (hex: string) => ['#12100e', '#357cff', '#497df7'].includes(hex);
 
 const p = (id: number, code: string, name: string, price: number, hex: string): Product => ({
   id: String(id),
