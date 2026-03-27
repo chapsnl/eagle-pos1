@@ -3,7 +3,7 @@ import { DbOrderItem } from '@/pages/Index';
 import { X, Nfc, CreditCard, Banknote, Send, Hash } from 'lucide-react';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
 import { useCreateSession, useUpdateSession, useAddDrinkLogs, useFindActiveSessionByWardrobe } from '@/hooks/useSessions';
-import { scanNfcTag, writeNfcTag } from '@/hooks/useNfc';
+import { scanNfcTag, writeNfcTag, eraseNfcTag } from '@/hooks/useNfc';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { useProducts } from '@/hooks/useProducts';
@@ -95,7 +95,7 @@ async function fetchDbOrderByWardrobe(wardrobeNumber: string): Promise<{ session
   };
 }
 
-type PayPhase = 'choose' | 'nfc-scan' | 'input-coat' | 'coat-not-found' | 'input-bag' | 'bag-not-found' | 'show-order';
+type PayPhase = 'choose' | 'nfc-scan' | 'input-coat' | 'coat-not-found' | 'input-bag' | 'bag-not-found' | 'show-order' | 'confirm-payment';
 
 export const BetalingPage = ({
   items,
@@ -119,6 +119,7 @@ export const BetalingPage = ({
   const [coatNumber, setCoatNumber] = useState('');
   const [bagNumber, setBagNumber] = useState('');
   const [foundSessionId, setFoundSessionId] = useState<string | null>(null);
+  const [pendingPaymentMethod, setPendingPaymentMethod] = useState<'pin' | 'cash' | null>(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -253,27 +254,64 @@ export const BetalingPage = ({
     return () => clearTimeout(t);
   }, [bagNumber, phase]);
 
-  // Process payment for found session
-  const processPaymentForSession = useCallback(async (method: 'pin' | 'cash') => {
+  // Step 1: choose PIN or Cash → go to confirmation screen
+  const processPaymentForSession = useCallback((method: 'pin' | 'cash') => {
+    setPendingPaymentMethod(method);
+    setPhase('confirm-payment');
+  }, []);
+
+  // Step 2a: "BETAALD" — erase everything
+  const confirmPaid = useCallback(async () => {
     if (!nfcOrderData || !foundSessionId) return;
     try {
+      // Delete drink_logs for this session
+      await supabase.from('drink_logs').delete().eq('session_id', foundSessionId);
+
+      // Archive the session, reset total
       await updateSession.mutateAsync({
         id: foundSessionId,
         actual_paid_amount: nfcOrderData.total,
         status: 'paid',
       });
+
+      // Try to erase NFC tag
+      if (nfcOrderData.uid) {
+        try {
+          const { promise, cancel } = eraseNfcTag(10000);
+          cancelRef.current = cancel;
+          await promise;
+        } catch { /* NFC erase failed, DB is done */ }
+      }
+
+      // Also call batch-erase edge function to clean up by wardrobe number
+      if (nfcOrderData.wn) {
+        try {
+          await supabase.functions.invoke('batch-erase', {
+            body: { wardrobe_number: nfcOrderData.wn, nfc_uid: nfcOrderData.uid || undefined },
+          });
+        } catch { /* edge function failed, main cleanup done */ }
+      }
+
+      // Play notification sound
+      try { new Audio('/notification.mp3').play(); } catch {}
+
       setFeedback('success');
       setTimeout(() => {
         setFeedback(null);
         resetToChoose();
-        if (method === 'pin') onPin();
+        if (pendingPaymentMethod === 'pin') onPin();
         else onCash();
       }, 2000);
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [nfcOrderData, foundSessionId, updateSession, onPin, onCash, resetToChoose]);
+  }, [nfcOrderData, foundSessionId, updateSession, pendingPaymentMethod, onPin, onCash, resetToChoose]);
+
+  // Step 2b: "NIET BETAALD" — keep everything, go back
+  const confirmNotPaid = useCallback(() => {
+    resetToChoose();
+  }, [resetToChoose]);
 
   // Process payment with items from bar
   const processPaymentWithItems = useCallback(async (method: 'pin' | 'cash') => {
@@ -573,6 +611,31 @@ export const BetalingPage = ({
           )}
 
           {phase === 'show-order' && renderOrderView()}
+
+          {phase === 'confirm-payment' && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-6 px-4">
+              <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em]" style={{ color: '#00cc13' }}>
+                {pendingPaymentMethod === 'pin' ? 'PIN' : 'CONTANT'}
+              </h2>
+              <div className="text-center text-lg font-bold text-muted-foreground">
+                Totaal: <span style={{ color: '#00cc13' }}>€{Number(nfcOrderData?.total ?? 0).toFixed(2)}</span>
+              </div>
+              <button
+                onClick={confirmPaid}
+                className="w-64 py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
+                style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}
+              >
+                ✓ BETAALD
+              </button>
+              <button
+                onClick={confirmNotPaid}
+                className="w-64 py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
+                style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 16px #ef444480' }}
+              >
+                ✗ NIET BETAALD
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
