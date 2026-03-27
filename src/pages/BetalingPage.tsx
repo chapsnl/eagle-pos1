@@ -611,6 +611,31 @@ export const BetalingPage = ({
           )}
 
           {phase === 'show-order' && renderOrderView()}
+
+          {phase === 'confirm-payment' && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-6 px-4">
+              <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em]" style={{ color: '#00cc13' }}>
+                {pendingPaymentMethod === 'pin' ? 'PIN' : 'CONTANT'}
+              </h2>
+              <div className="text-center text-lg font-bold text-muted-foreground">
+                Totaal: <span style={{ color: '#00cc13' }}>€{Number(nfcOrderData?.total ?? 0).toFixed(2)}</span>
+              </div>
+              <button
+                onClick={confirmPaid}
+                className="w-64 py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
+                style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}
+              >
+                ✓ BETAALD
+              </button>
+              <button
+                onClick={confirmNotPaid}
+                className="w-64 py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
+                style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 16px #ef444480' }}
+              >
+                ✗ NIET BETAALD
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
