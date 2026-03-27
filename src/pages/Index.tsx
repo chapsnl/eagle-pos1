@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { IntroPage } from './IntroPage';
 import { DbProduct } from '@/hooks/useProducts';
 import { FeedbackType, AppView } from '@/types/pos';
 import { NavTabs } from '@/components/pos/NavTabs';
@@ -20,8 +21,9 @@ export interface DbOrderItem {
   quantity: number;
 }
 
-const Index = () => {
+  const [started, setStarted] = useState(false);
   const [activeView, setActiveView] = useState<AppView>('bar');
+  const [items, setItems] = useState<DbOrderItem[]>([]);
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [nfcStatus, setNfcStatus] = useState<'scanning' | 'writing' | null>(null);
@@ -164,6 +166,10 @@ const Index = () => {
     cancelRef.current?.();
     setNfcStatus(null);
   }, []);
+
+  if (!started) {
+    return <IntroPage onEnter={() => setStarted(true)} />;
+  }
 
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
