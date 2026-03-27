@@ -46,7 +46,23 @@ export const GarderobePage = () => {
       return;
     }
 
-    // Step 2: Write the wardrobe number to the tag (no UI change, keep scanning overlay)
+    // Step 2: Check if this NFC already has a wardrobe number assigned
+    const { data: existingSession } = await supabase
+      .from('sessions')
+      .select('wardrobe_number')
+      .eq('nfc_uid', uid)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (existingSession?.wardrobe_number) {
+      // Already has a number — show red cross and block
+      setNfcStatus(null);
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+      return;
+    }
+
+    // Step 3: Write the wardrobe number to the tag
     const { promise: writePromise, cancel: cancelWrite } = writeNfcTag(wardrobeNumber, 30000);
     cancelRef.current = cancelWrite;
 
@@ -54,7 +70,7 @@ export const GarderobePage = () => {
       await writePromise;
       setNfcStatus(null);
 
-      // Step 3: Save to database (always overwrite wardrobe number for this NFC UID)
+      // Step 4: Save to database
       const session = await createSession.mutateAsync({
         nfc_uid: uid,
       });
