@@ -1,6 +1,6 @@
 {
-  "appId": "app.lovable.98b2f7f3955f4f91ad098ad46ec62ff1",
-  "appName": "eagle-pos1",
+  "appId": "com.eagle.pos",
+  "appName": "Eagle POS",
   "webDir": "dist",
   "server": {
     "url": "https://98b2f7f3-955f-4f91-ad09-8ad46ec62ff1.lovableproject.com?forceHideBadge=true",
@@ -9,6 +9,11 @@
   "plugins": {
     "CapacitorNfc": {
       "androidReaderModeFlags": 15
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#000000",
+      "overlaysWebView": true
     }
   }
 }
