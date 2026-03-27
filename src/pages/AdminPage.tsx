@@ -149,7 +149,7 @@ export const AdminPage = () => {
       cancelRef.current = () => wAc.abort();
       try {
         await writer.write(
-          { records: [{ recordType: 'text', data: '000' }] },
+          { records: [{ recordType: 'mime', mediaType: 'text/plain', data: new TextEncoder().encode('000') }] },
           { signal: wAc.signal, overwrite: true }
         );
         await refreshNfcContext();
