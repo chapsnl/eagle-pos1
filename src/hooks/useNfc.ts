@@ -145,3 +145,115 @@ export const writeNfcTag = (data: string, timeoutMs = 30000): { promise: Promise
 
   return { promise, cancel };
 };
+
+export interface ScanAndWriteResult {
+  uid: string;
+  message?: string;
+}
+
+/**
+ * Combined scan + write: reads the tag UID and existing data, then calls
+ * getWriteData with the result. If getWriteData returns a string, that
+ * data is written to the tag immediately (same tap). If it returns null,
+ * no write happens. This avoids the "second tap" problem.
+ */
+export const scanAndWriteNfcTag = (
+  getWriteData: (result: NfcScanResult) => Promise<string | null>,
+  timeoutMs = 30000,
+  onStatusChange?: (status: 'scanning' | 'writing') => void,
+): { promise: Promise<ScanAndWriteResult>; cancel: () => void } => {
+  let abortController: AbortController | null = new AbortController();
+  let timer: ReturnType<typeof setTimeout>;
+  let settled = false;
+
+  const cancel = () => {
+    if (settled) return;
+    settled = true;
+    abortController?.abort();
+    abortController = null;
+    clearTimeout(timer);
+  };
+
+  const promise = new Promise<ScanAndWriteResult>((resolve, reject) => {
+    if (!('NDEFReader' in window)) {
+      settled = true;
+      reject(new Error('NFC_NOT_SUPPORTED'));
+      return;
+    }
+
+    timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        abortController?.abort();
+        reject(new Error('NFC_TIMEOUT'));
+      }
+    }, timeoutMs);
+
+    const reader = new (window as any).NDEFReader();
+
+    reader
+      .scan({ signal: abortController!.signal })
+      .then(() => {
+        console.log('[NFC] Scan+Write started, waiting for tag...');
+        onStatusChange?.('scanning');
+
+        reader.onreading = async (event: any) => {
+          if (settled) return;
+          const uid = event.serialNumber?.replace(/:/g, '').toUpperCase() || '';
+          let message: string | undefined;
+          if (event.message?.records) {
+            for (const rec of event.message.records) {
+              try {
+                if (rec.recordType === 'text') {
+                  const decoder = new TextDecoder(rec.encoding || 'utf-8');
+                  message = decoder.decode(rec.data);
+                  break;
+                }
+              } catch { /* ignore */ }
+            }
+          }
+          console.log('[NFC] Tag read, UID:', uid, 'message:', message);
+
+          try {
+            const writeData = await getWriteData({ uid, message });
+            if (writeData !== null && !settled) {
+              onStatusChange?.('writing');
+              console.log('[NFC] Writing data:', writeData);
+              const writer = new (window as any).NDEFReader();
+              await writer.write(
+                { records: [{ recordType: 'text', data: writeData }] },
+                { overwrite: true }
+              );
+              console.log('[NFC] Write successful');
+            }
+            if (!settled) {
+              settled = true;
+              clearTimeout(timer);
+              abortController?.abort();
+              resolve({ uid, message });
+            }
+          } catch (err: any) {
+            if (!settled) {
+              settled = true;
+              clearTimeout(timer);
+              abortController?.abort();
+              reject(err);
+            }
+          }
+        };
+
+        reader.onreadingerror = () => {
+          console.warn('[NFC] Read error');
+        };
+      })
+      .catch((err: Error) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          reject(err);
+        }
+      });
+  });
+
+  return { promise, cancel };
+};
