@@ -42,57 +42,17 @@ export const AdminPage = () => {
     setNfcStatus('scanning');
 
     try {
-      const reader = new (window as any).NDEFReader();
-      const ac = new AbortController();
-      cancelRef.current = () => ac.abort();
+      const { promise, cancel } = eraseNfcTag(120000);
+      cancelRef.current = cancel;
 
-      // Wait for a tag
-      await reader.scan({ signal: ac.signal });
-
-      const tagData: { uid: string; wn?: string } = await new Promise((resolve, reject) => {
-        reader.onreading = (event: any) => {
-          const id = event.serialNumber?.replace(/:/g, '').toUpperCase() || '';
-          let wn: string | undefined;
-          // Try to extract wardrobe number from tag data
-          if (event.message?.records) {
-            for (const rec of event.message.records) {
-              try {
-                if (rec.recordType === 'text') {
-                  const decoder = new TextDecoder(rec.encoding || 'utf-8');
-                  const text = decoder.decode(rec.data);
-                  if (text) {
-                    const json = JSON.parse(text);
-                    if (json.wn) wn = json.wn;
-                  }
-                }
-              } catch { /* ignore */ }
-            }
-          }
-          resolve({ uid: id, wn });
-        };
-        reader.onreadingerror = () => reject(new Error('Read error'));
-        ac.signal.addEventListener('abort', () => reject(new Error('CANCELLED')));
-      });
-
-      const uid = tagData.uid;
-
-      if (!batchModeRef.current) return;
-
-      // Write empty record to wipe the tag
-      const writer = new (window as any).NDEFReader();
-      const wAc = new AbortController();
-      cancelRef.current = () => wAc.abort();
-      await writer.write(
-        { records: [{ recordType: 'text', data: '' }] },
-        { signal: wAc.signal, overwrite: true }
-      );
+      const { uid, wn } = await promise;
 
       if (!batchModeRef.current) return;
 
       // Archive session in DB if exists
       try {
         await supabase.functions.invoke('batch-erase', {
-          body: { nfc_uid: uid, wardrobe_number: tagData.wn || undefined },
+          body: { nfc_uid: uid, wardrobe_number: wn || undefined },
         });
       } catch {
         // OK if no session found
@@ -110,7 +70,7 @@ export const AdminPage = () => {
         }
       }, 2000);
     } catch (err: any) {
-      if (err.message === 'CANCELLED') return;
+      if (err.message === 'CANCELLED' || err.message === 'NFC_CANCELLED') return;
       setNfcStatus(null);
       // On error, retry after a short delay
       if (batchModeRef.current) {
