@@ -25,7 +25,7 @@ export const AdminPage = () => {
   const batchModeRef = useRef(false);
   const [nfcReadMode, setNfcReadMode] = useState(false);
   const [nfcReadData, setNfcReadData] = useState<
-    { uid: string; items: { shorthand: string; qty: number }[]; total: number; wn?: string } | { raw: string[]; uid?: string } | null
+    { uid: string; items: { shorthand: string; qty: number }[]; total: number; wn?: string; status?: string } | { raw: string[]; uid?: string } | null
   >(null);
   const nfcReadCancelRef = useRef<(() => void) | null>(null);
   const { data: productsData } = useProducts();
@@ -131,11 +131,11 @@ export const AdminPage = () => {
 
         // DB lookup first (source of truth)
         try {
-          const { data: session } = await supabase
+        const { data: session } = await supabase
             .from('sessions')
-            .select('id, total_amount, wardrobe_number')
+            .select('id, total_amount, wardrobe_number, status')
             .eq('nfc_uid', uid)
-            .eq('status', 'active')
+            .in('status', ['active', 'paid'])
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
@@ -158,6 +158,7 @@ export const AdminPage = () => {
                 items: Object.values(agg),
                 total: Number(session.total_amount),
                 wn: session.wardrobe_number || undefined,
+                status: session.status,
               });
               return;
             }
@@ -243,6 +244,20 @@ export const AdminPage = () => {
                 <span className="font-extrabold uppercase" style={{ fontSize: '1rem' }}>Totaal</span>
                 <span className="font-extrabold text-xl" style={{ color: '#00cc13' }}>€{Number(nfcReadData.total).toFixed(2)}</span>
               </div>
+              {'status' in nfcReadData && nfcReadData.status && (
+                <div className="border-t border-border mt-3 pt-3 flex justify-between items-center">
+                  <span className="font-extrabold uppercase" style={{ fontSize: '1rem' }}>Status</span>
+                  <span
+                    className="font-extrabold uppercase px-3 py-1 rounded-full text-sm"
+                    style={nfcReadData.status === 'paid'
+                      ? { backgroundColor: '#00cc13', color: '#fff' }
+                      : { backgroundColor: '#f59e0b', color: '#fff' }
+                    }
+                  >
+                    {nfcReadData.status === 'paid' ? 'BETAALD' : nfcReadData.status.toUpperCase()}
+                  </span>
+                </div>
+              )}
               {nfcReadData.wn && (
                 <div className="border-t border-border mt-3 pt-3 space-y-1">
                   {nfcReadData.wn.match(/C(\d+)/)?.[1] && (

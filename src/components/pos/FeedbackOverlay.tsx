@@ -1,11 +1,36 @@
 import { Check, X } from 'lucide-react';
+import { useEffect } from 'react';
 import { FeedbackType } from '@/types/pos';
 
 interface FeedbackOverlayProps {
   type: FeedbackType;
 }
 
+const playNotificationSound = () => {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+    oscillator.frequency.setValueAtTime(1108, ctx.currentTime + 0.1);
+    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.3);
+  } catch {
+    // Audio not available
+  }
+};
+
 export const FeedbackOverlay = ({ type }: FeedbackOverlayProps) => {
+  useEffect(() => {
+    if (type === 'success') {
+      playNotificationSound();
+    }
+  }, [type]);
+
   if (!type) return null;
 
   return (
