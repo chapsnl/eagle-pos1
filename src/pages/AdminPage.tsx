@@ -6,6 +6,7 @@ import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
 import { FeedbackType } from '@/types/pos';
 import { supabase } from '@/integrations/supabase/client';
+import { scanNfcTag, eraseNfcTag } from '@/hooks/useNfc';
 import {
   Dialog,
   DialogContent,
@@ -41,57 +42,17 @@ export const AdminPage = () => {
     setNfcStatus('scanning');
 
     try {
-      const reader = new (window as any).NDEFReader();
-      const ac = new AbortController();
-      cancelRef.current = () => ac.abort();
+      const { promise, cancel } = eraseNfcTag(120000);
+      cancelRef.current = cancel;
 
-      // Wait for a tag
-      await reader.scan({ signal: ac.signal });
-
-      const tagData: { uid: string; wn?: string } = await new Promise((resolve, reject) => {
-        reader.onreading = (event: any) => {
-          const id = event.serialNumber?.replace(/:/g, '').toUpperCase() || '';
-          let wn: string | undefined;
-          // Try to extract wardrobe number from tag data
-          if (event.message?.records) {
-            for (const rec of event.message.records) {
-              try {
-                if (rec.recordType === 'text') {
-                  const decoder = new TextDecoder(rec.encoding || 'utf-8');
-                  const text = decoder.decode(rec.data);
-                  if (text) {
-                    const json = JSON.parse(text);
-                    if (json.wn) wn = json.wn;
-                  }
-                }
-              } catch { /* ignore */ }
-            }
-          }
-          resolve({ uid: id, wn });
-        };
-        reader.onreadingerror = () => reject(new Error('Read error'));
-        ac.signal.addEventListener('abort', () => reject(new Error('CANCELLED')));
-      });
-
-      const uid = tagData.uid;
-
-      if (!batchModeRef.current) return;
-
-      // Write empty record to wipe the tag
-      const writer = new (window as any).NDEFReader();
-      const wAc = new AbortController();
-      cancelRef.current = () => wAc.abort();
-      await writer.write(
-        { records: [{ recordType: 'text', data: '' }] },
-        { signal: wAc.signal, overwrite: true }
-      );
+      const { uid, wn } = await promise;
 
       if (!batchModeRef.current) return;
 
       // Archive session in DB if exists
       try {
         await supabase.functions.invoke('batch-erase', {
-          body: { nfc_uid: uid, wardrobe_number: tagData.wn || undefined },
+          body: { nfc_uid: uid, wardrobe_number: wn || undefined },
         });
       } catch {
         // OK if no session found
@@ -109,7 +70,7 @@ export const AdminPage = () => {
         }
       }, 2000);
     } catch (err: any) {
-      if (err.message === 'CANCELLED') return;
+      if (err.message === 'CANCELLED' || err.message === 'NFC_CANCELLED') return;
       setNfcStatus(null);
       // On error, retry after a short delay
       if (batchModeRef.current) {
@@ -138,116 +99,96 @@ export const AdminPage = () => {
     setNfcReadMode(true);
     setNfcReadData(null);
     try {
-      const reader = new (window as any).NDEFReader();
-      const ac = new AbortController();
-      nfcReadCancelRef.current = () => ac.abort();
-      await reader.scan({ signal: ac.signal });
+      const { promise, cancel } = scanNfcTag(120000);
+      nfcReadCancelRef.current = cancel;
+      const result = await promise;
 
-      reader.onreading = async (event: any) => {
-        const uid = event.serialNumber?.replace(/:/g, '').toUpperCase() || 'Geen UID';
-        ac.abort();
+      const uid = result.uid || 'Geen UID';
 
-        // Extract wardrobe number from NFC tag data first
-        let tagWn: string | undefined;
-        if (event.message?.records) {
-          for (const rec of event.message.records) {
-            try {
-              if (rec.recordType === 'text') {
-                const decoder = new TextDecoder(rec.encoding || 'utf-8');
-                const text = decoder.decode(rec.data);
-                if (text) {
-                  const json = JSON.parse(text);
-                  if (json.wn) tagWn = json.wn;
-                }
-              }
-            } catch { /* ignore */ }
-          }
-        }
-
-        // DB lookup first (source of truth) - try nfc_uid first, then wardrobe_number
+      // Extract wardrobe number from NFC tag data first
+      let tagWn: string | undefined;
+      if (result.message) {
         try {
-          let session: any = null;
+          const json = JSON.parse(result.message);
+          if (json.wn) tagWn = json.wn;
+        } catch { /* ignore */ }
+      }
 
-          // Try by NFC UID
-          const { data: s1 } = await supabase
+      // DB lookup first (source of truth) - try nfc_uid first, then wardrobe_number
+      try {
+        let session: any = null;
+
+        // Try by NFC UID
+        const { data: s1 } = await supabase
+          .from('sessions')
+          .select('id, total_amount, wardrobe_number, status')
+          .eq('nfc_uid', uid)
+          .in('status', ['active', 'paid'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        session = s1;
+
+        // If not found by NFC UID, try by wardrobe number from tag
+        if (!session && tagWn) {
+          const wnNum = tagWn.replace(/[CB]/g, '');
+          const { data: s2 } = await supabase
             .from('sessions')
             .select('id, total_amount, wardrobe_number, status')
-            .eq('nfc_uid', uid)
             .in('status', ['active', 'paid'])
+            .or(`wardrobe_number.like.%C${wnNum}%,wardrobe_number.like.%B${wnNum}%`)
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
-          session = s1;
+          session = s2;
+        }
 
-          // If not found by NFC UID, try by wardrobe number from tag
-          if (!session && tagWn) {
-            const wnNum = tagWn.replace(/[CB]/g, '');
-            const { data: s2 } = await supabase
-              .from('sessions')
-              .select('id, total_amount, wardrobe_number, status')
-              .in('status', ['active', 'paid'])
-              .or(`wardrobe_number.like.%C${wnNum}%,wardrobe_number.like.%B${wnNum}%`)
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .maybeSingle();
-            session = s2;
-          }
+        if (session) {
+          const { data: logs } = await supabase
+            .from('drink_logs')
+            .select('product_id, products(shorthand)')
+            .eq('session_id', session.id);
 
-          if (session) {
-            const { data: logs } = await supabase
-              .from('drink_logs')
-              .select('product_id, products(shorthand)')
-              .eq('session_id', session.id);
-
-            if (logs && logs.length > 0) {
-              const agg: Record<string, { qty: number; shorthand: string }> = {};
-              for (const log of logs) {
-                const sh = (log as any).products?.shorthand || log.product_id;
-                if (!agg[sh]) agg[sh] = { qty: 0, shorthand: sh };
-                agg[sh].qty++;
-              }
-              setNfcReadData({
-                uid,
-                items: Object.values(agg),
-                total: Number(session.total_amount),
-                wn: session.wardrobe_number || tagWn || undefined,
-                status: session.status,
-              });
-              return;
+          if (logs && logs.length > 0) {
+            const agg: Record<string, { qty: number; shorthand: string }> = {};
+            for (const log of logs) {
+              const sh = (log as any).products?.shorthand || log.product_id;
+              if (!agg[sh]) agg[sh] = { qty: 0, shorthand: sh };
+              agg[sh].qty++;
             }
+            setNfcReadData({
+              uid,
+              items: Object.values(agg),
+              total: Number(session.total_amount),
+              wn: session.wardrobe_number || tagWn || undefined,
+              status: session.status,
+            });
+            return;
           }
-        } catch {
-          // DB lookup failed, fall back to NFC data
         }
+      } catch {
+        // DB lookup failed, fall back to NFC data
+      }
 
-        // Fall back to NFC data
-        let parsed = false;
-        if (event.message?.records) {
-          for (const rec of event.message.records) {
-            try {
-              if (rec.recordType === 'text') {
-                const decoder = new TextDecoder(rec.encoding || 'utf-8');
-                const text = decoder.decode(rec.data);
-                if (text) {
-                  const json = JSON.parse(text);
-                  if (json.items && typeof json.items === 'string') {
-                    const items = json.items.split(',').map((entry: string) => {
-                      const match = entry.match(/^(\d+)x(.+)$/);
-                      return match ? { qty: parseInt(match[1]), shorthand: match[2] } : { qty: 1, shorthand: entry };
-                    });
-                    setNfcReadData({ uid, items, total: json.total ?? 0, wn: json.wn });
-                    parsed = true;
-                  }
-                }
-              }
-            } catch { /* not JSON */ }
+      // Fall back to NFC data
+      if (result.message) {
+        try {
+          const json = JSON.parse(result.message);
+          if (json.items && typeof json.items === 'string') {
+            const items = json.items.split(',').map((entry: string) => {
+              const match = entry.match(/^(\d+)x(.+)$/);
+              return match ? { qty: parseInt(match[1]), shorthand: match[2] } : { qty: 1, shorthand: entry };
+            });
+            setNfcReadData({ uid, items, total: json.total ?? 0, wn: json.wn });
+            return;
           }
-        }
-        if (!parsed) setNfcReadData({ raw: [`UID: ${uid}`, 'Geen besteldata gevonden'] , uid });
-      };
+        } catch { /* not JSON */ }
+      }
+
+      setNfcReadData({ raw: [`UID: ${uid}`, 'Geen besteldata gevonden'], uid });
     } catch (err: any) {
-        if (err.name !== 'AbortError') {
-          setNfcReadData({ raw: ['Fout bij lezen: ' + err.message] });
+      if (err.name !== 'AbortError' && err.message !== 'NFC_CANCELLED') {
+        setNfcReadData({ raw: ['Fout bij lezen: ' + err.message] });
       }
     }
   }, []);
@@ -342,8 +283,10 @@ export const AdminPage = () => {
                 try {
                   const uidToArchive = nfcReadData?.uid;
                   const wnToArchive = nfcReadData && 'wn' in nfcReadData ? nfcReadData.wn : undefined;
-                  const writer = new (window as any).NDEFReader();
-                  await writer.write({ records: [{ recordType: 'text', data: '' }] }, { overwrite: true });
+
+                  // Use the eraseNfcTag abstraction (works for both Capacitor and Web NFC)
+                  const { promise } = eraseNfcTag(15000);
+                  await promise;
 
                   // Always call batch-erase with both identifiers
                   await supabase.functions.invoke('batch-erase', {
