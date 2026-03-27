@@ -10,6 +10,7 @@ import { useEffect } from "react";
 const queryClient = new QueryClient();
 
 const App = () => {
+  // force rebuild v2
   useEffect(() => {
     let cancelled = false;
 
