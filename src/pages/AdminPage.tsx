@@ -87,6 +87,19 @@ export const AdminPage = () => {
     if (updateError) throw updateError;
   }, []);
 
+  const refreshNfcContext = useCallback(async () => {
+    try {
+      const refreshReader = new (window as any).NDEFReader();
+      const refreshController = new AbortController();
+      const scanPromise = refreshReader.scan({ signal: refreshController.signal });
+      refreshController.abort();
+      await scanPromise.catch(() => undefined);
+    } catch {
+      // Ignore refresh errors; next scan will still re-initialize reader/writer
+    }
+    cancelRef.current = null;
+  }, []);
+
   const eraseNextTag = useCallback(async () => {
     if (!batchModeRef.current) return;
 
@@ -129,14 +142,19 @@ export const AdminPage = () => {
 
       if (!batchModeRef.current) return;
 
-      // Write empty record to wipe the tag
+      // Write explicit valid NDEF marker to keep tag in writable NDEF state
       const writer = new (window as any).NDEFReader();
       const wAc = new AbortController();
       cancelRef.current = () => wAc.abort();
-      await writer.write(
-        { records: [{ recordType: 'text', data: '' }] },
-        { signal: wAc.signal, overwrite: true }
-      );
+      try {
+        await writer.write(
+          { records: [{ recordType: 'text', data: 'EMPTY' }] },
+          { signal: wAc.signal, overwrite: true }
+        );
+      } catch (writeErr) {
+        await refreshNfcContext();
+        throw writeErr;
+      }
 
       if (!batchModeRef.current) return;
 
@@ -157,12 +175,13 @@ export const AdminPage = () => {
     } catch (err: any) {
       if (err.message === 'CANCELLED') return;
       setNfcStatus(null);
+      await refreshNfcContext();
       // On error, retry after a short delay
       if (batchModeRef.current) {
         setTimeout(() => eraseNextTag(), 500);
       }
     }
-  }, [archiveSessionsForTag]);
+  }, [archiveSessionsForTag, refreshNfcContext]);
 
   const startBatchErase = useCallback(() => {
     setShowConfirm(false);
