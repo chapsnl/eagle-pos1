@@ -32,11 +32,6 @@ export const NavTabs = ({ activeView, onViewChange, itemCount = 0 }: NavTabsProp
           }}
         >
           {label}
-          {view === 'betaling' && itemCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-              {itemCount}
-            </span>
-          )}
         </button>
       ))}
     </div>
