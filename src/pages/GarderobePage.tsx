@@ -28,68 +28,88 @@ export const GarderobePage = () => {
     if (!coatNumber && !bagNumber) return;
     const wardrobeNumber = `${coatNumber ? 'C' + coatNumber : ''}${bagNumber ? 'B' + bagNumber : ''}`;
 
-    // Step 1: Read the tag UID first
-    setNfcStatus('scanning');
-    const { promise: scanPromise, cancel: cancelScan } = scanNfcTag(30000);
-    cancelRef.current = cancelScan;
-
-    let uid: string;
-    try {
-      const result = await scanPromise;
-      uid = result.uid;
-    } catch (err: any) {
-      setNfcStatus(null);
-      if (err.message !== 'NFC_CANCELLED') {
-        setFeedback('error');
-        setTimeout(() => setFeedback(null), 2000);
-      }
-      return;
-    }
-
-    // Step 2: Check if this NFC already has a wardrobe number assigned
-    const { data: existingSession } = await supabase
-      .from('sessions')
-      .select('wardrobe_number')
-      .eq('nfc_uid', uid)
-      .eq('status', 'active')
-      .maybeSingle();
-
-    if (existingSession?.wardrobe_number) {
-      // Already has a number — show red cross and block
-      setNfcStatus(null);
+    if (!('NDEFReader' in window)) {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
       return;
     }
 
-    // Step 3: Write the wardrobe number to the tag
-    const { promise: writePromise, cancel: cancelWrite } = writeNfcTag(wardrobeNumber, 30000);
-    cancelRef.current = cancelWrite;
+    setNfcStatus('scanning');
+    const abortController = new AbortController();
+    cancelRef.current = () => {
+      abortController.abort();
+      setNfcStatus(null);
+    };
+
+    const timeout = setTimeout(() => {
+      abortController.abort();
+      setNfcStatus(null);
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+    }, 30000);
 
     try {
-      await writePromise;
-      setNfcStatus(null);
+      const reader = new (window as any).NDEFReader();
+      await reader.scan({ signal: abortController.signal });
 
-      // Step 4: Save to database
-      const session = await createSession.mutateAsync({
-        nfc_uid: uid,
-      });
+      reader.onreading = async (event: any) => {
+        const uid = event.serialNumber?.replace(/:/g, '').toUpperCase() || '';
+        clearTimeout(timeout);
 
-      await updateSession.mutateAsync({
-        id: session.id,
-        wardrobe_number: wardrobeNumber,
-      });
+        // Check if this NFC already has a wardrobe number assigned
+        const { data: existingSession } = await supabase
+          .from('sessions')
+          .select('wardrobe_number')
+          .eq('nfc_uid', uid)
+          .eq('status', 'active')
+          .maybeSingle();
 
-      setFeedback('success');
-      setTimeout(() => {
-        setFeedback(null);
-        setCoatNumber('');
-        setBagNumber('');
-        setActiveField(null);
-      }, 2000);
+        if (existingSession?.wardrobe_number) {
+          abortController.abort();
+          setNfcStatus(null);
+          setFeedback('error');
+          setTimeout(() => setFeedback(null), 2000);
+          return;
+        }
+
+        // Write wardrobe number to tag immediately (tag is still present)
+        try {
+          const writer = new (window as any).NDEFReader();
+          await writer.write(
+            { records: [{ recordType: 'text', data: wardrobeNumber }] },
+            { overwrite: true }
+          );
+
+          abortController.abort();
+          setNfcStatus(null);
+
+          // Save to database
+          const session = await createSession.mutateAsync({ nfc_uid: uid });
+          await updateSession.mutateAsync({ id: session.id, wardrobe_number: wardrobeNumber });
+
+          setFeedback('success');
+          try { new Audio('/notification.mp3').play(); } catch {}
+          setTimeout(() => {
+            setFeedback(null);
+            setCoatNumber('');
+            setBagNumber('');
+            setActiveField(null);
+          }, 2000);
+        } catch (writeErr: any) {
+          abortController.abort();
+          setNfcStatus(null);
+          setFeedback('error');
+          setTimeout(() => setFeedback(null), 2000);
+        }
+      };
+
+      reader.onreadingerror = () => {
+        console.warn('[NFC] Read error');
+      };
     } catch (err: any) {
+      clearTimeout(timeout);
       setNfcStatus(null);
-      if (err.message !== 'NFC_CANCELLED') {
+      if (err.name !== 'AbortError') {
         setFeedback('error');
         setTimeout(() => setFeedback(null), 2000);
       }
