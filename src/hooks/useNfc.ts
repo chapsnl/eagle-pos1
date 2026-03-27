@@ -67,7 +67,7 @@ export const scanNfcTag = (timeoutMs = 30000): { promise: Promise<NfcScanResult>
           if (event.message?.records) {
             for (const rec of event.message.records) {
               try {
-                if (rec.recordType === 'text') {
+                if (rec.recordType === 'text' || rec.recordType === 'mime') {
                   const decoder = new TextDecoder(rec.encoding || 'utf-8');
                   message = decoder.decode(rec.data);
                   break;
