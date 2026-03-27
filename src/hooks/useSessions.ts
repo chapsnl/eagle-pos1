@@ -4,20 +4,42 @@ import { supabase } from '@/integrations/supabase/client';
 export const useCreateSession = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { nfc_uid?: string; wardrobe_number?: string; is_event_numbered?: boolean }) => {
-      // If nfc_uid provided, check for existing active session
-      if (data.nfc_uid) {
+    mutationFn: async (data: { nfc_uid?: string; wardrobe_number?: string; is_event_numbered?: boolean; lookup_wardrobe?: string }) => {
+      const { lookup_wardrobe, ...insertData } = data;
+
+      // Priority 1: lookup by wardrobe_number (primary customer ID)
+      if (lookup_wardrobe) {
         const { data: existing } = await supabase
           .from('sessions')
           .select('*')
-          .eq('nfc_uid', data.nfc_uid)
+          .eq('status', 'active')
+          .or(`wardrobe_number.like.%C${lookup_wardrobe.replace(/[CB]/g, '')}%,wardrobe_number.like.%B${lookup_wardrobe.replace(/[CB]/g, '')}%`)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (existing) {
+          // Update NFC UID on existing session if provided and missing
+          if (insertData.nfc_uid && !existing.nfc_uid) {
+            await supabase.from('sessions').update({ nfc_uid: insertData.nfc_uid }).eq('id', existing.id);
+          }
+          return existing;
+        }
+      }
+
+      // Priority 2: lookup by nfc_uid (backup identifier)
+      if (insertData.nfc_uid) {
+        const { data: existing } = await supabase
+          .from('sessions')
+          .select('*')
+          .eq('nfc_uid', insertData.nfc_uid)
           .eq('status', 'active')
           .maybeSingle();
         if (existing) return existing;
       }
+
       const { data: session, error } = await supabase
         .from('sessions')
-        .insert(data)
+        .insert(insertData)
         .select()
         .single();
       if (error) throw error;
