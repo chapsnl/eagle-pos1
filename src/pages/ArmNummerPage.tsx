@@ -199,11 +199,11 @@ export const ArmNummerPage = () => {
   if (phase === 'bag-not-found') {
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden items-center justify-center gap-6 px-4">
-        <FeedbackOverlay type={feedback} />
+        <FeedbackOverlay type="error" />
         <div className="text-center font-extrabold uppercase tracking-[0.1em]" style={{ color: '#ef4444', fontSize: 'clamp(24px, 5vw, 40px)' }}>NIET GEVONDEN</div>
         <div className="text-center text-muted-foreground text-lg font-bold">Tas #{bagNumber} niet gevonden.</div>
-        <button onClick={() => { setBagNumber(''); setPhase('input-bag'); }} className="px-8 py-4 text-xl font-extrabold uppercase mb-3" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330' }}>OPNIEUW PROBEREN</button>
-        <button onClick={() => { setArmNumber(''); setBagNumber(''); setPhase('input-arm'); }} className="px-8 py-4 text-xl font-extrabold uppercase" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 16px #ef444480, 0 0 32px #ef444430' }}>JAS INVOER?</button>
+        <button onClick={() => { setBagNumber(''); setPhase('input-bag'); }} className="px-8 py-4 text-xl font-extrabold uppercase mb-3" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 16px #ef444480, 0 0 32px #ef444430' }}>OPNIEUW PROBEREN</button>
+        <button onClick={() => { setArmNumber(''); setBagNumber(''); setPhase('input-arm'); }} className="px-8 py-4 text-xl font-extrabold uppercase" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330' }}>AFBREKEN</button>
       </div>
     );
   }
