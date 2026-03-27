@@ -75,9 +75,17 @@ const Index = () => {
     cancelRef.current = cancel;
 
     let nfcUid: string | undefined;
+    let tagWardrobeNumber: string | undefined;
     try {
       const result = await promise;
       nfcUid = result.uid;
+      // Extract wardrobe number from NFC tag data
+      if (result.message) {
+        try {
+          const json = JSON.parse(result.message);
+          if (json.wn) tagWardrobeNumber = json.wn;
+        } catch { /* not JSON */ }
+      }
     } catch (err: any) {
       setNfcStatus(null);
       if (err.message === 'NFC_CANCELLED') return;
@@ -86,7 +94,10 @@ const Index = () => {
 
     try {
       // Create or find session in DB
-      const session = await createSession.mutateAsync({ nfc_uid: nfcUid });
+      const session = await createSession.mutateAsync({
+        nfc_uid: nfcUid,
+        lookup_wardrobe: tagWardrobeNumber,
+      });
       const logs = items.flatMap((item) =>
         Array.from({ length: item.quantity }, () => ({
           session_id: session.id,
