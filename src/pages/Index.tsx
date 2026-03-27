@@ -19,11 +19,10 @@ import { supabase } from '@/integrations/supabase/client';
 export interface DbOrderItem {
   product: DbProduct;
   quantity: number;
-}
 
+const Index = () => {
   const [started, setStarted] = useState(false);
   const [activeView, setActiveView] = useState<AppView>('bar');
-  const [items, setItems] = useState<DbOrderItem[]>([]);
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [nfcStatus, setNfcStatus] = useState<'scanning' | 'writing' | null>(null);
