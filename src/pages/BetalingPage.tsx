@@ -119,6 +119,7 @@ export const BetalingPage = ({
   const [coatNumber, setCoatNumber] = useState('');
   const [bagNumber, setBagNumber] = useState('');
   const [foundSessionId, setFoundSessionId] = useState<string | null>(null);
+  const [pendingPaymentMethod, setPendingPaymentMethod] = useState<'pin' | 'cash' | null>(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
