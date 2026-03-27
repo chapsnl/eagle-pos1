@@ -147,9 +147,29 @@ export const AdminPage = () => {
         const uid = event.serialNumber?.replace(/:/g, '').toUpperCase() || 'Geen UID';
         ac.abort();
 
-        // DB lookup first (source of truth)
+        // Extract wardrobe number from NFC tag data first
+        let tagWn: string | undefined;
+        if (event.message?.records) {
+          for (const rec of event.message.records) {
+            try {
+              if (rec.recordType === 'text') {
+                const decoder = new TextDecoder(rec.encoding || 'utf-8');
+                const text = decoder.decode(rec.data);
+                if (text) {
+                  const json = JSON.parse(text);
+                  if (json.wn) tagWn = json.wn;
+                }
+              }
+            } catch { /* ignore */ }
+          }
+        }
+
+        // DB lookup first (source of truth) - try nfc_uid first, then wardrobe_number
         try {
-        const { data: session } = await supabase
+          let session: any = null;
+
+          // Try by NFC UID
+          const { data: s1 } = await supabase
             .from('sessions')
             .select('id, total_amount, wardrobe_number, status')
             .eq('nfc_uid', uid)
@@ -157,6 +177,21 @@ export const AdminPage = () => {
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
+          session = s1;
+
+          // If not found by NFC UID, try by wardrobe number from tag
+          if (!session && tagWn) {
+            const wnNum = tagWn.replace(/[CB]/g, '');
+            const { data: s2 } = await supabase
+              .from('sessions')
+              .select('id, total_amount, wardrobe_number, status')
+              .in('status', ['active', 'paid'])
+              .or(`wardrobe_number.like.%C${wnNum}%,wardrobe_number.like.%B${wnNum}%`)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            session = s2;
+          }
 
           if (session) {
             const { data: logs } = await supabase
@@ -175,7 +210,7 @@ export const AdminPage = () => {
                 uid,
                 items: Object.values(agg),
                 total: Number(session.total_amount),
-                wn: session.wardrobe_number || undefined,
+                wn: session.wardrobe_number || tagWn || undefined,
                 status: session.status,
               });
               return;
