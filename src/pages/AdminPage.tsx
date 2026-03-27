@@ -24,7 +24,9 @@ export const AdminPage = () => {
   const cancelRef = useRef<(() => void) | null>(null);
   const batchModeRef = useRef(false);
   const [nfcReadMode, setNfcReadMode] = useState(false);
-  const [nfcReadData, setNfcReadData] = useState<{ uid: string; items: { shorthand: string; qty: number }[]; total: number; wn?: string } | { raw: string[] } | null>(null);
+  const [nfcReadData, setNfcReadData] = useState<
+    { uid: string; items: { shorthand: string; qty: number }[]; total: number; wn?: string } | { raw: string[]; uid?: string } | null
+  >(null);
   const nfcReadCancelRef = useRef<(() => void) | null>(null);
   const { data: productsData } = useProducts();
 
@@ -187,11 +189,11 @@ export const AdminPage = () => {
             } catch { /* not JSON */ }
           }
         }
-        if (!parsed) setNfcReadData({ raw: [`UID: ${uid}`, 'Geen besteldata gevonden'] });
+        if (!parsed) setNfcReadData({ raw: [`UID: ${uid}`, 'Geen besteldata gevonden'] , uid });
       };
     } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        setNfcReadData({ raw: ['Fout bij lezen: ' + err.message] });
+        if (err.name !== 'AbortError') {
+          setNfcReadData({ raw: ['Fout bij lezen: ' + err.message] });
       }
     }
   }, []);
@@ -270,11 +272,24 @@ export const AdminPage = () => {
             <button
               onClick={async () => {
                 try {
+                  const uidToArchive = nfcReadData?.uid;
                   const writer = new (window as any).NDEFReader();
                   await writer.write({ records: [{ recordType: 'text', data: '' }] }, { overwrite: true });
-                  setNfcReadData({ raw: ['Tag gewist!'] });
+
+                  if (uidToArchive) {
+                    await supabase.functions.invoke('batch-erase', {
+                      body: { nfc_uid: uidToArchive },
+                    });
+                  }
+
+                  setNfcReadData({
+                    raw: uidToArchive
+                      ? [`UID: ${uidToArchive}`, 'Tag gewist + sessie gearchiveerd']
+                      : ['Tag gewist!'],
+                    uid: uidToArchive,
+                  });
                 } catch (err: any) {
-                  setNfcReadData({ raw: ['Wissen mislukt: ' + err.message] });
+                  setNfcReadData({ raw: ['Wissen mislukt: ' + err.message], uid: nfcReadData?.uid });
                 }
               }}
               className="px-6 py-3 font-extrabold uppercase text-sm"

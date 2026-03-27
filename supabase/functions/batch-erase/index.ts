@@ -24,33 +24,42 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Get active session for this NFC
-    const { data: session, error: sessionErr } = await supabase
+    // Get all active sessions for this NFC
+    const { data: sessions, error: sessionErr } = await supabase
       .from('sessions')
-      .select('id, drink_logs(id)')
+      .select('id')
       .eq('nfc_uid', nfc_uid)
-      .eq('status', 'active')
-      .single();
+      .eq('status', 'active');
 
-    if (sessionErr || !session) {
+    if (sessionErr) throw sessionErr;
+
+    if (!sessions || sessions.length === 0) {
       return new Response(JSON.stringify({ error: 'No active session found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Archive the session
+    const sessionIds = sessions.map((s) => s.id);
+
+    const { count: drinkLogsCount } = await supabase
+      .from('drink_logs')
+      .select('id', { count: 'exact', head: true })
+      .in('session_id', sessionIds);
+
+    // Archive all active sessions for this tag
     const { error: updateErr } = await supabase
       .from('sessions')
       .update({ status: 'archived' })
-      .eq('id', session.id);
+      .in('id', sessionIds);
 
     if (updateErr) throw updateErr;
 
     return new Response(JSON.stringify({ 
       success: true, 
-      session_id: session.id,
-      drink_logs_count: session.drink_logs?.length ?? 0 
+      archived_session_ids: sessionIds,
+      archived_sessions_count: sessionIds.length,
+      drink_logs_count: drinkLogsCount ?? 0 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
