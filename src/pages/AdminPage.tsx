@@ -283,8 +283,10 @@ export const AdminPage = () => {
                 try {
                   const uidToArchive = nfcReadData?.uid;
                   const wnToArchive = nfcReadData && 'wn' in nfcReadData ? nfcReadData.wn : undefined;
-                  const writer = new (window as any).NDEFReader();
-                  await writer.write({ records: [{ recordType: 'text', data: '' }] }, { overwrite: true });
+
+                  // Use the eraseNfcTag abstraction (works for both Capacitor and Web NFC)
+                  const { promise } = eraseNfcTag(15000);
+                  await promise;
 
                   // Always call batch-erase with both identifiers
                   await supabase.functions.invoke('batch-erase', {
