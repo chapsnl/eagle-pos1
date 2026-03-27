@@ -91,7 +91,7 @@ export const AdminPage = () => {
       // Archive session in DB if exists
       try {
         await supabase.functions.invoke('batch-erase', {
-          body: { nfc_uid: uid },
+          body: { nfc_uid: uid, wardrobe_number: tagData.wn || undefined },
         });
       } catch {
         // OK if no session found
