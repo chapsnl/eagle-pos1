@@ -6,6 +6,7 @@ import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
 import { FeedbackType } from '@/types/pos';
 import { supabase } from '@/integrations/supabase/client';
+import { scanNfcTag, eraseNfcTag } from '@/hooks/useNfc';
 import {
   Dialog,
   DialogContent,
