@@ -131,11 +131,11 @@ export const AdminPage = () => {
 
         // DB lookup first (source of truth)
         try {
-          const { data: session } = await supabase
+        const { data: session } = await supabase
             .from('sessions')
-            .select('id, total_amount, wardrobe_number')
+            .select('id, total_amount, wardrobe_number, status')
             .eq('nfc_uid', uid)
-            .eq('status', 'active')
+            .in('status', ['active', 'paid'])
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
