@@ -35,6 +35,58 @@ export const AdminPage = () => {
     batchModeRef.current = batchMode;
   }, [batchMode]);
 
+  const archiveSessionsForTag = useCallback(async (nfcUid?: string, wardrobeNumber?: string) => {
+    if (!nfcUid && !wardrobeNumber) return;
+
+    const payload = {
+      nfc_uid: nfcUid || undefined,
+      wardrobe_number: wardrobeNumber || undefined,
+    };
+
+    const { error: functionError } = await supabase.functions.invoke('batch-erase', {
+      body: payload,
+    });
+
+    if (!functionError) return;
+
+    console.warn('[NFC] batch-erase function failed, using DB fallback:', functionError.message);
+
+    let query = supabase
+      .from('sessions')
+      .select('id')
+      .in('status', ['active', 'paid', 'incident']);
+
+    const orConditions: string[] = [];
+    if (nfcUid) orConditions.push(`nfc_uid.eq.${nfcUid}`);
+    if (wardrobeNumber) {
+      const wn = wardrobeNumber.replace(/[CB]/g, '');
+      orConditions.push(`wardrobe_number.like.%C${wn}%`);
+      orConditions.push(`wardrobe_number.like.%B${wn}%`);
+      orConditions.push(`wardrobe_number.eq.${wardrobeNumber}`);
+    }
+
+    if (orConditions.length === 0) return;
+    query = query.or(orConditions.join(','));
+
+    const { data: sessions, error: sessionsError } = await query;
+    if (sessionsError) throw sessionsError;
+
+    const sessionIds = [...new Set((sessions || []).map((s) => s.id))];
+    if (sessionIds.length === 0) return;
+
+    const { error: drinkLogsError } = await supabase
+      .from('drink_logs')
+      .delete()
+      .in('session_id', sessionIds);
+    if (drinkLogsError) throw drinkLogsError;
+
+    const { error: updateError } = await supabase
+      .from('sessions')
+      .update({ status: 'archived', total_amount: 0 })
+      .in('id', sessionIds);
+    if (updateError) throw updateError;
+  }, []);
+
   const eraseNextTag = useCallback(async () => {
     if (!batchModeRef.current) return;
 
@@ -89,13 +141,7 @@ export const AdminPage = () => {
       if (!batchModeRef.current) return;
 
       // Archive session in DB if exists
-      try {
-        await supabase.functions.invoke('batch-erase', {
-          body: { nfc_uid: uid, wardrobe_number: tagData.wn || undefined },
-        });
-      } catch {
-        // OK if no session found
-      }
+      await archiveSessionsForTag(uid, tagData.wn);
 
       setNfcStatus(null);
       setErasedCount((c) => c + 1);
@@ -116,7 +162,7 @@ export const AdminPage = () => {
         setTimeout(() => eraseNextTag(), 500);
       }
     }
-  }, []);
+  }, [archiveSessionsForTag]);
 
   const startBatchErase = useCallback(() => {
     setShowConfirm(false);
@@ -322,13 +368,11 @@ export const AdminPage = () => {
                 const uidToArchive = nfcReadData?.uid;
                 const wnToArchive = nfcReadData && 'wn' in nfcReadData ? nfcReadData.wn : undefined;
 
-                // First archive in DB (always works regardless of NFC)
+                let archiveError: string | null = null;
                 try {
-                  await supabase.functions.invoke('batch-erase', {
-                    body: { nfc_uid: uidToArchive || undefined, wardrobe_number: wnToArchive || undefined },
-                  });
-                } catch {
-                  // OK if no session
+                  await archiveSessionsForTag(uidToArchive || undefined, wnToArchive || undefined);
+                } catch (err: any) {
+                  archiveError = err?.message || 'Onbekende fout bij archiveren';
                 }
 
                 // Now prompt user to hold tag and write empty data
@@ -354,9 +398,15 @@ export const AdminPage = () => {
                   } catch {}
 
                   setNfcReadData({
-                    raw: uidToArchive
-                      ? [`UID: ${uidToArchive}`, 'Tag gewist + sessie gearchiveerd']
-                      : ['Tag gewist!'],
+                    raw: archiveError
+                      ? [
+                          ...(uidToArchive ? [`UID: ${uidToArchive}`] : []),
+                          'Tag gewist, maar database-opruiming mislukt',
+                          archiveError,
+                        ]
+                      : uidToArchive
+                        ? [`UID: ${uidToArchive}`, 'Tag gewist + sessie gearchiveerd']
+                        : ['Tag gewist!'],
                     uid: uidToArchive,
                   });
                 } catch (err: any) {
