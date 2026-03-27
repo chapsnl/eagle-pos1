@@ -3,7 +3,7 @@ import { DbOrderItem } from '@/pages/Index';
 import { X, Nfc, CreditCard, Banknote, Send, Hash } from 'lucide-react';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
 import { useCreateSession, useUpdateSession, useAddDrinkLogs, useFindActiveSessionByWardrobe } from '@/hooks/useSessions';
-import { scanNfcTag, writeNfcTag } from '@/hooks/useNfc';
+import { scanNfcTag, writeNfcTag, eraseNfcTag } from '@/hooks/useNfc';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { useProducts } from '@/hooks/useProducts';
