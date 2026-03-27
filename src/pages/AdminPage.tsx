@@ -220,7 +220,7 @@ export const AdminPage = () => {
         if (event.message?.records) {
           for (const rec of event.message.records) {
             try {
-              if (rec.recordType === 'text') {
+              if (rec.recordType === 'text' || rec.recordType === 'mime') {
                 const decoder = new TextDecoder(rec.encoding || 'utf-8');
                 const text = decoder.decode(rec.data);
                 if (text) {
