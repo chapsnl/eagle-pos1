@@ -220,30 +220,9 @@ export const AdminPage = () => {
           // DB lookup failed, fall back to NFC data
         }
 
-        // Fall back to NFC data
-        let parsed = false;
-        if (event.message?.records) {
-          for (const rec of event.message.records) {
-            try {
-              if (rec.recordType === 'text') {
-                const decoder = new TextDecoder(rec.encoding || 'utf-8');
-                const text = decoder.decode(rec.data);
-                if (text) {
-                  const json = JSON.parse(text);
-                  if (json.items && typeof json.items === 'string') {
-                    const items = json.items.split(',').map((entry: string) => {
-                      const match = entry.match(/^(\d+)x(.+)$/);
-                      return match ? { qty: parseInt(match[1]), shorthand: match[2] } : { qty: 1, shorthand: entry };
-                    });
-                    setNfcReadData({ uid, items, total: json.total ?? 0, wn: json.wn });
-                    parsed = true;
-                  }
-                }
-              }
-            } catch { /* not JSON */ }
-          }
-        }
-        if (!parsed) setNfcReadData({ raw: [`UID: ${uid}`, 'Geen besteldata gevonden'] , uid });
+        // DB lookup succeeded but no active/paid session found
+        // Don't fall back to stale NFC data - the session was archived/erased
+        setNfcReadData({ raw: [`UID: ${uid}`, 'Geen actieve sessie gevonden'], uid });
       };
     } catch (err: any) {
         if (err.name !== 'AbortError') {
