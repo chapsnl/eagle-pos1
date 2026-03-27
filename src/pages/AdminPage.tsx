@@ -217,11 +217,12 @@ export const AdminPage = () => {
             }
           }
         } catch {
-          // DB lookup failed, fall back to NFC data
+          // DB lookup failed - fall back to NFC data or show no data
+          setNfcReadData({ raw: [`UID: ${uid}`, 'Database niet bereikbaar'], uid });
+          return;
         }
 
         // DB lookup succeeded but no active/paid session found
-        // Don't fall back to stale NFC data - the session was archived/erased
         setNfcReadData({ raw: [`UID: ${uid}`, 'Geen actieve sessie gevonden'], uid });
       };
     } catch (err: any) {
