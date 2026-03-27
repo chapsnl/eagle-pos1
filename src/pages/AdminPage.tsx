@@ -122,7 +122,7 @@ export const AdminPage = () => {
           if (event.message?.records) {
             for (const rec of event.message.records) {
               try {
-                if (rec.recordType === 'text') {
+                if (rec.recordType === 'text' || rec.recordType === 'mime') {
                   const decoder = new TextDecoder(rec.encoding || 'utf-8');
                   const text = decoder.decode(rec.data);
                   if (text) {
@@ -149,7 +149,7 @@ export const AdminPage = () => {
       cancelRef.current = () => wAc.abort();
       try {
         await writer.write(
-          { records: [{ recordType: 'text', data: '000' }] },
+          { records: [{ recordType: 'mime', mediaType: 'text/plain', data: new TextEncoder().encode('000') }] },
           { signal: wAc.signal, overwrite: true }
         );
         await refreshNfcContext();
@@ -220,7 +220,7 @@ export const AdminPage = () => {
         if (event.message?.records) {
           for (const rec of event.message.records) {
             try {
-              if (rec.recordType === 'text') {
+              if (rec.recordType === 'text' || rec.recordType === 'mime') {
                 const decoder = new TextDecoder(rec.encoding || 'utf-8');
                 const text = decoder.decode(rec.data);
                 if (text) {
@@ -408,8 +408,8 @@ export const AdminPage = () => {
                   const ac = new AbortController();
                   nfcReadCancelRef.current = () => ac.abort();
                   // This will wait for a tag to be tapped, then write
-                  await writer.write(
-                    { records: [{ recordType: 'text', data: '000' }] },
+                   await writer.write(
+                    { records: [{ recordType: 'mime', mediaType: 'text/plain', data: new TextEncoder().encode('000') }] },
                     { signal: ac.signal, overwrite: true }
                   );
                   await refreshNfcContext();

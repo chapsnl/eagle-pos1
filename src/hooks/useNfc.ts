@@ -67,7 +67,7 @@ export const scanNfcTag = (timeoutMs = 30000): { promise: Promise<NfcScanResult>
           if (event.message?.records) {
             for (const rec of event.message.records) {
               try {
-                if (rec.recordType === 'text') {
+                if (rec.recordType === 'text' || rec.recordType === 'mime') {
                   const decoder = new TextDecoder(rec.encoding || 'utf-8');
                   message = decoder.decode(rec.data);
                   break;
@@ -137,7 +137,7 @@ export const writeNfcTag = (data: string, timeoutMs = 30000): { promise: Promise
 
     writer
       .write(
-        { records: [{ recordType: 'text', data }] },
+        { records: [{ recordType: 'mime', mediaType: 'text/plain', data: new TextEncoder().encode(data) }] },
         { signal: abortController!.signal, overwrite: true }
       )
       .then(() => {
@@ -220,7 +220,7 @@ export const scanAndWriteNfcTag = (
           if (event.message?.records) {
             for (const rec of event.message.records) {
               try {
-                if (rec.recordType === 'text') {
+                if (rec.recordType === 'text' || rec.recordType === 'mime') {
                   const decoder = new TextDecoder(rec.encoding || 'utf-8');
                   message = decoder.decode(rec.data);
                   break;
@@ -237,7 +237,7 @@ export const scanAndWriteNfcTag = (
               console.log('[NFC] Writing data:', writeData);
               const writer = new (window as any).NDEFReader();
               await writer.write(
-                { records: [{ recordType: 'text', data: writeData }] },
+                { records: [{ recordType: 'mime', mediaType: 'text/plain', data: new TextEncoder().encode(writeData) }] },
                 { overwrite: true }
               );
               console.log('[NFC] Write successful');
