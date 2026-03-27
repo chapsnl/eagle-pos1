@@ -28,88 +28,98 @@ export const GarderobePage = () => {
     if (!coatNumber && !bagNumber) return;
     const wardrobeNumber = `${coatNumber ? 'C' + coatNumber : ''}${bagNumber ? 'B' + bagNumber : ''}`;
 
-    if (!('NDEFReader' in window)) {
+    setNfcStatus('scanning');
+    const { promise: scanPromise, cancel: cancelScan } = scanNfcTag(30000);
+    cancelRef.current = cancelScan;
+
+    let uid: string;
+    let tagWardrobeNumber: string | null = null;
+
+    try {
+      const result = await scanPromise;
+      uid = result.uid;
+
+      if (result.message) {
+        try {
+          const parsed = JSON.parse(result.message);
+          if (parsed?.wn && typeof parsed.wn === 'string') {
+            tagWardrobeNumber = parsed.wn;
+          }
+        } catch {
+          const raw = result.message.trim();
+          if (/^C\d{1,3}(B\d{1,3})?$|^B\d{1,3}(C\d{1,3})?$/.test(raw)) {
+            tagWardrobeNumber = raw;
+          }
+        }
+      }
+    } catch (err: any) {
+      setNfcStatus(null);
+      if (err.message !== 'NFC_CANCELLED') {
+        setFeedback('error');
+        setTimeout(() => setFeedback(null), 2000);
+      }
+      return;
+    }
+
+    // Block overwrite if tag itself already has a coat/bag number
+    if (tagWardrobeNumber) {
+      setNfcStatus(null);
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
       return;
     }
 
-    setNfcStatus('scanning');
-    const abortController = new AbortController();
-    cancelRef.current = () => {
-      abortController.abort();
-      setNfcStatus(null);
-    };
+    // Block overwrite if DB has a non-archived session with wardrobe_number on this UID
+    const { data: existingSession, error: existingSessionError } = await supabase
+      .from('sessions')
+      .select('wardrobe_number')
+      .eq('nfc_uid', uid)
+      .in('status', ['active', 'paid', 'incident'])
+      .not('wardrobe_number', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    const timeout = setTimeout(() => {
-      abortController.abort();
+    if (existingSessionError) {
       setNfcStatus(null);
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
-    }, 30000);
+      return;
+    }
+
+    if (existingSession?.wardrobe_number) {
+      setNfcStatus(null);
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+      return;
+    }
+
+    // Write wn payload to NFC
+    setNfcStatus('writing');
+    const payload = JSON.stringify({ wn: wardrobeNumber });
+    const { promise: writePromise, cancel: cancelWrite } = writeNfcTag(payload, 30000);
+    cancelRef.current = cancelWrite;
 
     try {
-      const reader = new (window as any).NDEFReader();
-      await reader.scan({ signal: abortController.signal });
-
-      reader.onreading = async (event: any) => {
-        const uid = event.serialNumber?.replace(/:/g, '').toUpperCase() || '';
-        clearTimeout(timeout);
-
-        // Check if this NFC already has a wardrobe number assigned
-        const { data: existingSession } = await supabase
-          .from('sessions')
-          .select('wardrobe_number')
-          .eq('nfc_uid', uid)
-          .eq('status', 'active')
-          .maybeSingle();
-
-        if (existingSession?.wardrobe_number) {
-          abortController.abort();
-          setNfcStatus(null);
-          setFeedback('error');
-          setTimeout(() => setFeedback(null), 2000);
-          return;
-        }
-
-        // Write wardrobe number to tag immediately (tag is still present)
-        try {
-          const writer = new (window as any).NDEFReader();
-          await writer.write(
-            { records: [{ recordType: 'text', data: wardrobeNumber }] },
-            { overwrite: true }
-          );
-
-          abortController.abort();
-          setNfcStatus(null);
-
-          // Save to database
-          const session = await createSession.mutateAsync({ nfc_uid: uid });
-          await updateSession.mutateAsync({ id: session.id, wardrobe_number: wardrobeNumber });
-
-          setFeedback('success');
-          try { new Audio('/notification.mp3').play(); } catch {}
-          setTimeout(() => {
-            setFeedback(null);
-            setCoatNumber('');
-            setBagNumber('');
-            setActiveField(null);
-          }, 2000);
-        } catch (writeErr: any) {
-          abortController.abort();
-          setNfcStatus(null);
-          setFeedback('error');
-          setTimeout(() => setFeedback(null), 2000);
-        }
-      };
-
-      reader.onreadingerror = () => {
-        console.warn('[NFC] Read error');
-      };
-    } catch (err: any) {
-      clearTimeout(timeout);
+      await writePromise;
       setNfcStatus(null);
-      if (err.name !== 'AbortError') {
+
+      const session = await createSession.mutateAsync({ nfc_uid: uid });
+      await updateSession.mutateAsync({
+        id: session.id,
+        wardrobe_number: wardrobeNumber,
+      });
+
+      setFeedback('success');
+      setTimeout(() => {
+        setFeedback(null);
+        setCoatNumber('');
+        setBagNumber('');
+        setActiveField(null);
+      }, 2000);
+    } catch (err: any) {
+      setNfcStatus(null);
+      if (err.message !== 'NFC_CANCELLED') {
         setFeedback('error');
         setTimeout(() => setFeedback(null), 2000);
       }
@@ -140,13 +150,13 @@ export const GarderobePage = () => {
       <NfcOverlay status={nfcStatus} onCancel={handleCancelNfc} />
 
       <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>
-        Garderobe
+        COAT CHECK
       </h2>
 
       <div className="flex-1 flex flex-col items-center justify-center gap-2 px-4 min-h-0">
         <div className="w-full max-w-[280px]">
-          <label className="text-[13px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block text-center">
-            Jasnummer
+          <label className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pb-2 block" style={{ color: '#00cc13' }}>
+            COAT
           </label>
           <div
             onClick={() => setActiveField('coat')}
@@ -165,8 +175,8 @@ export const GarderobePage = () => {
           </div>
         </div>
         <div className="w-full max-w-[280px]">
-          <label className="text-[13px] font-bold uppercase tracking-widest text-muted-foreground mb-1 block text-center">
-            Tasnummer
+          <label className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pb-2 block" style={{ color: '#00cc13' }}>
+            BAG
           </label>
           <div
             onClick={() => setActiveField('bag')}
