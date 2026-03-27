@@ -254,27 +254,64 @@ export const BetalingPage = ({
     return () => clearTimeout(t);
   }, [bagNumber, phase]);
 
-  // Process payment for found session
-  const processPaymentForSession = useCallback(async (method: 'pin' | 'cash') => {
+  // Step 1: choose PIN or Cash → go to confirmation screen
+  const processPaymentForSession = useCallback((method: 'pin' | 'cash') => {
+    setPendingPaymentMethod(method);
+    setPhase('confirm-payment');
+  }, []);
+
+  // Step 2a: "BETAALD" — erase everything
+  const confirmPaid = useCallback(async () => {
     if (!nfcOrderData || !foundSessionId) return;
     try {
+      // Delete drink_logs for this session
+      await supabase.from('drink_logs').delete().eq('session_id', foundSessionId);
+
+      // Archive the session, reset total
       await updateSession.mutateAsync({
         id: foundSessionId,
         actual_paid_amount: nfcOrderData.total,
         status: 'paid',
       });
+
+      // Try to erase NFC tag
+      if (nfcOrderData.uid) {
+        try {
+          const { promise, cancel } = eraseNfcTag(10000);
+          cancelRef.current = cancel;
+          await promise;
+        } catch { /* NFC erase failed, DB is done */ }
+      }
+
+      // Also call batch-erase edge function to clean up by wardrobe number
+      if (nfcOrderData.wn) {
+        try {
+          await supabase.functions.invoke('batch-erase', {
+            body: { wardrobe_number: nfcOrderData.wn, nfc_uid: nfcOrderData.uid || undefined },
+          });
+        } catch { /* edge function failed, main cleanup done */ }
+      }
+
+      // Play notification sound
+      try { new Audio('/notification.mp3').play(); } catch {}
+
       setFeedback('success');
       setTimeout(() => {
         setFeedback(null);
         resetToChoose();
-        if (method === 'pin') onPin();
+        if (pendingPaymentMethod === 'pin') onPin();
         else onCash();
       }, 2000);
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [nfcOrderData, foundSessionId, updateSession, onPin, onCash, resetToChoose]);
+  }, [nfcOrderData, foundSessionId, updateSession, pendingPaymentMethod, onPin, onCash, resetToChoose]);
+
+  // Step 2b: "NIET BETAALD" — keep everything, go back
+  const confirmNotPaid = useCallback(() => {
+    resetToChoose();
+  }, [resetToChoose]);
 
   // Process payment with items from bar
   const processPaymentWithItems = useCallback(async (method: 'pin' | 'cash') => {
