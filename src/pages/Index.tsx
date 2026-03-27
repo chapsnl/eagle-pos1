@@ -69,88 +69,73 @@ const Index = () => {
   const handleSend = useCallback(async () => {
     if (items.length === 0) return;
 
-    // Start NFC scan to read UID
     setNfcStatus('scanning');
-    const { promise, cancel } = scanNfcTag(30000);
+
+    const { promise, cancel } = scanAndWriteNfcTag(
+      async (result) => {
+        const nfcUid = result.uid;
+        let tagWardrobeNumber: string | undefined;
+
+        // Extract wardrobe number from NFC tag data
+        if (result.message) {
+          try {
+            const json = JSON.parse(result.message);
+            if (json.wn) tagWardrobeNumber = json.wn;
+          } catch { /* not JSON */ }
+        }
+
+        // Create or find session in DB
+        const session = await createSession.mutateAsync({
+          nfc_uid: nfcUid,
+          lookup_wardrobe: tagWardrobeNumber,
+        });
+        const logs = items.flatMap((item) =>
+          Array.from({ length: item.quantity }, () => ({
+            session_id: session.id,
+            product_id: item.product.id,
+            price_at_time: item.product.price,
+          }))
+        );
+        await addDrinkLogs.mutateAsync(logs);
+        const newTotal = session.total_amount + total;
+        await updateSession.mutateAsync({
+          id: session.id,
+          total_amount: newTotal,
+        });
+
+        // Build cumulative NFC payload from DB
+        const { data: allLogs } = await supabase
+          .from('drink_logs')
+          .select('product_id, products(shorthand)')
+          .eq('session_id', session.id);
+
+        const agg: Record<string, { qty: number; shorthand: string }> = {};
+        for (const log of allLogs || []) {
+          const sh = (log as any).products?.shorthand || log.product_id;
+          if (!agg[sh]) agg[sh] = { qty: 0, shorthand: sh };
+          agg[sh].qty++;
+        }
+
+        const { data: freshSession } = await supabase
+          .from('sessions')
+          .select('wardrobe_number')
+          .eq('id', session.id)
+          .single();
+
+        const orderSummary = Object.values(agg).map(a => `${a.qty}x${a.shorthand}`).join(',');
+        return JSON.stringify({
+          items: orderSummary,
+          total: newTotal,
+          ...(freshSession?.wardrobe_number ? { wn: freshSession.wardrobe_number } : {}),
+        });
+      },
+      30000,
+      (status) => setNfcStatus(status),
+    );
     cancelRef.current = cancel;
 
-    let nfcUid: string | undefined;
-    let tagWardrobeNumber: string | undefined;
     try {
-      const result = await promise;
-      nfcUid = result.uid;
-      // Extract wardrobe number from NFC tag data
-      if (result.message) {
-        try {
-          const json = JSON.parse(result.message);
-          if (json.wn) tagWardrobeNumber = json.wn;
-        } catch { /* not JSON */ }
-      }
-    } catch (err: any) {
-      setNfcStatus(null);
-      if (err.message === 'NFC_CANCELLED') return;
-      // Timeout — proceed without NFC
-    }
-
-    try {
-      // Create or find session in DB
-      const session = await createSession.mutateAsync({
-        nfc_uid: nfcUid,
-        lookup_wardrobe: tagWardrobeNumber,
-      });
-      const logs = items.flatMap((item) =>
-        Array.from({ length: item.quantity }, () => ({
-          session_id: session.id,
-          product_id: item.product.id,
-          price_at_time: item.product.price,
-        }))
-      );
-      await addDrinkLogs.mutateAsync(logs);
-      const newTotal = session.total_amount + total;
-      await updateSession.mutateAsync({
-        id: session.id,
-        total_amount: newTotal,
-      });
-
-      // Write cumulative session data from DB to NFC tag
-      if (nfcUid) {
-        try {
-          // Fetch ALL drink_logs for this session to write cumulative data
-          const { data: allLogs } = await supabase
-            .from('drink_logs')
-            .select('product_id, products(shorthand)')
-            .eq('session_id', session.id);
-
-          const agg: Record<string, { qty: number; shorthand: string }> = {};
-          for (const log of allLogs || []) {
-            const sh = (log as any).products?.shorthand || log.product_id;
-            if (!agg[sh]) agg[sh] = { qty: 0, shorthand: sh };
-            agg[sh].qty++;
-          }
-
-          // Re-fetch session for latest wardrobe_number
-          const { data: freshSession } = await supabase
-            .from('sessions')
-            .select('wardrobe_number')
-            .eq('id', session.id)
-            .single();
-
-          const orderSummary = Object.values(agg).map(a => `${a.qty}x${a.shorthand}`).join(',');
-          const writeData = JSON.stringify({
-            items: orderSummary,
-            total: newTotal,
-            ...(freshSession?.wardrobe_number ? { wn: freshSession.wardrobe_number } : {}),
-          });
-
-          setNfcStatus('scanning');
-          const { promise: writePromise, cancel: writeCancel } = writeNfcTag(writeData, 15000);
-          cancelRef.current = writeCancel;
-          await writePromise;
-        } catch {
-          // Write failed but DB is saved — still show success
-        }
-      }
-
+      await promise;
       setNfcStatus(null);
       showFeedback('success');
       setItems([]);
