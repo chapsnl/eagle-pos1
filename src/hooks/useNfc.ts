@@ -137,7 +137,7 @@ export const writeNfcTag = (data: string, timeoutMs = 30000): { promise: Promise
 
     writer
       .write(
-        { records: [{ recordType: 'text', data }] },
+        { records: [{ recordType: 'mime', mediaType: 'text/plain', data: new TextEncoder().encode(data) }] },
         { signal: abortController!.signal, overwrite: true }
       )
       .then(() => {
