@@ -35,71 +35,6 @@ export const AdminPage = () => {
     batchModeRef.current = batchMode;
   }, [batchMode]);
 
-  const archiveSessionsForTag = useCallback(async (nfcUid?: string, wardrobeNumber?: string) => {
-    if (!nfcUid && !wardrobeNumber) return;
-
-    const payload = {
-      nfc_uid: nfcUid || undefined,
-      wardrobe_number: wardrobeNumber || undefined,
-    };
-
-    const { error: functionError } = await supabase.functions.invoke('batch-erase', {
-      body: payload,
-    });
-
-    if (!functionError) return;
-
-    console.warn('[NFC] batch-erase function failed, using DB fallback:', functionError.message);
-
-    let query = supabase
-      .from('sessions')
-      .select('id')
-      .in('status', ['active', 'paid', 'incident']);
-
-    const orConditions: string[] = [];
-    if (nfcUid) orConditions.push(`nfc_uid.eq.${nfcUid}`);
-    if (wardrobeNumber) {
-      const wn = wardrobeNumber.replace(/[CB]/g, '');
-      orConditions.push(`wardrobe_number.like.%C${wn}%`);
-      orConditions.push(`wardrobe_number.like.%B${wn}%`);
-      orConditions.push(`wardrobe_number.eq.${wardrobeNumber}`);
-    }
-
-    if (orConditions.length === 0) return;
-    query = query.or(orConditions.join(','));
-
-    const { data: sessions, error: sessionsError } = await query;
-    if (sessionsError) throw sessionsError;
-
-    const sessionIds = [...new Set((sessions || []).map((s) => s.id))];
-    if (sessionIds.length === 0) return;
-
-    const { error: drinkLogsError } = await supabase
-      .from('drink_logs')
-      .delete()
-      .in('session_id', sessionIds);
-    if (drinkLogsError) throw drinkLogsError;
-
-    const { error: updateError } = await supabase
-      .from('sessions')
-      .update({ status: 'archived', total_amount: 0 })
-      .in('id', sessionIds);
-    if (updateError) throw updateError;
-  }, []);
-
-  const refreshNfcContext = useCallback(async () => {
-    try {
-      const refreshReader = new (window as any).NDEFReader();
-      const refreshController = new AbortController();
-      const scanPromise = refreshReader.scan({ signal: refreshController.signal });
-      refreshController.abort();
-      await scanPromise.catch(() => undefined);
-    } catch {
-      // Ignore refresh errors; next scan will still re-initialize reader/writer
-    }
-    cancelRef.current = null;
-  }, []);
-
   const eraseNextTag = useCallback(async () => {
     if (!batchModeRef.current) return;
 
@@ -142,24 +77,25 @@ export const AdminPage = () => {
 
       if (!batchModeRef.current) return;
 
-      // Write explicit valid NDEF marker to keep tag in writable NDEF state
+      // Write empty record to wipe the tag
       const writer = new (window as any).NDEFReader();
       const wAc = new AbortController();
       cancelRef.current = () => wAc.abort();
-      try {
-        await writer.write(
-          { records: [{ recordType: 'text', data: 'EMPTY' }] },
-          { signal: wAc.signal, overwrite: true }
-        );
-      } catch (writeErr) {
-        await refreshNfcContext();
-        throw writeErr;
-      }
+      await writer.write(
+        { records: [{ recordType: 'text', data: '' }] },
+        { signal: wAc.signal, overwrite: true }
+      );
 
       if (!batchModeRef.current) return;
 
       // Archive session in DB if exists
-      await archiveSessionsForTag(uid, tagData.wn);
+      try {
+        await supabase.functions.invoke('batch-erase', {
+          body: { nfc_uid: uid, wardrobe_number: tagData.wn || undefined },
+        });
+      } catch {
+        // OK if no session found
+      }
 
       setNfcStatus(null);
       setErasedCount((c) => c + 1);
@@ -175,13 +111,12 @@ export const AdminPage = () => {
     } catch (err: any) {
       if (err.message === 'CANCELLED') return;
       setNfcStatus(null);
-      await refreshNfcContext();
       // On error, retry after a short delay
       if (batchModeRef.current) {
         setTimeout(() => eraseNextTag(), 500);
       }
     }
-  }, [archiveSessionsForTag, refreshNfcContext]);
+  }, []);
 
   const startBatchErase = useCallback(() => {
     setShowConfirm(false);
@@ -282,13 +217,33 @@ export const AdminPage = () => {
             }
           }
         } catch {
-          // DB lookup failed - fall back to NFC data or show no data
-          setNfcReadData({ raw: [`UID: ${uid}`, 'Database niet bereikbaar'], uid });
-          return;
+          // DB lookup failed, fall back to NFC data
         }
 
-        // DB lookup succeeded but no active/paid session found
-        setNfcReadData({ raw: [`UID: ${uid}`, 'Geen actieve sessie gevonden'], uid });
+        // Fall back to NFC data
+        let parsed = false;
+        if (event.message?.records) {
+          for (const rec of event.message.records) {
+            try {
+              if (rec.recordType === 'text') {
+                const decoder = new TextDecoder(rec.encoding || 'utf-8');
+                const text = decoder.decode(rec.data);
+                if (text) {
+                  const json = JSON.parse(text);
+                  if (json.items && typeof json.items === 'string') {
+                    const items = json.items.split(',').map((entry: string) => {
+                      const match = entry.match(/^(\d+)x(.+)$/);
+                      return match ? { qty: parseInt(match[1]), shorthand: match[2] } : { qty: 1, shorthand: entry };
+                    });
+                    setNfcReadData({ uid, items, total: json.total ?? 0, wn: json.wn });
+                    parsed = true;
+                  }
+                }
+              }
+            } catch { /* not JSON */ }
+          }
+        }
+        if (!parsed) setNfcReadData({ raw: [`UID: ${uid}`, 'Geen besteldata gevonden'] , uid });
       };
     } catch (err: any) {
         if (err.name !== 'AbortError') {
@@ -384,54 +339,25 @@ export const AdminPage = () => {
             </button>
             <button
               onClick={async () => {
-                const uidToArchive = nfcReadData?.uid;
-                const wnToArchive = nfcReadData && 'wn' in nfcReadData ? nfcReadData.wn : undefined;
-
-                let archiveError: string | null = null;
                 try {
-                  await archiveSessionsForTag(uidToArchive || undefined, wnToArchive || undefined);
-                } catch (err: any) {
-                  archiveError = err?.message || 'Onbekende fout bij archiveren';
-                }
-
-                // Now prompt user to hold tag and write empty data
-                setNfcReadData({
-                  raw: ['Houd het bandje tegen de telefoon om te wissen...'],
-                  uid: uidToArchive,
-                });
-
-                try {
+                  const uidToArchive = nfcReadData?.uid;
+                  const wnToArchive = nfcReadData && 'wn' in nfcReadData ? nfcReadData.wn : undefined;
                   const writer = new (window as any).NDEFReader();
-                  const ac = new AbortController();
-                  nfcReadCancelRef.current = () => ac.abort();
-                  // This will wait for a tag to be tapped, then write
-                  await writer.write(
-                    { records: [{ recordType: 'text', data: '' }] },
-                    { signal: ac.signal, overwrite: true }
-                  );
+                  await writer.write({ records: [{ recordType: 'text', data: '' }] }, { overwrite: true });
 
-                  // Play notification sound
-                  try {
-                    const audio = new Audio('/notification.mp3');
-                    audio.play().catch(() => {});
-                  } catch {}
+                  // Always call batch-erase with both identifiers
+                  await supabase.functions.invoke('batch-erase', {
+                    body: { nfc_uid: uidToArchive || undefined, wardrobe_number: wnToArchive || undefined },
+                  });
 
                   setNfcReadData({
-                    raw: archiveError
-                      ? [
-                          ...(uidToArchive ? [`UID: ${uidToArchive}`] : []),
-                          'Tag gewist, maar database-opruiming mislukt',
-                          archiveError,
-                        ]
-                      : uidToArchive
-                        ? [`UID: ${uidToArchive}`, 'Tag gewist + sessie gearchiveerd']
-                        : ['Tag gewist!'],
+                    raw: uidToArchive
+                      ? [`UID: ${uidToArchive}`, 'Tag gewist + sessie gearchiveerd']
+                      : ['Tag gewist!'],
                     uid: uidToArchive,
                   });
                 } catch (err: any) {
-                  if (err.name !== 'AbortError') {
-                    setNfcReadData({ raw: ['Wissen mislukt: ' + err.message], uid: nfcReadData?.uid });
-                  }
+                  setNfcReadData({ raw: ['Wissen mislukt: ' + err.message], uid: nfcReadData?.uid });
                 }
               }}
               className="px-6 py-3 font-extrabold uppercase text-sm"
