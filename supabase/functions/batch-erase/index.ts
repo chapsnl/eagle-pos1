@@ -42,15 +42,19 @@ Deno.serve(async (req) => {
 
     const sessionIds = sessions.map((s) => s.id);
 
+    // Delete all drink_logs for these sessions
     const { count: drinkLogsCount } = await supabase
       .from('drink_logs')
-      .select('id', { count: 'exact', head: true })
+      .delete()
       .in('session_id', sessionIds);
+
+    // Also count for response (already deleted above, use count from delete)
+    const deletedCount = drinkLogsCount ?? 0;
 
     // Archive all active sessions for this tag
     const { error: updateErr } = await supabase
       .from('sessions')
-      .update({ status: 'archived' })
+      .update({ status: 'archived', total_amount: 0 })
       .in('id', sessionIds);
 
     if (updateErr) throw updateErr;
@@ -59,7 +63,7 @@ Deno.serve(async (req) => {
       success: true, 
       archived_session_ids: sessionIds,
       archived_sessions_count: sessionIds.length,
-      drink_logs_count: drinkLogsCount ?? 0 
+      drink_logs_deleted: deletedCount 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
