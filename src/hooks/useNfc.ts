@@ -185,7 +185,7 @@ function eraseNfcCapacitor(timeoutMs: number): { promise: Promise<{ uid: string;
   const promise = new Promise<{ uid: string; wn?: string }>(async (resolve, reject) => {
     try {
       const { CapacitorNfc } = await import('@capgo/capacitor-nfc');
-      const emptyRecord = buildNdefTextRecord('');
+      const emptyRecord = buildNdefTextRecord('0');
 
       timer = setTimeout(() => {
         if (!settled) {

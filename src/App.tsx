@@ -6,28 +6,45 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
 
 const queryClient = new QueryClient();
+
+/** Hide status bar & navigation bar on Android for kiosk mode */
+const initKioskMode = async () => {
+  if (!Capacitor.isNativePlatform()) return;
+  try {
+    const { StatusBar } = await import("@capacitor/status-bar");
+    await StatusBar.hide();
+    await StatusBar.setOverlaysWebView({ overlay: true });
+  } catch {
+    // plugin not available
+  }
+  try {
+    // @capacitor/navigation-bar might not be installed; graceful fallback
+    const mod = await import("@capacitor/navigation-bar" as string);
+    if (mod?.NavigationBar?.hide) await mod.NavigationBar.hide();
+  } catch {
+    // plugin not available
+  }
+};
 
 const App = () => {
   useEffect(() => {
     let cancelled = false;
 
+    void initKioskMode();
+
     const tryLock = async () => {
       try {
-        // Best-effort: works in Chrome PWA; may fail in regular tabs.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const orientation = (screen as any)?.orientation;
         if (!orientation?.lock) return;
         await orientation.lock("portrait");
-      } catch {
-        // ignore — browser/device may not allow locking
-      }
+      } catch {}
     };
 
     void tryLock();
 
-    // Some devices only allow lock after user gesture; retry on first interaction.
     const onFirstGesture = () => {
       if (cancelled) return;
       void tryLock();
@@ -41,12 +58,7 @@ const App = () => {
       cancelled = true;
       window.removeEventListener("pointerdown", onFirstGesture);
       window.removeEventListener("touchstart", onFirstGesture);
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (screen as any)?.orientation?.unlock?.();
-      } catch {
-        // ignore
-      }
+      try { (screen as any)?.orientation?.unlock?.(); } catch {}
     };
   }, []);
 
