@@ -117,6 +117,7 @@ export const AdminPage = () => {
         reader.onreading = (event: any) => {
           const id = event.serialNumber?.replace(/:/g, '').toUpperCase() || '';
           let wn: string | undefined;
+          ac.abort();
           // Try to extract wardrobe number from tag data
           if (event.message?.records) {
             for (const rec of event.message.records) {
@@ -148,9 +149,10 @@ export const AdminPage = () => {
       cancelRef.current = () => wAc.abort();
       try {
         await writer.write(
-          { records: [{ recordType: 'text', data: 'EMPTY' }] },
+          { records: [{ recordType: 'text', data: '000' }] },
           { signal: wAc.signal, overwrite: true }
         );
+        await refreshNfcContext();
       } catch (writeErr) {
         await refreshNfcContext();
         throw writeErr;
@@ -211,6 +213,7 @@ export const AdminPage = () => {
       reader.onreading = async (event: any) => {
         const uid = event.serialNumber?.replace(/:/g, '').toUpperCase() || 'Geen UID';
         ac.abort();
+        void refreshNfcContext();
 
         // Extract wardrobe number from NFC tag data first
         let tagWn: string | undefined;
@@ -406,9 +409,10 @@ export const AdminPage = () => {
                   nfcReadCancelRef.current = () => ac.abort();
                   // This will wait for a tag to be tapped, then write
                   await writer.write(
-                    { records: [{ recordType: 'text', data: '' }] },
+                    { records: [{ recordType: 'text', data: '000' }] },
                     { signal: ac.signal, overwrite: true }
                   );
+                  await refreshNfcContext();
 
                   // Play notification sound
                   try {
