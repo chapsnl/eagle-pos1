@@ -244,6 +244,20 @@ export const AdminPage = () => {
                 <span className="font-extrabold uppercase" style={{ fontSize: '1rem' }}>Totaal</span>
                 <span className="font-extrabold text-xl" style={{ color: '#00cc13' }}>€{Number(nfcReadData.total).toFixed(2)}</span>
               </div>
+              {'status' in nfcReadData && nfcReadData.status && (
+                <div className="border-t border-border mt-3 pt-3 flex justify-between items-center">
+                  <span className="font-extrabold uppercase" style={{ fontSize: '1rem' }}>Status</span>
+                  <span
+                    className="font-extrabold uppercase px-3 py-1 rounded-full text-sm"
+                    style={nfcReadData.status === 'paid'
+                      ? { backgroundColor: '#00cc13', color: '#fff' }
+                      : { backgroundColor: '#f59e0b', color: '#fff' }
+                    }
+                  >
+                    {nfcReadData.status === 'paid' ? 'BETAALD' : nfcReadData.status.toUpperCase()}
+                  </span>
+                </div>
+              )}
               {nfcReadData.wn && (
                 <div className="border-t border-border mt-3 pt-3 space-y-1">
                   {nfcReadData.wn.match(/C(\d+)/)?.[1] && (
