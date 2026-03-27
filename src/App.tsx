@@ -21,9 +21,8 @@ const initKioskMode = async () => {
     // plugin not available
   }
   try {
-    // @capacitor/navigation-bar might not be installed; graceful fallback
-    const mod = await import("@capacitor/navigation-bar" as string);
-    if (mod?.NavigationBar?.hide) await mod.NavigationBar.hide();
+    // navigation-bar plugin only available in native builds
+    // skipped in web to avoid build errors
   } catch {
     // plugin not available
   }
