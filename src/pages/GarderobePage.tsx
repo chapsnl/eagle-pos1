@@ -3,7 +3,7 @@ import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { NfcOverlay } from '@/components/pos/NfcOverlay';
 import { FeedbackType } from '@/types/pos';
 import { Send } from 'lucide-react';
-import { useCreateSession } from '@/hooks/useSessions';
+import { useCreateSession, useUpdateSession } from '@/hooks/useSessions';
 import { writeNfcTag, scanNfcTag } from '@/hooks/useNfc';
 
 const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
@@ -16,6 +16,7 @@ export const GarderobePage = () => {
   const [nfcStatus, setNfcStatus] = useState<'scanning' | 'writing' | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
   const createSession = useCreateSession();
+  const updateSession = useUpdateSession();
 
   useEffect(() => {
     if (activeField === 'coat' && coatNumber.length >= 3) setActiveField(null);
@@ -52,9 +53,13 @@ export const GarderobePage = () => {
       await writePromise;
       setNfcStatus(null);
 
-      // Step 3: Save to database
-      await createSession.mutateAsync({
+      // Step 3: Save to database (always overwrite wardrobe number for this NFC UID)
+      const session = await createSession.mutateAsync({
         nfc_uid: uid,
+      });
+
+      await updateSession.mutateAsync({
+        id: session.id,
         wardrobe_number: wardrobeNumber,
       });
 
@@ -72,7 +77,7 @@ export const GarderobePage = () => {
         setTimeout(() => setFeedback(null), 2000);
       }
     }
-  }, [coatNumber, bagNumber, createSession]);
+  }, [coatNumber, bagNumber, createSession, updateSession]);
 
   const handleCancelNfc = useCallback(() => {
     cancelRef.current?.();
