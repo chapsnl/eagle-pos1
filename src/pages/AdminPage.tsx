@@ -339,16 +339,39 @@ export const AdminPage = () => {
             </button>
             <button
               onClick={async () => {
-                try {
-                  const uidToArchive = nfcReadData?.uid;
-                  const wnToArchive = nfcReadData && 'wn' in nfcReadData ? nfcReadData.wn : undefined;
-                  const writer = new (window as any).NDEFReader();
-                  await writer.write({ records: [{ recordType: 'text', data: '' }] }, { overwrite: true });
+                const uidToArchive = nfcReadData?.uid;
+                const wnToArchive = nfcReadData && 'wn' in nfcReadData ? nfcReadData.wn : undefined;
 
-                  // Always call batch-erase with both identifiers
+                // First archive in DB (always works regardless of NFC)
+                try {
                   await supabase.functions.invoke('batch-erase', {
                     body: { nfc_uid: uidToArchive || undefined, wardrobe_number: wnToArchive || undefined },
                   });
+                } catch {
+                  // OK if no session
+                }
+
+                // Now prompt user to hold tag and write empty data
+                setNfcReadData({
+                  raw: ['Houd het bandje tegen de telefoon om te wissen...'],
+                  uid: uidToArchive,
+                });
+
+                try {
+                  const writer = new (window as any).NDEFReader();
+                  const ac = new AbortController();
+                  nfcReadCancelRef.current = () => ac.abort();
+                  // This will wait for a tag to be tapped, then write
+                  await writer.write(
+                    { records: [{ recordType: 'text', data: '' }] },
+                    { signal: ac.signal, overwrite: true }
+                  );
+
+                  // Play notification sound
+                  try {
+                    const audio = new Audio('/notification.mp3');
+                    audio.play().catch(() => {});
+                  } catch {}
 
                   setNfcReadData({
                     raw: uidToArchive
@@ -357,7 +380,9 @@ export const AdminPage = () => {
                     uid: uidToArchive,
                   });
                 } catch (err: any) {
-                  setNfcReadData({ raw: ['Wissen mislukt: ' + err.message], uid: nfcReadData?.uid });
+                  if (err.name !== 'AbortError') {
+                    setNfcReadData({ raw: ['Wissen mislukt: ' + err.message], uid: nfcReadData?.uid });
+                  }
                 }
               }}
               className="px-6 py-3 font-extrabold uppercase text-sm"
