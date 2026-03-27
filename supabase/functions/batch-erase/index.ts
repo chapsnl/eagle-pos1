@@ -11,9 +11,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { nfc_uid } = await req.json();
-    if (!nfc_uid) {
-      return new Response(JSON.stringify({ error: 'nfc_uid required' }), {
+    const { nfc_uid, wardrobe_number } = await req.json();
+    if (!nfc_uid && !wardrobe_number) {
+      return new Response(JSON.stringify({ error: 'nfc_uid or wardrobe_number required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -24,23 +24,50 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Get all active sessions for this NFC
-    const { data: sessions, error: sessionErr } = await supabase
+    // Build query to find sessions by nfc_uid OR wardrobe_number
+    let query = supabase
       .from('sessions')
       .select('id')
-      .eq('nfc_uid', nfc_uid)
       .eq('status', 'active');
 
+    const orConditions: string[] = [];
+    if (nfc_uid) orConditions.push(`nfc_uid.eq.${nfc_uid}`);
+    if (wardrobe_number) {
+      // Match any wardrobe_number containing the coat/bag patterns
+      const wn = wardrobe_number.replace(/[CB]/g, '');
+      orConditions.push(`wardrobe_number.like.%C${wn}%`);
+      orConditions.push(`wardrobe_number.like.%B${wn}%`);
+      orConditions.push(`wardrobe_number.eq.${wardrobe_number}`);
+    }
+
+    if (orConditions.length > 0) {
+      query = query.or(orConditions.join(','));
+    }
+
+    const { data: sessions, error: sessionErr } = await query;
     if (sessionErr) throw sessionErr;
 
-    if (!sessions || sessions.length === 0) {
-      return new Response(JSON.stringify({ error: 'No active session found' }), {
-        status: 404,
+    // Also check paid sessions
+    let queryPaid = supabase
+      .from('sessions')
+      .select('id')
+      .eq('status', 'paid');
+
+    if (orConditions.length > 0) {
+      queryPaid = queryPaid.or(orConditions.join(','));
+    }
+
+    const { data: paidSessions } = await queryPaid;
+
+    const allSessions = [...(sessions || []), ...(paidSessions || [])];
+
+    if (allSessions.length === 0) {
+      return new Response(JSON.stringify({ success: true, message: 'No sessions found, tag cleared' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const sessionIds = sessions.map((s) => s.id);
+    const sessionIds = allSessions.map((s) => s.id);
 
     // Delete all drink_logs for these sessions
     const { count: drinkLogsCount } = await supabase
@@ -48,10 +75,9 @@ Deno.serve(async (req) => {
       .delete()
       .in('session_id', sessionIds);
 
-    // Also count for response (already deleted above, use count from delete)
     const deletedCount = drinkLogsCount ?? 0;
 
-    // Archive all active sessions for this tag
+    // Archive all sessions for this tag
     const { error: updateErr } = await supabase
       .from('sessions')
       .update({ status: 'archived', total_amount: 0 })

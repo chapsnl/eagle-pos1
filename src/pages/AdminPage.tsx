@@ -288,14 +288,14 @@ export const AdminPage = () => {
               onClick={async () => {
                 try {
                   const uidToArchive = nfcReadData?.uid;
+                  const wnToArchive = nfcReadData && 'wn' in nfcReadData ? nfcReadData.wn : undefined;
                   const writer = new (window as any).NDEFReader();
                   await writer.write({ records: [{ recordType: 'text', data: '' }] }, { overwrite: true });
 
-                  if (uidToArchive) {
-                    await supabase.functions.invoke('batch-erase', {
-                      body: { nfc_uid: uidToArchive },
-                    });
-                  }
+                  // Always call batch-erase with both identifiers
+                  await supabase.functions.invoke('batch-erase', {
+                    body: { nfc_uid: uidToArchive || undefined, wardrobe_number: wnToArchive || undefined },
+                  });
 
                   setNfcReadData({
                     raw: uidToArchive
