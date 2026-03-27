@@ -48,14 +48,32 @@ export const AdminPage = () => {
       // Wait for a tag
       await reader.scan({ signal: ac.signal });
 
-      const uid: string = await new Promise((resolve, reject) => {
+      const tagData: { uid: string; wn?: string } = await new Promise((resolve, reject) => {
         reader.onreading = (event: any) => {
           const id = event.serialNumber?.replace(/:/g, '').toUpperCase() || '';
-          resolve(id);
+          let wn: string | undefined;
+          // Try to extract wardrobe number from tag data
+          if (event.message?.records) {
+            for (const rec of event.message.records) {
+              try {
+                if (rec.recordType === 'text') {
+                  const decoder = new TextDecoder(rec.encoding || 'utf-8');
+                  const text = decoder.decode(rec.data);
+                  if (text) {
+                    const json = JSON.parse(text);
+                    if (json.wn) wn = json.wn;
+                  }
+                }
+              } catch { /* ignore */ }
+            }
+          }
+          resolve({ uid: id, wn });
         };
         reader.onreadingerror = () => reject(new Error('Read error'));
         ac.signal.addEventListener('abort', () => reject(new Error('CANCELLED')));
       });
+
+      const uid = tagData.uid;
 
       if (!batchModeRef.current) return;
 
