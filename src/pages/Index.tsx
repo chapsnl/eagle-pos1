@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface DbOrderItem {
   product: DbProduct;
   quantity: number;
+}
 
 const Index = () => {
   const [started, setStarted] = useState(false);
