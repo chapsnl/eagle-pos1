@@ -8,19 +8,6 @@ export interface NfcScanResult {
   message?: string;
 }
 
-const softResetNfcContext = () => {
-  if (!('NDEFReader' in window)) return;
-  try {
-    const resetReader = new (window as any).NDEFReader();
-    const resetController = new AbortController();
-    const scanPromise = resetReader.scan({ signal: resetController.signal });
-    resetController.abort();
-    void scanPromise.catch(() => undefined);
-  } catch {
-    // Ignore reset errors; next operation re-initializes the reader/writer anyway
-  }
-};
-
 /**
  * Read an NFC tag's serial number (UID).
  * Returns a promise that resolves with the UID when a tag is tapped.
@@ -79,7 +66,6 @@ export const scanNfcTag = (timeoutMs = 30000): { promise: Promise<NfcScanResult>
           settled = true;
           clearTimeout(timer);
           abortController?.abort();
-          softResetNfcContext();
           resolve({ uid, message });
         };
 
@@ -144,8 +130,6 @@ export const writeNfcTag = (data: string, timeoutMs = 30000): { promise: Promise
         if (!settled) {
           settled = true;
           clearTimeout(timer);
-          abortController?.abort();
-          softResetNfcContext();
           console.log('[NFC] Write successful');
           resolve();
         }
@@ -246,7 +230,6 @@ export const scanAndWriteNfcTag = (
               settled = true;
               clearTimeout(timer);
               abortController?.abort();
-              softResetNfcContext();
               resolve({ uid, message });
             }
           } catch (err: any) {
