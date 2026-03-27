@@ -4,7 +4,7 @@ import { NfcOverlay } from '@/components/pos/NfcOverlay';
 import { FeedbackType } from '@/types/pos';
 import { Send } from 'lucide-react';
 import { useCreateSession, useUpdateSession } from '@/hooks/useSessions';
-import { writeNfcTag, scanNfcTag } from '@/hooks/useNfc';
+import { scanAndWriteNfcTag } from '@/hooks/useNfc';
 import { supabase } from '@/integrations/supabase/client';
 
 const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
@@ -29,82 +29,56 @@ export const GarderobePage = () => {
     const wardrobeNumber = `${coatNumber ? 'C' + coatNumber : ''}${bagNumber ? 'B' + bagNumber : ''}`;
 
     setNfcStatus('scanning');
-    const { promise: scanPromise, cancel: cancelScan } = scanNfcTag(30000);
-    cancelRef.current = cancelScan;
 
-    let uid: string;
-    let tagWardrobeNumber: string | null = null;
+    const { promise, cancel } = scanAndWriteNfcTag(
+      async (result) => {
+        const uid = result.uid;
 
-    try {
-      const result = await scanPromise;
-      uid = result.uid;
-
-      if (result.message) {
-        try {
-          const parsed = JSON.parse(result.message);
-          if (parsed?.wn && typeof parsed.wn === 'string') {
-            tagWardrobeNumber = parsed.wn;
-          }
-        } catch {
-          const raw = result.message.trim();
-          if (/^C\d{1,3}(B\d{1,3})?$|^B\d{1,3}(C\d{1,3})?$/.test(raw)) {
-            tagWardrobeNumber = raw;
+        // Check if tag already has a wardrobe number
+        if (result.message) {
+          try {
+            const parsed = JSON.parse(result.message);
+            if (parsed?.wn && typeof parsed.wn === 'string') {
+              throw new Error('TAG_HAS_WARDROBE');
+            }
+          } catch (e: any) {
+            if (e.message === 'TAG_HAS_WARDROBE') throw e;
+            // Not JSON - check raw
+            const raw = result.message.trim();
+            if (/^C\d{1,3}(B\d{1,3})?$|^B\d{1,3}(C\d{1,3})?$/.test(raw)) {
+              throw new Error('TAG_HAS_WARDROBE');
+            }
           }
         }
-      }
-    } catch (err: any) {
-      setNfcStatus(null);
-      if (err.message !== 'NFC_CANCELLED') {
-        setFeedback('error');
-        setTimeout(() => setFeedback(null), 2000);
-      }
-      return;
-    }
 
-    // Block overwrite if tag itself already has a coat/bag number
-    if (tagWardrobeNumber) {
-      setNfcStatus(null);
-      setFeedback('error');
-      setTimeout(() => setFeedback(null), 2000);
-      return;
-    }
+        // Check DB for existing wardrobe assignment
+        const { data: existingSession, error } = await supabase
+          .from('sessions')
+          .select('wardrobe_number')
+          .eq('nfc_uid', uid)
+          .in('status', ['active', 'paid', 'incident'])
+          .not('wardrobe_number', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-    // Block overwrite if DB has a non-archived session with wardrobe_number on this UID
-    const { data: existingSession, error: existingSessionError } = await supabase
-      .from('sessions')
-      .select('wardrobe_number')
-      .eq('nfc_uid', uid)
-      .in('status', ['active', 'paid', 'incident'])
-      .not('wardrobe_number', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+        if (error) throw new Error('DB_ERROR');
+        if (existingSession?.wardrobe_number) throw new Error('TAG_HAS_WARDROBE');
 
-    if (existingSessionError) {
-      setNfcStatus(null);
-      setFeedback('error');
-      setTimeout(() => setFeedback(null), 2000);
-      return;
-    }
-
-    if (existingSession?.wardrobe_number) {
-      setNfcStatus(null);
-      setFeedback('error');
-      setTimeout(() => setFeedback(null), 2000);
-      return;
-    }
-
-    // Write wn payload to NFC
-    setNfcStatus('writing');
-    const payload = JSON.stringify({ wn: wardrobeNumber });
-    const { promise: writePromise, cancel: cancelWrite } = writeNfcTag(payload, 30000);
-    cancelRef.current = cancelWrite;
+        // Return JSON payload to write
+        return JSON.stringify({ wn: wardrobeNumber });
+      },
+      30000,
+      (status) => setNfcStatus(status),
+    );
+    cancelRef.current = cancel;
 
     try {
-      await writePromise;
+      const result = await promise;
       setNfcStatus(null);
 
-      const session = await createSession.mutateAsync({ nfc_uid: uid });
+      // Save to DB
+      const session = await createSession.mutateAsync({ nfc_uid: result.uid });
       await updateSession.mutateAsync({
         id: session.id,
         wardrobe_number: wardrobeNumber,
