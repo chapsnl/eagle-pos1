@@ -95,7 +95,7 @@ async function fetchDbOrderByWardrobe(wardrobeNumber: string): Promise<{ session
   };
 }
 
-type PayPhase = 'choose' | 'nfc-scan' | 'input-coat' | 'coat-not-found' | 'input-bag' | 'bag-not-found' | 'show-order';
+type PayPhase = 'choose' | 'nfc-scan' | 'input-coat' | 'coat-not-found' | 'input-bag' | 'bag-not-found' | 'show-order' | 'confirm-payment';
 
 export const BetalingPage = ({
   items,
