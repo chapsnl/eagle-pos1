@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
-import { Send } from 'lucide-react';
+import { Send, X } from 'lucide-react';
 import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs } from '@/hooks/useSessions';
 
 interface ArmOrderItem {
@@ -209,14 +209,31 @@ export const ArmNummerPage = () => {
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full">
       <FeedbackOverlay type={feedback} />
-      <div className="bg-card border-b border-border p-2 flex items-center gap-3">
+      <div className="min-h-10 bg-card border-b border-border flex items-center px-2 gap-1.5">
         <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">#{armNumber || bagNumber}</label>
-        <div className="flex-1 text-sm overflow-hidden">
+        <div className="flex-1 flex items-center gap-1.5 overflow-x-auto py-1">
           {items.map((i) => (
-            <span key={i.product.id} className="mr-2 text-xs font-bold">{i.quantity > 1 && `${i.quantity}×`}{i.product.shorthand}</span>
+            <button
+              key={i.product.id}
+              onClick={() => setItems(prev => {
+                const item = prev.find(x => x.product.id === i.product.id);
+                if (!item) return prev;
+                if (item.quantity > 1) return prev.map(x => x.product.id === i.product.id ? { ...x, quantity: x.quantity - 1 } : x);
+                return prev.filter(x => x.product.id !== i.product.id);
+              })}
+              className="flex items-center gap-1 bg-secondary rounded px-2 py-1 text-[10px] font-bold uppercase shrink-0 hover:bg-destructive/20 transition-colors group"
+            >
+              <span>{i.quantity > 1 && `${i.quantity}×`}{i.product.shorthand}</span>
+              <X className="w-2.5 h-2.5 opacity-40 group-hover:opacity-100" />
+            </button>
           ))}
         </div>
-        <span className="font-extrabold text-lg whitespace-nowrap" style={{ color: '#00cc13' }}>€{total.toFixed(2)}</span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="font-extrabold text-sm" style={{ color: '#00cc13' }}>€{total.toFixed(2)}</span>
+          <button onClick={() => setItems([])} className="pos-btn text-[10px] text-muted-foreground hover:text-destructive px-1.5 py-0.5">
+            WISSEN
+          </button>
+        </div>
       </div>
       <div className="flex-1 overflow-hidden flex flex-col">
         {gridLayout.map((row, ri) => (
