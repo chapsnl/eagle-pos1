@@ -408,8 +408,8 @@ export const AdminPage = () => {
                   const ac = new AbortController();
                   nfcReadCancelRef.current = () => ac.abort();
                   // This will wait for a tag to be tapped, then write
-                  await writer.write(
-                    { records: [{ recordType: 'text', data: '000' }] },
+                   await writer.write(
+                    { records: [{ recordType: 'mime', mediaType: 'text/plain', data: new TextEncoder().encode('000') }] },
                     { signal: ac.signal, overwrite: true }
                   );
                   await refreshNfcContext();

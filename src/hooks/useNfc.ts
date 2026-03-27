@@ -237,7 +237,7 @@ export const scanAndWriteNfcTag = (
               console.log('[NFC] Writing data:', writeData);
               const writer = new (window as any).NDEFReader();
               await writer.write(
-                { records: [{ recordType: 'text', data: writeData }] },
+                { records: [{ recordType: 'mime', mediaType: 'text/plain', data: new TextEncoder().encode(writeData) }] },
                 { overwrite: true }
               );
               console.log('[NFC] Write successful');
