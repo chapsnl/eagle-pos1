@@ -10,7 +10,7 @@ const tabs: { view: AppView; label: string }[] = [
   { view: 'bar', label: 'BAR' },
   { view: 'garderobe', label: 'COAT CHECK' },
   { view: 'betaling', label: 'PAY' },
-  { view: 'arm-nummer', label: 'NO-NFC' },
+  { view: 'arm-nummer', label: 'BY NUMBER' },
   { view: 'admin', label: 'ADMIN' },
 ];
 
