@@ -158,6 +158,7 @@ export const AdminPage = () => {
                 items: Object.values(agg),
                 total: Number(session.total_amount),
                 wn: session.wardrobe_number || undefined,
+                status: session.status,
               });
               return;
             }
