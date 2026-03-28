@@ -405,20 +405,6 @@ export const AdminPage = () => {
         />
 
         <AdminButton
-          label="BATCH-ERASE"
-          description="Continu NFC-bandjes wissen"
-          variant="success"
-          onClick={() => setShowConfirm(true)}
-        />
-
-        <AdminButton
-          label="NFC UITLEZEN"
-          description="Lees data van een NFC-bandje"
-          variant="success"
-          onClick={startNfcRead}
-        />
-
-        <AdminButton
           label="AFGESLOTEN KLANTEN"
           description="Bekijk betaalde sessies"
           variant="success"
@@ -437,6 +423,20 @@ export const AdminPage = () => {
           description="Probleem-sessie vlaggen"
           variant="destructive"
           onClick={() => console.log('Incident')}
+        />
+
+        <AdminButton
+          label="NFC UITLEZEN"
+          description="Lees data van een NFC-bandje"
+          variant="success"
+          onClick={startNfcRead}
+        />
+
+        <AdminButton
+          label="BATCH-ERASE"
+          description="Continu NFC-bandjes wissen"
+          variant="success"
+          onClick={() => setShowConfirm(true)}
         />
 
       </div>
