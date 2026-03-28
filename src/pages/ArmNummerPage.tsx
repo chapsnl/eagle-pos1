@@ -276,9 +276,9 @@ export const ArmNummerPage = () => {
               const textColor = getTextColor(product.category_color);
               return (
                 <button key={ci} onClick={() => addProduct(product)} style={{ flex: cell.span, backgroundColor: product.category_color, color: textColor }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 active:brightness-[0.6] p-1 min-w-0 transition-all duration-75"
-                  onPointerDown={(e) => { e.currentTarget.style.boxShadow = 'inset 0 0 0 3px #ff0000, 0 0 15px #ff0000'; }}
-                  onPointerUp={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
-                  onPointerLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
+                  onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
+                  onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
                   <span className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line" style={{ fontSize: cell.span === 2 ? 'clamp(0.96rem, 3.04vw, 2.48rem)' : 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>
                     {cell.hideLabel ? '' : product.full_name}
