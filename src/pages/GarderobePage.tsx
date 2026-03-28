@@ -250,11 +250,11 @@ export const GarderobePage = () => {
         </div>
       )}
 
-      <div className="px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-1">
+      <div className="px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-1 flex justify-center">
         <button
           onClick={handleSubmit}
           disabled={!coatNumber && !bagNumber}
-          className="w-full py-3 text-lg font-extrabold uppercase disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+          className="max-w-[280px] w-full py-3 text-lg font-extrabold uppercase disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           style={{
             backgroundColor: '#00cc13',
             color: '#fff',

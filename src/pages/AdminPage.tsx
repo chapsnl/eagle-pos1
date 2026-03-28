@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Trash2, ArrowRightLeft, Mail, DollarSign, RotateCcw, AlertTriangle, Users, ChevronDown, ChevronUp, Square, Nfc } from 'lucide-react';
+import { ChevronDown, ChevronUp, Square, Nfc, Users } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { useActiveSessions, useIncidentSessions, useUpdateSession } from '@/hooks/useSessions';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
@@ -399,14 +399,12 @@ export const AdminPage = () => {
         <ActiveSessionsSection />
 
         <AdminCard
-          icon={<DollarSign className="w-5 h-5" />}
           title="FOOI UIT KAS"
           description="Verschil gepind bedrag vs productwaarde"
           value="€0.00"
         />
 
         <AdminButton
-          icon={<Trash2 className="w-5 h-5" />}
           label="BATCH-ERASE"
           description="Continu NFC-bandjes wissen"
           variant="success"
@@ -414,7 +412,6 @@ export const AdminPage = () => {
         />
 
         <AdminButton
-          icon={<Nfc className="w-5 h-5" />}
           label="NFC UITLEZEN"
           description="Lees data van een NFC-bandje"
           variant="success"
@@ -422,23 +419,20 @@ export const AdminPage = () => {
         />
 
         <AdminButton
-          icon={<RotateCcw className="w-5 h-5" />}
           label="AFGESLOTEN KLANTEN"
-          description="Bekijk betaalde/gearchiveerde sessies"
-          variant="primary"
+          description="Bekijk betaalde sessies"
+          variant="success"
           onClick={() => setShowClosed(true)}
         />
 
         <AdminButton
-          icon={<Mail className="w-5 h-5" />}
           label="CLOSE SHIFT (E-MAIL)"
           description="Voorraad + Debt List versturen, dagsaldo resetten"
-          variant="primary"
+          variant="success"
           onClick={() => setShowCloseShift(true)}
         />
 
         <AdminButton
-          icon={<AlertTriangle className="w-5 h-5" />}
           label="INCIDENT"
           description="Probleem-sessie vlaggen"
           variant="destructive"
@@ -605,7 +599,7 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
     supabase
       .from('sessions')
       .select('*, drink_logs(*, products(*))')
-      .in('status', ['paid', 'archived'])
+      .eq('status', 'paid')
       .order('created_at', { ascending: false })
       .limit(50)
       .then(({ data }) => {
@@ -676,7 +670,7 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
                     </div>
                     {drinkSummary && (
                       <div className="text-xs text-muted-foreground mt-1">
-                        🍹 {drinkSummary}
+                        {drinkSummary}
                       </div>
                     )}
                   </div>
@@ -720,33 +714,31 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
   );
 };
 
-const AdminCard = ({ icon, title, description, value }: { icon: React.ReactNode; title: string; description: string; value: string }) => (
-  <div className="bg-card border border-border rounded-lg p-4 flex items-center gap-4">
-    <div className="text-primary">{icon}</div>
+const AdminCard = ({ title, description, value }: { title: string; description: string; value: string }) => (
+  <div className="rounded-lg p-4 flex items-center gap-4" style={{ backgroundColor: '#1a1a1a', border: '1px solid #00cc1340' }}>
     <div className="flex-1">
-      <h3 className="text-sm font-extrabold uppercase">{title}</h3>
+      <h3 className="text-sm font-extrabold uppercase" style={{ color: '#00cc13' }}>{title}</h3>
       <p className="text-xs text-muted-foreground">{description}</p>
     </div>
-    <span className="text-2xl font-extrabold text-primary">{value}</span>
+    <span className="text-2xl font-extrabold" style={{ color: '#00cc13' }}>{value}</span>
   </div>
 );
 
-const AdminButton = ({ icon, label, description, variant, onClick }: {
-  icon: React.ReactNode; label: string; description: string; variant?: string; onClick: () => void;
+const AdminButton = ({ label, description, variant, onClick }: {
+  label: string; description: string; variant?: string; onClick: () => void;
 }) => (
   <button
     onClick={onClick}
-    className={`w-full text-left bg-card border border-border rounded-lg p-4 flex items-center gap-4 hover:brightness-110 transition-all active:scale-[0.98] ${
-      variant === 'destructive' ? 'hover:border-destructive' : variant === 'primary' ? 'hover:border-primary' : variant === 'success' ? '' : 'hover:border-muted-foreground'
-    }`}
-    style={variant === 'success' ? { borderColor: '#00cc1340' } : undefined}
+    className="w-full text-left rounded-lg p-4 flex items-center gap-4 transition-all active:scale-[0.98] font-extrabold uppercase"
+    style={{
+      backgroundColor: variant === 'destructive' ? '#ef4444' : '#00cc13',
+      color: '#fff',
+      boxShadow: variant === 'destructive' ? '0 0 12px #ef444480' : '0 0 12px #00cc1380',
+    }}
   >
-    <div style={variant === 'success' ? { color: '#00cc13' } : undefined} className={variant === 'destructive' ? 'text-destructive' : variant === 'primary' ? 'text-primary' : variant === 'success' ? '' : 'text-muted-foreground'}>
-      {icon}
-    </div>
     <div>
       <h3 className="text-sm font-extrabold uppercase">{label}</h3>
-      <p className="text-xs text-muted-foreground">{description}</p>
+      <p className="text-xs opacity-80 font-normal normal-case">{description}</p>
     </div>
   </button>
 );
