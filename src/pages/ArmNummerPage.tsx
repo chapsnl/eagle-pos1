@@ -114,8 +114,8 @@ export const ArmNummerPage = () => {
 
     const t = window.setTimeout(() => {
       void resolveSessionByWardrobe(wardrobe, () => {
-        setFeedback('error');
-        setTimeout(() => { setFeedback(null); setPhase('bag-not-found'); }, 1500);
+        setPendingWardrobe(wardrobe);
+        setShowAddDialog(true);
       });
     }, 300);
     return () => window.clearTimeout(t);
