@@ -676,7 +676,7 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
                     </div>
                     {drinkSummary && (
                       <div className="text-xs text-muted-foreground mt-1">
-                        🍹 {drinkSummary}
+                        {drinkSummary}
                       </div>
                     )}
                   </div>
