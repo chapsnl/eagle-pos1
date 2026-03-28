@@ -399,7 +399,6 @@ export const AdminPage = () => {
         <ActiveSessionsSection />
 
         <AdminCard
-          icon={<DollarSign className="w-5 h-5" />}
           title="FOOI UIT KAS"
           description="Verschil gepind bedrag vs productwaarde"
           value="€0.00"
