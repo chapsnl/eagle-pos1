@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { IntroPage } from './IntroPage';
 import { DbProduct } from '@/hooks/useProducts';
 import { FeedbackType, AppView } from '@/types/pos';
@@ -6,31 +6,43 @@ import { NavTabs } from '@/components/pos/NavTabs';
 import { OrderBar } from '@/components/pos/OrderBar';
 import { ProductGrid } from '@/components/pos/ProductGrid';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
-import { NfcOverlay } from '@/components/pos/NfcOverlay';
 import { GarderobePage } from './GarderobePage';
 import { BetalingPage } from './BetalingPage';
 import { ArmNummerPage } from './ArmNummerPage';
 import { AdminPage } from './AdminPage';
-import { Send } from 'lucide-react';
-import { useCreateSession, useAddDrinkLogs, useUpdateSession } from '@/hooks/useSessions';
-import { scanNfcTag, writeNfcTag } from '@/hooks/useNfc';
-import { supabase } from '@/integrations/supabase/client';
+import { Send, X } from 'lucide-react';
+import { useCreateSession, useAddDrinkLogs, useUpdateSession, useFindActiveSessionByWardrobe } from '@/hooks/useSessions';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 export interface DbOrderItem {
   product: DbProduct;
   quantity: number;
 }
 
+const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
+
+type BarPhase = 'input-number' | 'products';
+
 const Index = () => {
   const [started, setStarted] = useState(false);
   const [activeView, setActiveView] = useState<AppView>('bar');
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
-  const [nfcStatus, setNfcStatus] = useState<'scanning' | 'writing' | null>(null);
-  const cancelRef = useRef<(() => void) | null>(null);
+
+  // Bar number entry state
+  const [barPhase, setBarPhase] = useState<BarPhase>('input-number');
+  const [barNumber, setBarNumber] = useState('');
+  const [barSessionId, setBarSessionId] = useState<string | null>(null);
+  const [barSessionTotal, setBarSessionTotal] = useState(0);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
+  const lastLookupRef = useRef<string | null>(null);
+
   const createSession = useCreateSession();
   const addDrinkLogs = useAddDrinkLogs();
   const updateSession = useUpdateSession();
+  const findActiveSessionByWardrobe = useFindActiveSessionByWardrobe();
 
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
@@ -58,136 +70,179 @@ const Index = () => {
     setTimeout(() => setFeedback(null), 2000);
   }, []);
 
-  const handlePin = useCallback(() => {
-    setItems([]);
+  // Reset bar phase when switching views
+  useEffect(() => {
+    if (activeView !== 'bar') {
+      setBarPhase('input-number');
+      setBarNumber('');
+      setBarSessionId(null);
+      setBarSessionTotal(0);
+      setItems([]);
+      lastLookupRef.current = null;
+    }
+  }, [activeView]);
+
+  const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string, onNotFound: () => void) => {
+    try {
+      const session = await findActiveSessionByWardrobe.mutateAsync(wardrobeNum);
+      if (!session) {
+        onNotFound();
+        return;
+      }
+      setBarSessionId(session.id);
+      setBarSessionTotal(Number(session.total_amount ?? 0));
+      setFeedback('success');
+      setTimeout(() => { setFeedback(null); setBarPhase('products'); }, 1000);
+    } catch {
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+    }
+  }, [findActiveSessionByWardrobe]);
+
+  // Auto-lookup when 3 digits entered
+  useEffect(() => {
+    if (barPhase !== 'input-number' || activeView !== 'bar') return;
+    if (barNumber.length < 3) {
+      lastLookupRef.current = null;
+      return;
+    }
+    const wardrobe = `C${barNumber}`;
+    if (lastLookupRef.current === wardrobe) return;
+    lastLookupRef.current = wardrobe;
+
+    const t = window.setTimeout(() => {
+      void resolveSessionByWardrobe(wardrobe, () => {
+        setPendingWardrobe(wardrobe);
+        setShowAddDialog(true);
+      });
+    }, 300);
+    return () => window.clearTimeout(t);
+  }, [barNumber, barPhase, activeView, resolveSessionByWardrobe]);
+
+  const handleNumKey = (key: string) => {
+    if (key === 'DEL') setBarNumber('');
+    else if (barNumber.length < 3) setBarNumber(barNumber + key);
+  };
+
+  const handleConfirmAdd = useCallback(async () => {
+    if (!pendingWardrobe) return;
+    setShowAddDialog(false);
+    try {
+      const session = await createSession.mutateAsync({
+        wardrobe_number: pendingWardrobe,
+        is_event_numbered: true,
+      });
+      setBarSessionId(session.id);
+      setBarSessionTotal(Number(session.total_amount ?? 0));
+      setPendingWardrobe(null);
+      setFeedback('success');
+      setTimeout(() => { setFeedback(null); setBarPhase('products'); }, 1000);
+    } catch {
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+    }
+  }, [pendingWardrobe, createSession]);
+
+  const handleCancelAdd = useCallback(() => {
+    setShowAddDialog(false);
+    setPendingWardrobe(null);
+    setBarNumber('');
+    lastLookupRef.current = null;
   }, []);
 
-  const handleCash = useCallback(() => {
-    setItems([]);
-  }, [showFeedback]);
-
-  const handleSend = useCallback(async () => {
-    if (items.length === 0) return;
-
-    // Start NFC scan to read UID
-    setNfcStatus('scanning');
-    const { promise, cancel } = scanNfcTag(30000);
-    cancelRef.current = cancel;
-
-    let nfcUid: string | undefined;
-    let tagWardrobeNumber: string | undefined;
+  const handleBoek = useCallback(async () => {
+    if (items.length === 0 || !barSessionId) return;
     try {
-      const result = await promise;
-      nfcUid = result.uid;
-      // Extract wardrobe number from NFC tag data
-      if (result.message) {
-        try {
-          const json = JSON.parse(result.message);
-          if (json.wn) tagWardrobeNumber = json.wn;
-        } catch { /* not JSON */ }
-      }
-    } catch (err: any) {
-      setNfcStatus(null);
-      if (err.message === 'NFC_CANCELLED') return;
-      // Timeout — proceed without NFC
-    }
-
-    try {
-      // Create or find session in DB
-      const session = await createSession.mutateAsync({
-        nfc_uid: nfcUid,
-        lookup_wardrobe: tagWardrobeNumber,
-      });
       const logs = items.flatMap((item) =>
         Array.from({ length: item.quantity }, () => ({
-          session_id: session.id,
+          session_id: barSessionId,
           product_id: item.product.id,
           price_at_time: item.product.price,
         }))
       );
       await addDrinkLogs.mutateAsync(logs);
-      const newTotal = session.total_amount + total;
       await updateSession.mutateAsync({
-        id: session.id,
-        total_amount: newTotal,
+        id: barSessionId,
+        total_amount: barSessionTotal + total,
       });
-
-      // Write cumulative session data from DB to NFC tag
-      if (nfcUid) {
-        try {
-          // Fetch ALL drink_logs for this session to write cumulative data
-          const { data: allLogs } = await supabase
-            .from('drink_logs')
-            .select('product_id, products(shorthand)')
-            .eq('session_id', session.id);
-
-          const agg: Record<string, { qty: number; shorthand: string }> = {};
-          for (const log of allLogs || []) {
-            const sh = (log as any).products?.shorthand || log.product_id;
-            if (!agg[sh]) agg[sh] = { qty: 0, shorthand: sh };
-            agg[sh].qty++;
-          }
-
-          // Re-fetch session for latest wardrobe_number
-          const { data: freshSession } = await supabase
-            .from('sessions')
-            .select('wardrobe_number')
-            .eq('id', session.id)
-            .single();
-
-          const orderSummary = Object.values(agg).map(a => `${a.qty}x${a.shorthand}`).join(',');
-          const writeData = JSON.stringify({
-            items: orderSummary,
-            total: newTotal,
-            ...(freshSession?.wardrobe_number ? { wn: freshSession.wardrobe_number } : {}),
-          });
-
-          setNfcStatus('scanning');
-          const { promise: writePromise, cancel: writeCancel } = writeNfcTag(writeData, 15000);
-          cancelRef.current = writeCancel;
-          await writePromise;
-        } catch {
-          // Write failed but DB is saved — still show success
-        }
-      }
-
-      setNfcStatus(null);
       showFeedback('success');
-      setItems([]);
+      setTimeout(() => {
+        setItems([]);
+        setBarNumber('');
+        setBarSessionId(null);
+        setBarSessionTotal(0);
+        setBarPhase('input-number');
+        lastLookupRef.current = null;
+      }, 2000);
     } catch {
-      setNfcStatus(null);
       showFeedback('error');
     }
-  }, [items, total, createSession, addDrinkLogs, updateSession, showFeedback]);
+  }, [items, barSessionId, barSessionTotal, total, addDrinkLogs, updateSession, showFeedback]);
 
-  const handleCancelNfc = useCallback(() => {
-    cancelRef.current?.();
-    setNfcStatus(null);
-  }, []);
+  const handlePin = useCallback(() => setItems([]), []);
+  const handleCash = useCallback(() => setItems([]), []);
 
   if (!started) {
     return <IntroPage onEnter={() => setStarted(true)} />;
   }
 
+  const addDialog = (
+    <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) handleCancelAdd(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-extrabold uppercase">Nummer niet gevonden</DialogTitle>
+          <DialogDescription className="text-base">
+            <span className="font-bold">{pendingWardrobe}</span> bestaat niet in de database. Wil je dit nummer toevoegen?
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="flex gap-3 sm:gap-3">
+          <Button variant="destructive" className="flex-1 text-lg font-extrabold py-6" onClick={handleCancelAdd}>NEE</Button>
+          <Button className="flex-1 text-lg font-extrabold py-6" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }} onClick={handleConfirmAdd}>JA</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
-      <NfcOverlay status={nfcStatus} onCancel={handleCancelNfc} />
+      {addDialog}
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
 
-      {activeView === 'bar' && (
+      {activeView === 'bar' && barPhase === 'input-number' && (
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
+          <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>NUMMER</h2>
+          <div className="flex-1 flex flex-col items-center justify-center px-4">
+            <div className="w-full" style={{ maxWidth: '280px' }}>
+              <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(16px, 3vh, 32px) 16px', border: '3px solid #00cc13', boxShadow: '0 0 12px #00cc1380, 0 0 24px #00cc1330' }}>
+                {barNumber || <span style={{ color: '#9ca3af' }}>—</span>}
+              </div>
+            </div>
+          </div>
+          <div className="px-4 pb-2">
+            <div className="w-full max-w-md mx-auto grid grid-cols-3 gap-0">
+              {NUM_KEYS.map((key, i) => (
+                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="py-3 text-2xl font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: key === 'DEL' ? '#fff' : '#e5e5e5', border: '1px solid #333' }}>{key}</button>
+              ))}
+            </div>
+          </div>
+          <div className="h-4" />
+        </div>
+      )}
+
+      {activeView === 'bar' && barPhase === 'products' && (
         <>
           <OrderBar items={items} total={total} onRemoveItem={removeItem} onClear={clearOrder} />
           <ProductGrid onAddProduct={addProduct} />
           <div className="pb-[max(0px,env(safe-area-inset-bottom))]">
             <button
-              onClick={handleSend}
+              onClick={handleBoek}
               disabled={items.length === 0}
               className="pos-btn w-full py-3 text-lg flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110 active:brightness-75"
               style={{ backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340, inset 0 1px 0 #ffffff20' }}
             >
               <Send className="w-5 h-5" />
-              SEND — €{total.toFixed(2)}
+              BOEK — €{total.toFixed(2)}
             </button>
           </div>
         </>
