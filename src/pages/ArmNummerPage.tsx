@@ -3,7 +3,9 @@ import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { Send, X } from 'lucide-react';
-import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs } from '@/hooks/useSessions';
+import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface ArmOrderItem {
   product: DbProduct;
@@ -39,7 +41,7 @@ const gridLayout: { code: string; span: number; hideLabel?: boolean }[][] = [
 
 const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
 
-type Phase = 'input-arm' | 'not-found' | 'input-bag' | 'bag-not-found' | 'products';
+type Phase = 'input-arm' | 'input-bag' | 'products';
 
 export const ArmNummerPage = () => {
   const [phase, setPhase] = useState<Phase>('input-arm');
@@ -49,12 +51,15 @@ export const ArmNummerPage = () => {
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionTotal, setSessionTotal] = useState(0);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const lastArmLookupRef = useRef<string | null>(null);
   const lastBagLookupRef = useRef<string | null>(null);
   const { data: products } = useProducts();
   const findActiveSessionByWardrobe = useFindActiveSessionByWardrobe();
   const updateSession = useUpdateSession();
   const addDrinkLogs = useAddDrinkLogs();
+  const createSession = useCreateSession();
 
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
@@ -88,7 +93,10 @@ export const ArmNummerPage = () => {
     lastArmLookupRef.current = wardrobe;
 
     const t = window.setTimeout(() => {
-      void resolveSessionByWardrobe(wardrobe, () => setPhase('not-found'));
+      void resolveSessionByWardrobe(wardrobe, () => {
+        setPendingWardrobe(wardrobe);
+        setShowAddDialog(true);
+      });
     }, 300);
     return () => window.clearTimeout(t);
   }, [armNumber, phase, resolveSessionByWardrobe]);
@@ -106,8 +114,8 @@ export const ArmNummerPage = () => {
 
     const t = window.setTimeout(() => {
       void resolveSessionByWardrobe(wardrobe, () => {
-        setFeedback('error');
-        setTimeout(() => { setFeedback(null); setPhase('bag-not-found'); }, 1500);
+        setPendingWardrobe(wardrobe);
+        setShowAddDialog(true);
       });
     }, 300);
     return () => window.clearTimeout(t);
@@ -157,12 +165,58 @@ export const ArmNummerPage = () => {
     }
   }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession]);
 
+  const handleConfirmAdd = useCallback(async () => {
+    if (!pendingWardrobe) return;
+    setShowAddDialog(false);
+    try {
+      const session = await createSession.mutateAsync({
+        wardrobe_number: pendingWardrobe,
+        is_event_numbered: true,
+      });
+      setSessionId(session.id);
+      setSessionTotal(Number(session.total_amount ?? 0));
+      setPendingWardrobe(null);
+      setFeedback('success');
+      setTimeout(() => { setFeedback(null); setPhase('products'); }, 1000);
+    } catch {
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+    }
+  }, [pendingWardrobe, createSession]);
+
+  const handleCancelAdd = useCallback(() => {
+    setShowAddDialog(false);
+    setPendingWardrobe(null);
+    if (phase === 'input-arm') setArmNumber('');
+    else if (phase === 'input-bag') setBagNumber('');
+    lastArmLookupRef.current = null;
+    lastBagLookupRef.current = null;
+  }, [phase]);
+
+  const addDialog = (
+    <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) handleCancelAdd(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-extrabold uppercase">Nummer niet gevonden</DialogTitle>
+          <DialogDescription className="text-base">
+            <span className="font-bold">{pendingWardrobe}</span> bestaat niet in de database. Wil je dit nummer toevoegen?
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="flex gap-3 sm:gap-3">
+          <Button variant="destructive" className="flex-1 text-lg font-extrabold py-6" onClick={handleCancelAdd}>NEE</Button>
+          <Button className="flex-1 text-lg font-extrabold py-6" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }} onClick={handleConfirmAdd}>JA</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (phase === 'input-arm' || phase === 'input-bag') {
     const value = phase === 'input-arm' ? armNumber : bagNumber;
     const label = phase === 'input-arm' ? 'ARM NUMMER' : 'TAS NUMMER';
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <FeedbackOverlay type={feedback} />
+        {addDialog}
         <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>{label}</h2>
         <div className="flex-1 flex flex-col items-center justify-center px-4">
           <div className="w-full" style={{ maxWidth: '280px' }}>
@@ -179,31 +233,6 @@ export const ArmNummerPage = () => {
           </div>
         </div>
         <div className="h-4" />
-      </div>
-    );
-  }
-
-  if (phase === 'not-found') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden items-center justify-center gap-6 px-4">
-        <FeedbackOverlay type={feedback} />
-        <FeedbackOverlay type="error" />
-        <div className="text-center font-extrabold uppercase tracking-[0.1em]" style={{ color: '#ef4444', fontSize: 'clamp(24px, 5vw, 40px)' }}>NIET GEVONDEN</div>
-        <div className="text-center text-muted-foreground text-lg font-bold">Arm #{armNumber} niet gevonden.<br />Probeer met tasnummer.</div>
-        <button onClick={() => setPhase('input-bag')} className="px-8 py-4 text-xl font-extrabold uppercase" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 16px #ef444480, 0 0 32px #ef444430' }}>TAS NUMMER INVOEREN?</button>
-        <button onClick={() => { setArmNumber(''); setBagNumber(''); setPhase('input-arm'); }} className="px-8 py-4 text-xl font-extrabold uppercase" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330' }}>AFBREKEN</button>
-      </div>
-    );
-  }
-
-  if (phase === 'bag-not-found') {
-    return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden items-center justify-center gap-6 px-4">
-        <FeedbackOverlay type="error" />
-        <div className="text-center font-extrabold uppercase tracking-[0.1em]" style={{ color: '#ef4444', fontSize: 'clamp(24px, 5vw, 40px)' }}>NIET GEVONDEN</div>
-        <div className="text-center text-muted-foreground text-lg font-bold">Tas #{bagNumber} niet gevonden.</div>
-        <button onClick={() => { setBagNumber(''); setPhase('input-bag'); }} className="px-8 py-4 text-xl font-extrabold uppercase mb-3" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 16px #ef444480, 0 0 32px #ef444430' }}>OPNIEUW PROBEREN</button>
-        <button onClick={() => { setArmNumber(''); setBagNumber(''); setPhase('input-arm'); }} className="px-8 py-4 text-xl font-extrabold uppercase" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380, 0 0 32px #00cc1330' }}>AFBREKEN</button>
       </div>
     );
   }
