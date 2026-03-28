@@ -531,15 +531,15 @@ export const BetalingPage = ({
               <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em]" style={{ color: '#00cc13' }}>BETALING</h2>
               <button
                 onClick={startNfcScan}
-                className="w-64 py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
-                style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}
+                className="py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
+                style={{ width: '80%', maxWidth: '80vw', backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}
               >
                 <Nfc className="w-7 h-7" /> SCAN NFC
               </button>
               <button
                 onClick={() => setPhase('input-coat')}
-                className="w-64 py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
-                style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}
+                className="py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
+                style={{ width: '80%', maxWidth: '80vw', backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}
               >
                 <Hash className="w-7 h-7" /> NUMMER ZOEKEN
               </button>
