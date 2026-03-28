@@ -90,6 +90,7 @@ export const GarderobePage = () => {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
       return;
+    }
 
     // Block overwrite if DB has a non-archived session with wardrobe_number on this UID
     const { data: existingSession, error: existingSessionError } = await supabase
