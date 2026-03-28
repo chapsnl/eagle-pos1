@@ -260,14 +260,11 @@ export const BetalingPage = ({
     setPhase('confirm-payment');
   }, []);
 
-  // Step 2a: "BETAALD" — erase everything
+  // Step 2a: "BETAALD" — mark as paid, keep drink_logs for admin reopen
   const confirmPaid = useCallback(async () => {
     if (!nfcOrderData || !foundSessionId) return;
     try {
-      // Delete drink_logs for this session
-      await supabase.from('drink_logs').delete().eq('session_id', foundSessionId);
-
-      // Archive the session, reset total
+      // Mark session as paid — keep drink_logs intact for potential reopen
       await updateSession.mutateAsync({
         id: foundSessionId,
         actual_paid_amount: nfcOrderData.total,
@@ -281,15 +278,6 @@ export const BetalingPage = ({
           cancelRef.current = cancel;
           await promise;
         } catch { /* NFC erase failed, DB is done */ }
-      }
-
-      // Also call batch-erase edge function to clean up by wardrobe number
-      if (nfcOrderData.wn) {
-        try {
-          await supabase.functions.invoke('batch-erase', {
-            body: { wardrobe_number: nfcOrderData.wn, nfc_uid: nfcOrderData.uid || undefined },
-          });
-        } catch { /* edge function failed, main cleanup done */ }
       }
 
       // Play notification sound

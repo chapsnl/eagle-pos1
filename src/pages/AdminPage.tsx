@@ -533,7 +533,7 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
     setLoading(true);
     supabase
       .from('sessions')
-      .select('*')
+      .select('*, drink_logs(*, products(*))')
       .in('status', ['paid', 'archived'])
       .order('created_at', { ascending: false })
       .limit(50)
@@ -574,25 +574,40 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
             <div className="space-y-2">
               {sessions.map((s) => {
                 const label = s.wardrobe_number || (s.nfc_uid ? `UID: ${s.nfc_uid.slice(0, 8)}…` : 'Anoniem');
+                const drinks = s.drink_logs || [];
+                // Aggregate drinks by product shorthand
+                const drinkMap: Record<string, number> = {};
+                drinks.forEach((d: any) => {
+                  const name = d.products?.shorthand || '?';
+                  drinkMap[name] = (drinkMap[name] || 0) + 1;
+                });
+                const drinkSummary = Object.entries(drinkMap).map(([name, qty]) => `${qty}x ${name}`).join(', ');
                 return (
-                  <div key={s.id} className="flex items-center justify-between bg-secondary px-3 py-2 rounded">
-                    <div>
-                      <span className="text-sm font-bold">{label}</span>
-                      <span className="text-xs text-muted-foreground ml-2">
-                        €{Number(s.total_amount).toFixed(2)}
-                      </span>
-                      <span className="text-xs ml-2 px-1.5 py-0.5 rounded-full uppercase font-bold"
-                        style={s.status === 'paid' ? { backgroundColor: '#00cc1330', color: '#00cc13' } : { backgroundColor: '#6b728030', color: '#6b7280' }}>
-                        {s.status}
-                      </span>
+                  <div key={s.id} className="bg-secondary px-3 py-2 rounded">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-sm font-bold">{label}</span>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          €{Number(s.total_amount).toFixed(2)}
+                        </span>
+                        <span className="text-xs ml-2 px-1.5 py-0.5 rounded-full uppercase font-bold"
+                          style={s.status === 'paid' ? { backgroundColor: '#00cc1330', color: '#00cc13' } : { backgroundColor: '#6b728030', color: '#6b7280' }}>
+                          {s.status}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setReopenId(s.id)}
+                        className="px-4 py-2 text-xs font-extrabold uppercase"
+                        style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
+                      >
+                        HEROPEN
+                      </button>
                     </div>
-                    <button
-                      onClick={() => setReopenId(s.id)}
-                      className="px-4 py-2 text-xs font-extrabold uppercase"
-                      style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
-                    >
-                      HEROPEN
-                    </button>
+                    {drinkSummary && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        🍹 {drinkSummary}
+                      </div>
+                    )}
                   </div>
                 );
               })}
