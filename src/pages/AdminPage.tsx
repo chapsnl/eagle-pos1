@@ -480,7 +480,7 @@ export const AdminPage = () => {
                     if (error) throw error;
                     setCloseShiftResult({
                       success: true,
-                      message: `Rapport verstuurd! ${data.totalItems} items, totaal €${Number(data.grandTotal).toFixed(2)}`,
+                      message: 'Rapport verstuurd!',
                     });
                   } catch (err: any) {
                     setCloseShiftResult({

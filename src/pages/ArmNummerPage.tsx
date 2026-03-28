@@ -200,7 +200,7 @@ export const ArmNummerPage = () => {
           <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Nummer niet gevonden</DialogTitle>
           <DialogDescription className="text-sm pt-2">
             <span className="font-extrabold text-base" style={{ color: '#00cc13' }}>{pendingWardrobe}</span>{' '}
-            bestaat niet in de database. Wil je dit nummer toevoegen?
+            Wil je dit nummer toevoegen?
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex gap-3 sm:gap-3">
