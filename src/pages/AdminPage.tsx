@@ -545,7 +545,10 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
 
   const handleReopen = async (id: string) => {
     try {
+      // Keep existing total_amount so it carries over
       await updateSession.mutateAsync({ id, status: 'active' });
+      // Restore actual_paid_amount to null since it's reopened
+      await supabase.from('sessions').update({ actual_paid_amount: null }).eq('id', id);
       setSessions(prev => prev.filter(s => s.id !== id));
       setReopenId(null);
     } catch { /* error */ }
