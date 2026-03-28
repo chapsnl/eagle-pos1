@@ -407,17 +407,17 @@ export const BetalingPage = ({
       <div className="flex gap-3 mt-4">
         <button
           onClick={() => processPaymentForSession('pin')}
-          className="px-6 py-3 font-extrabold uppercase text-sm flex items-center gap-2"
+          className="px-8 py-5 font-extrabold uppercase text-lg flex items-center gap-3"
           style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }}
         >
-          <CreditCard className="w-4 h-4" /> PIN
+          <CreditCard className="w-6 h-6" /> PIN
         </button>
         <button
           onClick={() => processPaymentForSession('cash')}
-          className="px-6 py-3 font-extrabold uppercase text-sm flex items-center gap-2"
+          className="px-8 py-5 font-extrabold uppercase text-lg flex items-center gap-3"
           style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }}
         >
-          <Banknote className="w-4 h-4" /> CONTANT
+          <Banknote className="w-6 h-6" /> CONTANT
         </button>
       </div>
       <button
@@ -531,17 +531,17 @@ export const BetalingPage = ({
               <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em]" style={{ color: '#00cc13' }}>BETALING</h2>
               <button
                 onClick={startNfcScan}
-                className="w-64 py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
+                className="w-72 py-7 text-2xl font-extrabold uppercase flex items-center justify-center gap-3"
                 style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}
               >
-                <Nfc className="w-7 h-7" /> SCAN NFC
+                <Nfc className="w-9 h-9" /> SCAN NFC
               </button>
               <button
                 onClick={() => setPhase('input-coat')}
-                className="w-64 py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
+                className="w-72 py-7 text-2xl font-extrabold uppercase flex items-center justify-center gap-3"
                 style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}
               >
-                <Hash className="w-7 h-7" /> NUMMER ZOEKEN
+                <Hash className="w-9 h-9" /> NUMMER ZOEKEN
               </button>
             </div>
           )}
@@ -622,14 +622,14 @@ export const BetalingPage = ({
               </div>
               <button
                 onClick={confirmPaid}
-                className="w-64 py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
+                className="w-72 py-7 text-2xl font-extrabold uppercase flex items-center justify-center gap-3"
                 style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}
               >
                 ✓ BETAALD
               </button>
               <button
                 onClick={confirmNotPaid}
-                className="w-64 py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
+                className="w-72 py-7 text-2xl font-extrabold uppercase flex items-center justify-center gap-3"
                 style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 16px #ef444480' }}
               >
                 ✗ NIET BETAALD
