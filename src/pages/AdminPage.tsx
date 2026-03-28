@@ -446,16 +446,16 @@ export const AdminPage = () => {
 
       {/* Close Shift confirmation dialog */}
       <Dialog open={showCloseShift} onOpenChange={(v) => { if (!closeShiftLoading) { setShowCloseShift(v); setCloseShiftResult(null); } }}>
-        <DialogContent className="bg-card" style={{ borderColor: '#ef444440' }}>
+        <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
           <DialogHeader>
-            <DialogTitle className="font-extrabold uppercase" style={{ color: '#ef4444' }}>
+            <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>
               {closeShiftResult ? (closeShiftResult.success ? 'SHIFT AFGESLOTEN' : 'FOUT') : 'CLOSE SHIFT'}
             </DialogTitle>
-            <DialogDescription className="text-sm">
+            <DialogDescription className="text-sm pt-2">
               {closeShiftResult
                 ? closeShiftResult.message
                 : (
-                  <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                  <span className="font-extrabold text-base block py-2" style={{ color: '#00cc13' }}>
                     ⚠️ Weet je het zeker? Alle bestellingen gaan verloren!
                   </span>
                 )
@@ -466,7 +466,8 @@ export const AdminPage = () => {
             <DialogFooter className="flex gap-3 sm:gap-3">
               <button
                 onClick={() => { setShowCloseShift(false); setCloseShiftResult(null); }}
-                className="flex-1 py-3 font-extrabold uppercase text-sm bg-secondary text-secondary-foreground"
+                className="flex-1 py-3 font-extrabold uppercase text-sm"
+                style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
                 disabled={closeShiftLoading}
               >
                 Nee
@@ -491,7 +492,7 @@ export const AdminPage = () => {
                   }
                 }}
                 className="flex-1 py-3 font-extrabold uppercase text-sm"
-                style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
+                style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
                 disabled={closeShiftLoading}
               >
                 {closeShiftLoading ? 'BEZIG...' : 'JA, SLUIT SHIFT'}
