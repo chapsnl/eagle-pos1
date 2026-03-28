@@ -362,8 +362,8 @@ export const AdminPage = () => {
   return (
     <div className="flex-1 overflow-y-auto p-4">
       <div className="max-w-lg mx-auto space-y-4">
-        <h2 className="text-xl font-extrabold uppercase tracking-[0.15em] text-primary mb-6">
-          Admin Panel
+        <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center mb-6" style={{ color: '#00cc13', textShadow: '0 0 20px #00cc1340' }}>
+          ADMIN PANEL
         </h2>
 
         {/* Confirmation dialog */}
