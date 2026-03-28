@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
     const tableRows = rows.map(r => `<tr>
 <td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;text-align:left;">${r.name}</td>
 <td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;text-align:center;">${r.qty}</td>
-<td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;text-align:right;">&euro;${r.unitPrice.toFixed(2)}</td>
+<td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;text-align:right;white-space:nowrap;">&euro;${r.unitPrice.toFixed(2)}</td>
 <td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;font-weight:bold;text-align:right;">&euro;${r.total.toFixed(2)}</td>
 </tr>`).join('');
 

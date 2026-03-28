@@ -453,7 +453,11 @@ export const AdminPage = () => {
             </DialogTitle>
             <DialogDescription className="text-sm pt-2">
               {closeShiftResult
-                ? closeShiftResult.message
+                ? (
+                  <span className="font-extrabold text-base block py-2" style={{ color: '#00cc13' }}>
+                    {closeShiftResult.message}
+                  </span>
+                )
                 : (
                   <span className="font-extrabold text-base block py-2" style={{ color: '#00cc13' }}>
                     ⚠️ Weet je het zeker? Alle bestellingen gaan verloren!
