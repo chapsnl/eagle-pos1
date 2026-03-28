@@ -1,14 +1,51 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts';
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+async function readSmtpResponse(conn: Deno.Conn): Promise<string> {
+  const decoder = new TextDecoder();
+  const buf = new Uint8Array(2048);
+  let response = '';
+
+  while (true) {
+    const n = await conn.read(buf);
+    if (n === null) break;
+
+    response += decoder.decode(buf.subarray(0, n));
+    const lines = response.split(/\r?\n/).filter(Boolean);
+    if (lines.length === 0) continue;
+
+    const lastLine = lines[lines.length - 1];
+    if (/^\d{3} /.test(lastLine)) break;
+  }
+
+  return response;
+}
+
+async function sendSmtpCommand(
+  conn: Deno.Conn,
+  command: string,
+  expectedCodes: number[]
+): Promise<string> {
+  const encoder = new TextEncoder();
+  await conn.write(encoder.encode(`${command}\r\n`));
+  const response = await readSmtpResponse(conn);
+  const code = Number(response.slice(0, 3));
+
+  if (!expectedCodes.includes(code)) {
+    throw new Error(`SMTP command failed (${command}): ${response.trim()}`);
+  }
+
+  return response;
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
@@ -103,32 +140,60 @@ Deno.serve(async (req) => {
     </body>
     </html>`;
 
-    // Send email via SMTP (port 587 STARTTLS)
+    // Send email via SMTP to fixed recipient (manual TLS SMTP)
     const smtpHost = Deno.env.get('SMTP_HOST')!;
     const smtpUser = Deno.env.get('SMTP_USER')!;
     const smtpPass = Deno.env.get('SMTP_PASS')!;
+    const recipient = 'michael.roks@icloud.com';
 
-    const client = new SMTPClient({
-      connection: {
-        hostname: smtpHost,
-        port: 587,
-        tls: false,
-        auth: {
-          username: smtpUser,
-          password: smtpPass,
-        },
-      },
-    });
+    const conn = await Deno.connectTls({ hostname: smtpHost, port: 465 });
+    try {
+      const greeting = await readSmtpResponse(conn);
+      if (!greeting.startsWith('220')) {
+        throw new Error(`SMTP greeting failed: ${greeting.trim()}`);
+      }
 
-    await client.send({
-      from: smtpUser,
-      to: 'michael.roks@icloud.com',
-      subject: `Eagle POS Shift Report — ${dateStr} ${timeStr}`,
-      content: 'Zie bijlage voor het shift rapport.',
-      html: htmlReport,
-    });
+      await sendSmtpCommand(conn, 'EHLO eagle-pos.local', [250]);
+      await sendSmtpCommand(conn, 'AUTH LOGIN', [334]);
+      await sendSmtpCommand(conn, btoa(smtpUser), [334]);
+      await sendSmtpCommand(conn, btoa(smtpPass), [235]);
+      await sendSmtpCommand(conn, `MAIL FROM:<${smtpUser}>`, [250]);
+      await sendSmtpCommand(conn, `RCPT TO:<${recipient}>`, [250, 251]);
+      await sendSmtpCommand(conn, 'DATA', [354]);
 
-    await client.close();
+      const boundary = `eagle-pos-${crypto.randomUUID()}`;
+      const message = [
+        `From: Eagle POS <${smtpUser}>`,
+        `To: ${recipient}`,
+        `Subject: Eagle POS Shift Report — ${dateStr} ${timeStr}`,
+        'MIME-Version: 1.0',
+        `Content-Type: multipart/alternative; boundary="${boundary}"`,
+        '',
+        `--${boundary}`,
+        'Content-Type: text/plain; charset="UTF-8"',
+        '',
+        `Shift report van ${dateStr} ${timeStr}.`,
+        '',
+        `--${boundary}`,
+        'Content-Type: text/html; charset="UTF-8"',
+        '',
+        htmlReport,
+        '',
+        `--${boundary}--`,
+      ].join('\r\n');
+
+      const encoder = new TextEncoder();
+      await conn.write(encoder.encode(`${message}\r\n.\r\n`));
+
+      const dataResp = await readSmtpResponse(conn);
+      if (!dataResp.startsWith('250')) {
+        throw new Error(`SMTP DATA failed: ${dataResp.trim()}`);
+      }
+
+      await sendSmtpCommand(conn, 'QUIT', [221]);
+    } finally {
+      conn.close();
+    }
 
     // Archive all active sessions after report
     await supabase
