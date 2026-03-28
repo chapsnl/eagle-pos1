@@ -93,7 +93,10 @@ export const ArmNummerPage = () => {
     lastArmLookupRef.current = wardrobe;
 
     const t = window.setTimeout(() => {
-      void resolveSessionByWardrobe(wardrobe, () => setPhase('not-found'));
+      void resolveSessionByWardrobe(wardrobe, () => {
+        setPendingWardrobe(wardrobe);
+        setShowAddDialog(true);
+      });
     }, 300);
     return () => window.clearTimeout(t);
   }, [armNumber, phase, resolveSessionByWardrobe]);
