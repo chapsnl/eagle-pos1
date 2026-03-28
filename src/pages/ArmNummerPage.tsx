@@ -41,7 +41,7 @@ const gridLayout: { code: string; span: number; hideLabel?: boolean }[][] = [
 
 const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
 
-type Phase = 'input-arm' | 'not-found' | 'input-bag' | 'bag-not-found' | 'products';
+type Phase = 'input-arm' | 'input-bag' | 'bag-not-found' | 'products';
 
 export const ArmNummerPage = () => {
   const [phase, setPhase] = useState<Phase>('input-arm');
