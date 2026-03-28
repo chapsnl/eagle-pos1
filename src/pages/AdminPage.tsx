@@ -418,6 +418,14 @@ export const AdminPage = () => {
         />
 
         <AdminButton
+          icon={<RotateCcw className="w-5 h-5" />}
+          label="AFGESLOTEN KLANTEN"
+          description="Bekijk betaalde/gearchiveerde sessies"
+          variant="primary"
+          onClick={() => setShowClosed(true)}
+        />
+
+        <AdminButton
           icon={<Mail className="w-5 h-5" />}
           label="CLOSE SHIFT (E-MAIL)"
           description="Voorraad + Debt List versturen, dagsaldo resetten"
@@ -434,6 +442,9 @@ export const AdminPage = () => {
         />
 
       </div>
+
+      {/* Closed sessions dialog */}
+      <ClosedSessionsDialog open={showClosed} onOpenChange={setShowClosed} />
     </div>
   );
 };
