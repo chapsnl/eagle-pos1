@@ -366,9 +366,6 @@ export const BetalingPage = ({
         {nfcOrderData?.uid && (
           <p className="text-xs font-mono mb-3 break-all" style={{ color: '#00cc13' }}>UID: {nfcOrderData.uid}</p>
         )}
-        {nfcOrderData?.source === 'db' && (
-          <p className="text-xs text-muted-foreground mb-2">📊 Data uit database</p>
-        )}
         <div className="space-y-2">
           {nfcOrderData?.items.map((item, i) => {
             const product = productsData?.find(p => p.shorthand === item.shorthand);
@@ -404,17 +401,22 @@ export const BetalingPage = ({
           </div>
         )}
       </div>
+      {Number(nfcOrderData?.total ?? 0) <= 8 && (
+        <div className="mt-3 px-4 py-2 text-center font-extrabold uppercase text-sm" style={{ backgroundColor: '#f59e0b20', color: '#f59e0b', border: '1px solid #f59e0b40' }}>
+          ⚠ Minimum niet bereikt
+        </div>
+      )}
       <div className="flex gap-3 mt-4">
         <button
           onClick={() => processPaymentForSession('pin')}
-          className="px-8 py-5 font-extrabold uppercase text-lg flex items-center gap-3"
+          className="flex-1 py-5 font-extrabold uppercase text-lg flex items-center justify-center gap-3"
           style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }}
         >
           <CreditCard className="w-6 h-6" /> PIN
         </button>
         <button
           onClick={() => processPaymentForSession('cash')}
-          className="px-8 py-5 font-extrabold uppercase text-lg flex items-center gap-3"
+          className="flex-1 py-5 font-extrabold uppercase text-lg flex items-center justify-center gap-3"
           style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }}
         >
           <Banknote className="w-6 h-6" /> CONTANT
