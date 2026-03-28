@@ -622,15 +622,15 @@ export const BetalingPage = ({
               </div>
               <button
                 onClick={confirmPaid}
-                className="w-64 py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
-                style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}
+                className="py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
+                style={{ width: '80%', maxWidth: '80vw', backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}
               >
                 ✓ BETAALD
               </button>
               <button
                 onClick={confirmNotPaid}
-                className="w-64 py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
-                style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 16px #ef444480' }}
+                className="py-5 text-xl font-extrabold uppercase flex items-center justify-center gap-3"
+                style={{ width: '80%', maxWidth: '80vw', backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 16px #ef444480' }}
               >
                 ✗ NIET BETAALD
               </button>
