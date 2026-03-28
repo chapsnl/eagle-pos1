@@ -59,12 +59,10 @@ const Index = () => {
   }, []);
 
   const handlePin = useCallback(() => {
-    showFeedback('success');
     setItems([]);
-  }, [showFeedback]);
+  }, []);
 
   const handleCash = useCallback(() => {
-    showFeedback('success');
     setItems([]);
   }, [showFeedback]);
 
