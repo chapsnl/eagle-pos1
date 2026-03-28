@@ -588,8 +588,8 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
                     </div>
                     <button
                       onClick={() => setReopenId(s.id)}
-                      className="px-3 py-1 text-xs font-extrabold uppercase"
-                      style={{ backgroundColor: '#f59e0b', color: '#fff', boxShadow: '0 0 8px #f59e0b60' }}
+                      className="px-4 py-2 text-xs font-extrabold uppercase"
+                      style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
                     >
                       HEROPEN
                     </button>
