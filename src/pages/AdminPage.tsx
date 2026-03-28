@@ -731,22 +731,21 @@ const AdminCard = ({ icon, title, description, value }: { icon: React.ReactNode;
   </div>
 );
 
-const AdminButton = ({ icon, label, description, variant, onClick }: {
-  icon: React.ReactNode; label: string; description: string; variant?: string; onClick: () => void;
+const AdminButton = ({ label, description, variant, onClick }: {
+  label: string; description: string; variant?: string; onClick: () => void;
 }) => (
   <button
     onClick={onClick}
-    className={`w-full text-left bg-card border border-border rounded-lg p-4 flex items-center gap-4 hover:brightness-110 transition-all active:scale-[0.98] ${
-      variant === 'destructive' ? 'hover:border-destructive' : variant === 'primary' ? 'hover:border-primary' : variant === 'success' ? '' : 'hover:border-muted-foreground'
-    }`}
-    style={variant === 'success' ? { borderColor: '#00cc1340' } : undefined}
+    className="w-full text-left rounded-lg p-4 flex items-center gap-4 transition-all active:scale-[0.98] font-extrabold uppercase"
+    style={{
+      backgroundColor: variant === 'destructive' ? '#ef4444' : '#00cc13',
+      color: '#fff',
+      boxShadow: variant === 'destructive' ? '0 0 12px #ef444480' : '0 0 12px #00cc1380',
+    }}
   >
-    <div style={variant === 'success' ? { color: '#00cc13' } : undefined} className={variant === 'destructive' ? 'text-destructive' : variant === 'primary' ? 'text-primary' : variant === 'success' ? '' : 'text-muted-foreground'}>
-      {icon}
-    </div>
     <div>
       <h3 className="text-sm font-extrabold uppercase">{label}</h3>
-      <p className="text-xs text-muted-foreground">{description}</p>
+      <p className="text-xs opacity-80 font-normal normal-case">{description}</p>
     </div>
   </button>
 );
