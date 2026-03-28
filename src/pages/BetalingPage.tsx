@@ -366,9 +366,6 @@ export const BetalingPage = ({
         {nfcOrderData?.uid && (
           <p className="text-xs font-mono mb-3 break-all" style={{ color: '#00cc13' }}>UID: {nfcOrderData.uid}</p>
         )}
-        {nfcOrderData?.source === 'db' && (
-          <p className="text-xs text-muted-foreground mb-2">📊 Data uit database</p>
-        )}
         <div className="space-y-2">
           {nfcOrderData?.items.map((item, i) => {
             const product = productsData?.find(p => p.shorthand === item.shorthand);
