@@ -19,6 +19,7 @@ import {
 export const AdminPage = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [batchMode, setBatchMode] = useState(false);
+  const [showClosed, setShowClosed] = useState(false);
   const [nfcStatus, setNfcStatus] = useState<'scanning' | 'writing' | null>(null);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [erasedCount, setErasedCount] = useState(0);
