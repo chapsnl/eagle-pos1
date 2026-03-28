@@ -405,10 +405,24 @@ export const AdminPage = () => {
         />
 
         <AdminButton
-          label="BATCH-ERASE"
-          description="Continu NFC-bandjes wissen"
+          label="AFGESLOTEN KLANTEN"
+          description="Bekijk betaalde sessies"
           variant="success"
-          onClick={() => setShowConfirm(true)}
+          onClick={() => setShowClosed(true)}
+        />
+
+        <AdminButton
+          label="CLOSE SHIFT (E-MAIL)"
+          description="Dagsaldo Resetten"
+          variant="success"
+          onClick={() => setShowCloseShift(true)}
+        />
+
+        <AdminButton
+          label="INCIDENT"
+          description="Probleem-sessie vlaggen"
+          variant="destructive"
+          onClick={() => console.log('Incident')}
         />
 
         <AdminButton
@@ -419,24 +433,10 @@ export const AdminPage = () => {
         />
 
         <AdminButton
-          label="AFGESLOTEN KLANTEN"
-          description="Bekijk betaalde sessies"
+          label="BATCH-ERASE"
+          description="Continu NFC-bandjes wissen"
           variant="success"
-          onClick={() => setShowClosed(true)}
-        />
-
-        <AdminButton
-          label="CLOSE SHIFT (E-MAIL)"
-          description="Voorraad + Debt List versturen, dagsaldo resetten"
-          variant="success"
-          onClick={() => setShowCloseShift(true)}
-        />
-
-        <AdminButton
-          label="INCIDENT"
-          description="Probleem-sessie vlaggen"
-          variant="destructive"
-          onClick={() => console.log('Incident')}
+          onClick={() => setShowConfirm(true)}
         />
 
       </div>
@@ -523,12 +523,12 @@ const ActiveSessionsSection = () => {
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden">
       <div className="p-4 flex items-center gap-3 border-b border-border">
-        <Users className="w-5 h-5 text-primary" />
+        <Users className="w-5 h-5" style={{ color: '#00cc13' }} />
         <div className="flex-1">
           <h3 className="text-sm font-extrabold uppercase">OPENSTAANDE BEZOEKERS</h3>
           <p className="text-xs text-muted-foreground">Actieve sessies</p>
         </div>
-        <span className="text-lg font-extrabold text-primary">{sessions?.length ?? 0}</span>
+        <span className="text-lg font-extrabold" style={{ color: '#00cc13' }}>{sessions?.length ?? 0}</span>
       </div>
 
       {isLoading && (

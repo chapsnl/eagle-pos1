@@ -75,7 +75,7 @@ export const ProductGrid = ({ onAddProduct }: ProductGridProps) => {
                   color: textColor,
                 }}
                 onPointerDown={(e) => {
-                  e.currentTarget.style.boxShadow = 'inset 0 0 0 3px #ff0000, 0 0 15px #ff0000';
+                  e.currentTarget.style.boxShadow = 'inset 0 0 0 3px #00cc13, 0 0 15px #00cc1380';
                 }}
                 onPointerUp={(e) => {
                   e.currentTarget.style.boxShadow = 'none';
