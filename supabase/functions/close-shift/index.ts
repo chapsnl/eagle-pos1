@@ -131,7 +131,7 @@ ${tableRows}
 </div>
 </div>
 <div style="padding:16px;text-align:center;background:#f5f5f5;border-top:1px solid #ddd;">
-<p style="margin:0;color:#666;font-size:11px;">Eagle POS System &mdash; Automated Shift Report</p>
+<p style="margin:0;color:#4b4b4b;font-size:11px;">Eagle POS System &mdash; Automated Shift Report</p>
 </div>
 </div>
 </body>
