@@ -69,6 +69,29 @@ export const GarderobePage = () => {
       return;
     }
 
+    // Block if this wardrobe number is already assigned to any active session
+    const { data: existingWnSession, error: wnError } = await supabase
+      .from('sessions')
+      .select('id')
+      .eq('wardrobe_number', wardrobeNumber)
+      .in('status', ['active', 'paid', 'incident'])
+      .limit(1)
+      .maybeSingle();
+
+    if (wnError) {
+      setNfcStatus(null);
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+      return;
+    }
+
+    if (existingWnSession) {
+      setNfcStatus(null);
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+      return;
+    }
+
     // Block overwrite if DB has a non-archived session with wardrobe_number on this UID
     const { data: existingSession, error: existingSessionError } = await supabase
       .from('sessions')
