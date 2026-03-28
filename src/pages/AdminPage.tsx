@@ -615,14 +615,15 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
           <DialogFooter className="flex gap-3 sm:gap-3">
             <button
               onClick={() => setReopenId(null)}
-              className="flex-1 py-3 font-extrabold uppercase text-sm bg-secondary text-secondary-foreground"
+              className="flex-1 py-3 font-extrabold uppercase text-sm"
+              style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
             >
               Annuleren
             </button>
             <button
               onClick={() => reopenId && handleReopen(reopenId)}
               className="flex-1 py-3 font-extrabold uppercase text-sm"
-              style={{ backgroundColor: '#f59e0b', color: '#fff' }}
+              style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
             >
               Ja, Heropen
             </button>
