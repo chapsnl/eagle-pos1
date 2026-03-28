@@ -427,7 +427,7 @@ export const AdminPage = () => {
 
         <AdminButton
           label="CLOSE SHIFT (E-MAIL)"
-          description="Voorraad + Debt List versturen, dagsaldo resetten"
+          description="Dagsaldo Resetten"
           variant="success"
           onClick={() => setShowCloseShift(true)}
         />
