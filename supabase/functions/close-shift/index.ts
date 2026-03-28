@@ -103,27 +103,20 @@ Deno.serve(async (req) => {
     </body>
     </html>`;
 
-    // Send email via SMTP
+    // Send email via SMTP (port 587 STARTTLS)
     const smtpHost = Deno.env.get('SMTP_HOST')!;
-    const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '465');
     const smtpUser = Deno.env.get('SMTP_USER')!;
     const smtpPass = Deno.env.get('SMTP_PASS')!;
 
     const client = new SMTPClient({
       connection: {
         hostname: smtpHost,
-        port: smtpPort,
-        tls: true,
+        port: 587,
+        tls: false,
         auth: {
           username: smtpUser,
           password: smtpPass,
         },
-      },
-      debug: {
-        log: false,
-        allowUnsecure: false,
-        encodeLB: false,
-        noStartTLS: true,
       },
     });
 
