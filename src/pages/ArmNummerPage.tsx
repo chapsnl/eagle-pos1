@@ -195,16 +195,17 @@ export const ArmNummerPage = () => {
 
   const addDialog = (
     <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) handleCancelAdd(); }}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
         <DialogHeader>
-          <DialogTitle className="text-xl font-extrabold uppercase">Nummer niet gevonden</DialogTitle>
-          <DialogDescription className="text-base">
-            <span className="font-bold">{pendingWardrobe}</span> bestaat niet in de database. Wil je dit nummer toevoegen?
+          <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Nummer niet gevonden</DialogTitle>
+          <DialogDescription className="text-sm pt-2">
+            <span className="font-extrabold text-base" style={{ color: '#00cc13' }}>{pendingWardrobe}</span>{' '}
+            bestaat niet in de database. Wil je dit nummer toevoegen?
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex gap-3 sm:gap-3">
-          <Button variant="destructive" className="flex-1 text-lg font-extrabold py-6" onClick={handleCancelAdd}>NEE</Button>
-          <Button className="flex-1 text-lg font-extrabold py-6" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }} onClick={handleConfirmAdd}>JA</Button>
+          <button onClick={handleCancelAdd} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}>NEE</button>
+          <button onClick={handleConfirmAdd} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}>JA</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
