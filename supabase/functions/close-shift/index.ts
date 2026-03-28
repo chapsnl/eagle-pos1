@@ -90,10 +90,10 @@ Deno.serve(async (req) => {
     // Build HTML email with A4 report styling
     const tableRows = rows.map(r => `
       <tr>
-        <td style="padding:8px 12px;border-bottom:1px solid #333;color:#fff;font-size:14px;">${r.name}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #333;color:#fff;text-align:center;font-size:14px;">${r.qty}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #333;color:#fff;text-align:right;font-size:14px;">€${r.unitPrice.toFixed(2)}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #333;color:#00cc13;text-align:right;font-size:14px;font-weight:bold;">€${r.total.toFixed(2)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;">${r.name}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;text-align:center;font-size:14px;">${r.qty}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;text-align:right;font-size:14px;">€${r.unitPrice.toFixed(2)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;text-align:right;font-size:14px;font-weight:bold;">€${r.total.toFixed(2)}</td>
       </tr>
     `).join('');
 
