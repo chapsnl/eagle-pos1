@@ -434,7 +434,7 @@ export const AdminPage = () => {
           label="CLOSE SHIFT (E-MAIL)"
           description="Voorraad + Debt List versturen, dagsaldo resetten"
           variant="primary"
-          onClick={() => console.log('Close shift')}
+          onClick={() => setShowCloseShift(true)}
         />
 
         <AdminButton
