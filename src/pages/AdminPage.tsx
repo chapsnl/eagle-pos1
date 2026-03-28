@@ -522,6 +522,114 @@ const ActiveSessionsSection = () => {
   );
 };
 
+const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) => {
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [reopenId, setReopenId] = useState<string | null>(null);
+  const updateSession = useUpdateSession();
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    supabase
+      .from('sessions')
+      .select('*')
+      .in('status', ['paid', 'archived'])
+      .order('created_at', { ascending: false })
+      .limit(50)
+      .then(({ data }) => {
+        setSessions(data || []);
+        setLoading(false);
+      });
+  }, [open]);
+
+  const handleReopen = async (id: string) => {
+    try {
+      await updateSession.mutateAsync({ id, status: 'active' });
+      setSessions(prev => prev.filter(s => s.id !== id));
+      setReopenId(null);
+    } catch { /* error */ }
+  };
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="bg-card max-h-[80vh] overflow-y-auto" style={{ borderColor: '#00cc1340' }}>
+          <DialogHeader>
+            <DialogTitle className="font-extrabold uppercase" style={{ color: '#00cc13' }}>
+              Afgesloten Klanten
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Betaalde en gearchiveerde sessies
+            </DialogDescription>
+          </DialogHeader>
+          {loading ? (
+            <div className="text-xs text-muted-foreground py-4">Laden...</div>
+          ) : sessions.length === 0 ? (
+            <div className="text-xs text-muted-foreground py-4">Geen afgesloten sessies</div>
+          ) : (
+            <div className="space-y-2">
+              {sessions.map((s) => {
+                const label = s.wardrobe_number || (s.nfc_uid ? `UID: ${s.nfc_uid.slice(0, 8)}…` : 'Anoniem');
+                return (
+                  <div key={s.id} className="flex items-center justify-between bg-secondary px-3 py-2 rounded">
+                    <div>
+                      <span className="text-sm font-bold">{label}</span>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        €{Number(s.total_amount).toFixed(2)}
+                      </span>
+                      <span className="text-xs ml-2 px-1.5 py-0.5 rounded-full uppercase font-bold"
+                        style={s.status === 'paid' ? { backgroundColor: '#00cc1330', color: '#00cc13' } : { backgroundColor: '#6b728030', color: '#6b7280' }}>
+                        {s.status}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setReopenId(s.id)}
+                      className="px-3 py-1 text-xs font-extrabold uppercase"
+                      style={{ backgroundColor: '#f59e0b', color: '#fff', boxShadow: '0 0 8px #f59e0b60' }}
+                    >
+                      HEROPEN
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reopen confirmation */}
+      <Dialog open={!!reopenId} onOpenChange={() => setReopenId(null)}>
+        <DialogContent className="bg-card" style={{ borderColor: '#f59e0b40' }}>
+          <DialogHeader>
+            <DialogTitle className="font-extrabold uppercase" style={{ color: '#f59e0b' }}>
+              Weet je het zeker?
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Deze sessie wordt heropend als actief.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-3 sm:gap-3">
+            <button
+              onClick={() => setReopenId(null)}
+              className="flex-1 py-3 font-extrabold uppercase text-sm bg-secondary text-secondary-foreground"
+            >
+              Annuleren
+            </button>
+            <button
+              onClick={() => reopenId && handleReopen(reopenId)}
+              className="flex-1 py-3 font-extrabold uppercase text-sm"
+              style={{ backgroundColor: '#f59e0b', color: '#fff' }}
+            >
+              Ja, Heropen
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
 const AdminCard = ({ icon, title, description, value }: { icon: React.ReactNode; title: string; description: string; value: string }) => (
   <div className="bg-card border border-border rounded-lg p-4 flex items-center gap-4">
     <div className="text-primary">{icon}</div>
