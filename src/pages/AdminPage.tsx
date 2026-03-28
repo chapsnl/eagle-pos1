@@ -715,14 +715,13 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
   );
 };
 
-const AdminCard = ({ icon, title, description, value }: { icon: React.ReactNode; title: string; description: string; value: string }) => (
-  <div className="bg-card border border-border rounded-lg p-4 flex items-center gap-4">
-    <div className="text-primary">{icon}</div>
+const AdminCard = ({ title, description, value }: { title: string; description: string; value: string }) => (
+  <div className="rounded-lg p-4 flex items-center gap-4" style={{ backgroundColor: '#1a1a1a', border: '1px solid #00cc1340' }}>
     <div className="flex-1">
-      <h3 className="text-sm font-extrabold uppercase">{title}</h3>
+      <h3 className="text-sm font-extrabold uppercase" style={{ color: '#00cc13' }}>{title}</h3>
       <p className="text-xs text-muted-foreground">{description}</p>
     </div>
-    <span className="text-2xl font-extrabold text-primary">{value}</span>
+    <span className="text-2xl font-extrabold" style={{ color: '#00cc13' }}>{value}</span>
   </div>
 );
 
