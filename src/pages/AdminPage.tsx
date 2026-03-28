@@ -533,7 +533,7 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
     setLoading(true);
     supabase
       .from('sessions')
-      .select('*')
+      .select('*, drink_logs(*, products(*))')
       .in('status', ['paid', 'archived'])
       .order('created_at', { ascending: false })
       .limit(50)
