@@ -20,6 +20,9 @@ export const AdminPage = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [batchMode, setBatchMode] = useState(false);
   const [showClosed, setShowClosed] = useState(false);
+  const [showCloseShift, setShowCloseShift] = useState(false);
+  const [closeShiftLoading, setCloseShiftLoading] = useState(false);
+  const [closeShiftResult, setCloseShiftResult] = useState<{ success: boolean; message: string } | null>(null);
   const [nfcStatus, setNfcStatus] = useState<'scanning' | 'writing' | null>(null);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [erasedCount, setErasedCount] = useState(0);
@@ -431,7 +434,7 @@ export const AdminPage = () => {
           label="CLOSE SHIFT (E-MAIL)"
           description="Voorraad + Debt List versturen, dagsaldo resetten"
           variant="primary"
-          onClick={() => console.log('Close shift')}
+          onClick={() => setShowCloseShift(true)}
         />
 
         <AdminButton
@@ -446,6 +449,74 @@ export const AdminPage = () => {
 
       {/* Closed sessions dialog */}
       <ClosedSessionsDialog open={showClosed} onOpenChange={setShowClosed} />
+
+      {/* Close Shift confirmation dialog */}
+      <Dialog open={showCloseShift} onOpenChange={(v) => { if (!closeShiftLoading) { setShowCloseShift(v); setCloseShiftResult(null); } }}>
+        <DialogContent className="bg-card" style={{ borderColor: '#ef444440' }}>
+          <DialogHeader>
+            <DialogTitle className="font-extrabold uppercase" style={{ color: '#ef4444' }}>
+              {closeShiftResult ? (closeShiftResult.success ? 'SHIFT AFGESLOTEN' : 'FOUT') : 'CLOSE SHIFT'}
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              {closeShiftResult
+                ? closeShiftResult.message
+                : (
+                  <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                    ⚠️ Weet je het zeker? Alle bestellingen gaan verloren!
+                  </span>
+                )
+              }
+            </DialogDescription>
+          </DialogHeader>
+          {!closeShiftResult && (
+            <DialogFooter className="flex gap-3 sm:gap-3">
+              <button
+                onClick={() => { setShowCloseShift(false); setCloseShiftResult(null); }}
+                className="flex-1 py-3 font-extrabold uppercase text-sm bg-secondary text-secondary-foreground"
+                disabled={closeShiftLoading}
+              >
+                Nee
+              </button>
+              <button
+                onClick={async () => {
+                  setCloseShiftLoading(true);
+                  try {
+                    const { data, error } = await supabase.functions.invoke('close-shift');
+                    if (error) throw error;
+                    setCloseShiftResult({
+                      success: true,
+                      message: `Rapport verstuurd! ${data.totalItems} items, totaal €${Number(data.grandTotal).toFixed(2)}`,
+                    });
+                  } catch (err: any) {
+                    setCloseShiftResult({
+                      success: false,
+                      message: `Er ging iets mis: ${err.message}`,
+                    });
+                  } finally {
+                    setCloseShiftLoading(false);
+                  }
+                }}
+                className="flex-1 py-3 font-extrabold uppercase text-sm"
+                style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
+                disabled={closeShiftLoading}
+              >
+                {closeShiftLoading ? 'BEZIG...' : 'JA, SLUIT SHIFT'}
+              </button>
+            </DialogFooter>
+          )}
+          {closeShiftResult && (
+            <DialogFooter>
+              <button
+                onClick={() => { setShowCloseShift(false); setCloseShiftResult(null); }}
+                className="w-full py-3 font-extrabold uppercase text-sm"
+                style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
+              >
+                OK
+              </button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
