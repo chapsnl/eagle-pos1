@@ -407,17 +407,17 @@ export const BetalingPage = ({
       <div className="flex gap-3 mt-4">
         <button
           onClick={() => processPaymentForSession('pin')}
-          className="px-6 py-3 font-extrabold uppercase text-sm flex items-center gap-2"
+          className="px-8 py-5 font-extrabold uppercase text-lg flex items-center gap-3"
           style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }}
         >
-          <CreditCard className="w-4 h-4" /> PIN
+          <CreditCard className="w-6 h-6" /> PIN
         </button>
         <button
           onClick={() => processPaymentForSession('cash')}
-          className="px-6 py-3 font-extrabold uppercase text-sm flex items-center gap-2"
+          className="px-8 py-5 font-extrabold uppercase text-lg flex items-center gap-3"
           style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }}
         >
-          <Banknote className="w-4 h-4" /> CONTANT
+          <Banknote className="w-6 h-6" /> CONTANT
         </button>
       </div>
       <button
