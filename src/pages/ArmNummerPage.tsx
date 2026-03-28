@@ -59,6 +59,7 @@ export const ArmNummerPage = () => {
   const findActiveSessionByWardrobe = useFindActiveSessionByWardrobe();
   const updateSession = useUpdateSession();
   const addDrinkLogs = useAddDrinkLogs();
+  const createSession = useCreateSession();
 
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
