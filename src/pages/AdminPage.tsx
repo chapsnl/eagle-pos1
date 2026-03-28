@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { ChevronDown, ChevronUp, Square, Nfc } from 'lucide-react';
+import { ChevronDown, ChevronUp, Square, Nfc, Users } from 'lucide-react';
 import { useProducts } from '@/hooks/useProducts';
 import { useActiveSessions, useIncidentSessions, useUpdateSession } from '@/hooks/useSessions';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
