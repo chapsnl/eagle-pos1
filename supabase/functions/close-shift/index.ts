@@ -140,30 +140,59 @@ Deno.serve(async (req) => {
     </body>
     </html>`;
 
-    // Send email via SMTP to fixed recipient
+    // Send email via SMTP to fixed recipient (manual TLS SMTP)
     const smtpHost = Deno.env.get('SMTP_HOST')!;
     const smtpUser = Deno.env.get('SMTP_USER')!;
     const smtpPass = Deno.env.get('SMTP_PASS')!;
     const recipient = 'michael.roks@icloud.com';
 
-    const client = new SmtpClient();
+    const conn = await Deno.connectTls({ hostname: smtpHost, port: 465 });
     try {
-      await client.connectTLS({
-        hostname: smtpHost,
-        port: 465,
-        username: smtpUser,
-        password: smtpPass,
-      });
+      const greeting = await readSmtpResponse(conn);
+      if (!greeting.startsWith('220')) {
+        throw new Error(`SMTP greeting failed: ${greeting.trim()}`);
+      }
 
-      await client.send({
-        from: smtpUser,
-        to: recipient,
-        subject: `Eagle POS Shift Report — ${dateStr} ${timeStr}`,
-        content: htmlReport,
-        html: htmlReport,
-      });
+      await sendSmtpCommand(conn, 'EHLO eagle-pos.local', [250]);
+      await sendSmtpCommand(conn, 'AUTH LOGIN', [334]);
+      await sendSmtpCommand(conn, btoa(smtpUser), [334]);
+      await sendSmtpCommand(conn, btoa(smtpPass), [235]);
+      await sendSmtpCommand(conn, `MAIL FROM:<${smtpUser}>`, [250]);
+      await sendSmtpCommand(conn, `RCPT TO:<${recipient}>`, [250, 251]);
+      await sendSmtpCommand(conn, 'DATA', [354]);
+
+      const boundary = `eagle-pos-${crypto.randomUUID()}`;
+      const message = [
+        `From: Eagle POS <${smtpUser}>`,
+        `To: ${recipient}`,
+        `Subject: Eagle POS Shift Report — ${dateStr} ${timeStr}`,
+        'MIME-Version: 1.0',
+        `Content-Type: multipart/alternative; boundary="${boundary}"`,
+        '',
+        `--${boundary}`,
+        'Content-Type: text/plain; charset="UTF-8"',
+        '',
+        `Shift report van ${dateStr} ${timeStr}.`,
+        '',
+        `--${boundary}`,
+        'Content-Type: text/html; charset="UTF-8"',
+        '',
+        htmlReport,
+        '',
+        `--${boundary}--`,
+      ].join('\r\n');
+
+      const encoder = new TextEncoder();
+      await conn.write(encoder.encode(`${message}\r\n.\r\n`));
+
+      const dataResp = await readSmtpResponse(conn);
+      if (!dataResp.startsWith('250')) {
+        throw new Error(`SMTP DATA failed: ${dataResp.trim()}`);
+      }
+
+      await sendSmtpCommand(conn, 'QUIT', [221]);
     } finally {
-      await client.close();
+      conn.close();
     }
 
     // Archive all active sessions after report
