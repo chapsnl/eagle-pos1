@@ -88,14 +88,12 @@ Deno.serve(async (req) => {
     const timeStr = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
 
     // Build HTML email with A4 report styling
-    const tableRows = rows.map(r => `
-      <tr>
-        <td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;">${r.name}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;text-align:center;font-size:14px;">${r.qty}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;text-align:right;font-size:14px;">€${r.unitPrice.toFixed(2)}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;text-align:right;font-size:14px;font-weight:bold;">€${r.total.toFixed(2)}</td>
-      </tr>
-    `).join('');
+    const tableRows = rows.map(r => `<tr>
+<td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;text-align:left;">${r.name}</td>
+<td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;text-align:center;">${r.qty}</td>
+<td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;text-align:right;">&euro;${r.unitPrice.toFixed(2)}</td>
+<td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;font-weight:bold;text-align:right;">&euro;${r.total.toFixed(2)}</td>
+</tr>`).join('');
 
     const htmlReport = `
     <!DOCTYPE html>
