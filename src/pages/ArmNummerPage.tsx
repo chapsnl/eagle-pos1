@@ -51,6 +51,8 @@ export const ArmNummerPage = () => {
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionTotal, setSessionTotal] = useState(0);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const lastArmLookupRef = useRef<string | null>(null);
   const lastBagLookupRef = useRef<string | null>(null);
   const { data: products } = useProducts();
