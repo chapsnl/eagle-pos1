@@ -404,29 +404,29 @@ export const BetalingPage = ({
           </div>
         )}
       </div>
-      <div className="flex gap-3 mt-4">
+      <div className="flex flex-col items-center gap-3 mt-4" style={{ width: '80%' }}>
         <button
           onClick={() => processPaymentForSession('pin')}
-          className="px-6 py-3 font-extrabold uppercase text-sm flex items-center gap-2"
+          className="w-full py-3 font-extrabold uppercase text-sm flex items-center justify-center gap-2"
           style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }}
         >
           <CreditCard className="w-4 h-4" /> PIN
         </button>
         <button
           onClick={() => processPaymentForSession('cash')}
-          className="px-6 py-3 font-extrabold uppercase text-sm flex items-center gap-2"
+          className="w-full py-3 font-extrabold uppercase text-sm flex items-center justify-center gap-2"
           style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }}
         >
           <Banknote className="w-4 h-4" /> CONTANT
         </button>
+        <button
+          onClick={resetToChoose}
+          className="w-full py-2 font-extrabold uppercase text-sm"
+          style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
+        >
+          CANCEL
+        </button>
       </div>
-      <button
-        onClick={resetToChoose}
-        className="mt-3 px-6 py-2 font-extrabold uppercase text-sm"
-        style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
-      >
-        CANCEL
-      </button>
     </div>
   );
 
