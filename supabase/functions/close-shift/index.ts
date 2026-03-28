@@ -6,6 +6,43 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+async function readSmtpResponse(conn: Deno.Conn): Promise<string> {
+  const decoder = new TextDecoder();
+  const buf = new Uint8Array(2048);
+  let response = '';
+
+  while (true) {
+    const n = await conn.read(buf);
+    if (n === null) break;
+
+    response += decoder.decode(buf.subarray(0, n));
+    const lines = response.split(/\r?\n/).filter(Boolean);
+    if (lines.length === 0) continue;
+
+    const lastLine = lines[lines.length - 1];
+    if (/^\d{3} /.test(lastLine)) break;
+  }
+
+  return response;
+}
+
+async function sendSmtpCommand(
+  conn: Deno.Conn,
+  command: string,
+  expectedCodes: number[]
+): Promise<string> {
+  const encoder = new TextEncoder();
+  await conn.write(encoder.encode(`${command}\r\n`));
+  const response = await readSmtpResponse(conn);
+  const code = Number(response.slice(0, 3));
+
+  if (!expectedCodes.includes(code)) {
+    throw new Error(`SMTP command failed (${command}): ${response.trim()}`);
+  }
+
+  return response;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
