@@ -418,25 +418,11 @@ export const AdminPage = () => {
         />
 
         <AdminButton
-          icon={<ArrowRightLeft className="w-5 h-5" />}
-          label="TRANSFER BANDJE"
-          description="Data overzetten naar nieuw bandje"
-          onClick={() => console.log('Transfer started')}
-        />
-
-        <AdminButton
           icon={<Mail className="w-5 h-5" />}
           label="CLOSE SHIFT (E-MAIL)"
           description="Voorraad + Debt List versturen, dagsaldo resetten"
           variant="primary"
           onClick={() => console.log('Close shift')}
-        />
-
-        <AdminButton
-          icon={<RotateCcw className="w-5 h-5" />}
-          label="CORRIGEER"
-          description="Annuleren of fooi toevoegen"
-          onClick={() => console.log('Correct')}
         />
 
         <AdminButton
