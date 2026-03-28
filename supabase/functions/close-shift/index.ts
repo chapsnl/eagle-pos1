@@ -119,6 +119,12 @@ Deno.serve(async (req) => {
           password: smtpPass,
         },
       },
+      debug: {
+        log: false,
+        allowUnsecure: false,
+        encodeLB: false,
+        noStartTLS: true,
+      },
     });
 
     await client.send({
