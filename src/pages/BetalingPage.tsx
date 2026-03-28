@@ -402,21 +402,21 @@ export const BetalingPage = ({
         )}
       </div>
       {Number(nfcOrderData?.total ?? 0) <= 8 && (
-        <div className="mt-3 px-4 py-2 text-center font-extrabold uppercase text-sm" style={{ backgroundColor: '#f59e0b20', color: '#f59e0b', border: '1px solid #f59e0b40' }}>
-          ⚠ Minimum niet bereikt
+        <div className="mt-4 px-6 py-4 text-center font-extrabold uppercase text-lg tracking-widest" style={{ backgroundColor: '#ef444420', color: '#ef4444', border: '2px solid #ef4444', boxShadow: '0 0 16px #ef444440' }}>
+          ⚠ MINIMUM NIET BEREIKT
         </div>
       )}
       <div className="flex gap-3 mt-4">
         <button
           onClick={() => processPaymentForSession('pin')}
-          className="flex-1 py-5 font-extrabold uppercase text-lg flex items-center justify-center gap-3"
+          className="px-8 py-5 font-extrabold uppercase text-lg flex items-center justify-center gap-3"
           style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }}
         >
           <CreditCard className="w-6 h-6" /> PIN
         </button>
         <button
           onClick={() => processPaymentForSession('cash')}
-          className="flex-1 py-5 font-extrabold uppercase text-lg flex items-center justify-center gap-3"
+          className="px-8 py-5 font-extrabold uppercase text-lg flex items-center justify-center gap-3"
           style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 16px #00cc1380' }}
         >
           <Banknote className="w-6 h-6" /> CONTANT
@@ -450,13 +450,6 @@ export const BetalingPage = ({
           ))}
         </div>
       </div>
-      <button
-        onClick={resetToChoose}
-        className="mx-4 mb-4 py-3 font-extrabold uppercase text-sm"
-        style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
-      >
-        CANCEL
-      </button>
     </div>
   );
 

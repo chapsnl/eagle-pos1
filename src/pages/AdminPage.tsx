@@ -545,7 +545,10 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
 
   const handleReopen = async (id: string) => {
     try {
+      // Keep existing total_amount so it carries over
       await updateSession.mutateAsync({ id, status: 'active' });
+      // Restore actual_paid_amount to null since it's reopened
+      await supabase.from('sessions').update({ actual_paid_amount: null }).eq('id', id);
       setSessions(prev => prev.filter(s => s.id !== id));
       setReopenId(null);
     } catch { /* error */ }
@@ -585,8 +588,8 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
                     </div>
                     <button
                       onClick={() => setReopenId(s.id)}
-                      className="px-3 py-1 text-xs font-extrabold uppercase"
-                      style={{ backgroundColor: '#f59e0b', color: '#fff', boxShadow: '0 0 8px #f59e0b60' }}
+                      className="px-4 py-2 text-xs font-extrabold uppercase"
+                      style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
                     >
                       HEROPEN
                     </button>
@@ -612,14 +615,15 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
           <DialogFooter className="flex gap-3 sm:gap-3">
             <button
               onClick={() => setReopenId(null)}
-              className="flex-1 py-3 font-extrabold uppercase text-sm bg-secondary text-secondary-foreground"
+              className="flex-1 py-3 font-extrabold uppercase text-sm"
+              style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
             >
               Annuleren
             </button>
             <button
               onClick={() => reopenId && handleReopen(reopenId)}
               className="flex-1 py-3 font-extrabold uppercase text-sm"
-              style={{ backgroundColor: '#f59e0b', color: '#fff' }}
+              style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
             >
               Ja, Heropen
             </button>
