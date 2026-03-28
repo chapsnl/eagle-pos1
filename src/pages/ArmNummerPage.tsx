@@ -3,7 +3,9 @@ import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { Send, X } from 'lucide-react';
-import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs } from '@/hooks/useSessions';
+import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface ArmOrderItem {
   product: DbProduct;
