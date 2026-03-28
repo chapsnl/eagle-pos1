@@ -450,13 +450,6 @@ export const BetalingPage = ({
           ))}
         </div>
       </div>
-      <button
-        onClick={resetToChoose}
-        className="mx-4 mb-4 py-3 font-extrabold uppercase text-sm"
-        style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
-      >
-        CANCEL
-      </button>
     </div>
   );
 
