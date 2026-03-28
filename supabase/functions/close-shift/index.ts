@@ -103,60 +103,30 @@ Deno.serve(async (req) => {
     </body>
     </html>`;
 
-    // Send email via SMTP to fixed recipient (with secure fallback)
+    // Send email via SMTP to fixed recipient
     const smtpHost = Deno.env.get('SMTP_HOST')!;
     const smtpUser = Deno.env.get('SMTP_USER')!;
     const smtpPass = Deno.env.get('SMTP_PASS')!;
     const recipient = 'michael.roks@icloud.com';
 
-    const smtpAttempts = [
-      {
-        label: '465_tls',
-        client: new SMTPClient({
-          connection: {
-            hostname: smtpHost,
-            port: 465,
-            tls: true,
-            auth: { username: smtpUser, password: smtpPass },
-          },
-        }),
-      },
-      {
-        label: '587_starttls',
-        client: new SMTPClient({
-          connection: {
-            hostname: smtpHost,
-            port: 587,
-            tls: false,
-            auth: { username: smtpUser, password: smtpPass },
-          },
-        }),
-      },
-    ];
+    const client = new SmtpClient();
+    try {
+      await client.connectTLS({
+        hostname: smtpHost,
+        port: 465,
+        username: smtpUser,
+        password: smtpPass,
+      });
 
-    const smtpErrors: string[] = [];
-    let emailSent = false;
-
-    for (const attempt of smtpAttempts) {
-      try {
-        await attempt.client.send({
-          from: smtpUser,
-          to: recipient,
-          subject: `Eagle POS Shift Report — ${dateStr} ${timeStr}`,
-          content: 'Zie rapport hieronder.',
-          html: htmlReport,
-        });
-        await attempt.client.close();
-        emailSent = true;
-        break;
-      } catch (e: any) {
-        smtpErrors.push(`${attempt.label}: ${e?.message || 'unknown error'}`);
-        try { await attempt.client.close(); } catch { /* ignore */ }
-      }
-    }
-
-    if (!emailSent) {
-      throw new Error(`SMTP verzending mislukt: ${smtpErrors.join(' | ')}`);
+      await client.send({
+        from: smtpUser,
+        to: recipient,
+        subject: `Eagle POS Shift Report — ${dateStr} ${timeStr}`,
+        content: htmlReport,
+        html: htmlReport,
+      });
+    } finally {
+      await client.close();
     }
 
     // Archive all active sessions after report
