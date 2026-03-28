@@ -95,48 +95,47 @@ Deno.serve(async (req) => {
 <td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;font-weight:bold;text-align:right;">&euro;${r.total.toFixed(2)}</td>
 </tr>`).join('');
 
-    const htmlReport = `
-    <!DOCTYPE html>
-    <html>
-    <body style="margin:0;padding:40px;background:#ffffff;font-family:Arial,Helvetica,sans-serif;">
-      <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #ddd;">
-        <div style="background:#f5f5f5;padding:30px;text-align:center;border-bottom:2px solid #4b4b4b;">
-          <h1 style="margin:0;color:#4b4b4b;font-size:28px;letter-spacing:4px;text-transform:uppercase;">Eagle POS</h1>
-          <p style="margin:8px 0 0;color:#000;font-size:13px;">Shift Report — ${dateStr} ${timeStr}</p>
-        </div>
-        <div style="padding:24px;">
-          <table style="width:100%;border-collapse:collapse;">
-            <thead>
-              <tr style="border-bottom:2px solid #4b4b4b;">
-                <th style="padding:10px 12px;text-align:left;color:#4b4b4b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Product</th>
-                <th style="padding:10px 12px;text-align:center;color:#4b4b4b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Aantal</th>
-                <th style="padding:10px 12px;text-align:right;color:#4b4b4b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Prijs</th>
-                <th style="padding:10px 12px;text-align:right;color:#4b4b4b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Subtotaal</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tableRows}
-            </tbody>
-          </table>
-          <div style="margin-top:20px;padding:16px;background:#f5f5f5;border-radius:8px;border:1px solid #ddd;">
-            <table style="width:100%;">
-              <tr>
-                <td style="color:#000;font-size:14px;">Totaal items:</td>
-                <td style="color:#000;font-size:14px;text-align:right;font-weight:bold;">${totalItems}</td>
-              </tr>
-              <tr>
-                <td style="color:#000;font-size:20px;font-weight:bold;padding-top:8px;">TOTAAL</td>
-                <td style="color:#000;font-size:20px;font-weight:bold;text-align:right;padding-top:8px;">€${grandTotal.toFixed(2)}</td>
-              </tr>
-            </table>
-          </div>
-        </div>
-        <div style="padding:16px;text-align:center;background:#f5f5f5;border-top:1px solid #ddd;">
-          <p style="margin:0;color:#666;font-size:11px;">Eagle POS System — Automated Shift Report</p>
-        </div>
-      </div>
-    </body>
-    </html>`;
+    const htmlReport = `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:40px;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#000;">
+<div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #ddd;">
+<div style="background:#f5f5f5;padding:30px;text-align:center;border-bottom:2px solid #4b4b4b;">
+<h1 style="margin:0;color:#4b4b4b;font-size:28px;letter-spacing:4px;text-transform:uppercase;">Eagle POS</h1>
+<p style="margin:8px 0 0;color:#000;font-size:13px;">Shift Report &mdash; ${dateStr} ${timeStr}</p>
+</div>
+<div style="padding:24px;">
+<table style="width:100%;border-collapse:collapse;">
+<thead>
+<tr style="border-bottom:2px solid #4b4b4b;">
+<th style="padding:10px 12px;text-align:left;color:#4b4b4b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Product</th>
+<th style="padding:10px 12px;text-align:center;color:#4b4b4b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Aantal</th>
+<th style="padding:10px 12px;text-align:right;color:#4b4b4b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Prijs</th>
+<th style="padding:10px 12px;text-align:right;color:#4b4b4b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Subtotaal</th>
+</tr>
+</thead>
+<tbody>
+${tableRows}
+</tbody>
+</table>
+<div style="margin-top:20px;padding:16px;background:#f5f5f5;border-radius:8px;border:1px solid #ddd;">
+<table style="width:100%;">
+<tr>
+<td style="color:#000;font-size:14px;text-align:left;">Totaal items:</td>
+<td style="color:#000;font-size:14px;text-align:right;font-weight:bold;">${totalItems}</td>
+</tr>
+<tr>
+<td style="color:#000;font-size:20px;font-weight:bold;padding-top:8px;text-align:left;">TOTAAL</td>
+<td style="color:#000;font-size:20px;font-weight:bold;text-align:right;padding-top:8px;">&euro;${grandTotal.toFixed(2)}</td>
+</tr>
+</table>
+</div>
+</div>
+<div style="padding:16px;text-align:center;background:#f5f5f5;border-top:1px solid #ddd;">
+<p style="margin:0;color:#666;font-size:11px;">Eagle POS System &mdash; Automated Shift Report</p>
+</div>
+</div>
+</body>
+</html>`;
 
     // Send email via SMTP to fixed recipient (manual TLS SMTP)
     const smtpHost = Deno.env.get('SMTP_HOST')!;
