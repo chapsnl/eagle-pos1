@@ -6,7 +6,7 @@ import { Send, X, Delete } from 'lucide-react';
 import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { onOrderUpdate, readOrder, broadcastOrder, clearOrder, SyncOrderState } from '@/lib/orderSync';
+import { broadcastOrder, clearOrder } from '@/lib/orderSync';
 
 interface TestOrderItem {
   product: DbProduct;
@@ -83,9 +83,11 @@ export const TestPage = () => {
   const existingTotal = existingLogs.reduce((sum, l) => sum + l.unit_price * l.quantity, 0);
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
 
-  // Fetch existing drink logs when session changes
+  // Polling: fetch drink logs for current session every 2s (like Admin's refetchInterval)
+  const [liveDbLogs, setLiveDbLogs] = useState<{ product_id: string; product_name: string; quantity: number }[]>([]);
+
   useEffect(() => {
-    if (!sessionId) { setExistingLogs([]); return; }
+    if (!sessionId) { setExistingLogs([]); setLiveDbLogs([]); return; }
     const fetchLogs = async () => {
       const { data } = await supabase
         .from('drink_logs')
@@ -93,16 +95,23 @@ export const TestPage = () => {
         .eq('session_id', sessionId);
       if (!data) return;
       const map = new Map<string, { product_id: string; product_name: string; quantity: number; unit_price: number }>();
+      const dbMap = new Map<string, { product_id: string; product_name: string; quantity: number }>();
       for (const log of data) {
         const name = (log.products as any)?.full_name ?? 'Unknown';
         const pid = log.product_id;
         const existing = map.get(pid);
         if (existing) existing.quantity++;
         else map.set(pid, { product_id: pid, product_name: name, quantity: 1, unit_price: log.price_at_time });
+        const dbExisting = dbMap.get(pid);
+        if (dbExisting) dbExisting.quantity++;
+        else dbMap.set(pid, { product_id: pid, product_name: name, quantity: 1 });
       }
       setExistingLogs(Array.from(map.values()));
+      setLiveDbLogs(Array.from(dbMap.values()));
     };
     fetchLogs();
+    const interval = setInterval(fetchLogs, 2000);
+    return () => clearInterval(interval);
   }, [sessionId]);
 
   const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string, onNotFound: () => void) => {
@@ -187,42 +196,6 @@ export const TestPage = () => {
   const [retourMode, setRetourMode] = useState(false);
   const [retourFlash, setRetourFlash] = useState<string | null>(null);
 
-  // Live sync state from bar page
-  const [liveOrder, setLiveOrder] = useState<SyncOrderState | null>(null);
-  const [liveFlash, setLiveFlash] = useState<string | null>(null);
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    const stored = readOrder();
-    if (stored) setLiveOrder(stored);
-  }, []);
-
-  // Listen for live updates from bar page (use ref to avoid stale closure)
-  const liveOrderRef = useRef<SyncOrderState | null>(null);
-  liveOrderRef.current = liveOrder;
-
-  useEffect(() => {
-    return onOrderUpdate((state) => {
-      if (state) {
-        const prev = liveOrderRef.current;
-        if (prev) {
-          const oldItems = new Map(prev.items.map((i) => [i.product_id, i.quantity]));
-          for (const item of state.items) {
-            const oldQty = oldItems.get(item.product_id) ?? 0;
-            if (item.quantity > oldQty) {
-              setLiveFlash(item.product_id);
-              setTimeout(() => setLiveFlash(null), 800);
-              break;
-            }
-          }
-        } else if (state.items.length > 0) {
-          setLiveFlash(state.items[0].product_id);
-          setTimeout(() => setLiveFlash(null), 800);
-        }
-      }
-      setLiveOrder(state);
-    });
-  }, []);
 
   const handleSubmit = useCallback(async () => {
     if (items.length === 0 || !sessionId) return;
@@ -313,7 +286,7 @@ export const TestPage = () => {
       setFeedback('success');
       setTimeout(() => {
         setFeedback(null);
-        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); setLiveOrder(null);
+        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); setLiveDbLogs([]);
         lastCoatLookupRef.current = null; lastBagLookupRef.current = null;
       }, 1500);
     } catch {
@@ -534,7 +507,7 @@ export const TestPage = () => {
         </div>
       )}
 
-      {/* Left column - 20% - Guest overview */}
+      {/* Left column - 15% - Guest overview */}
       <div className="flex flex-col h-full" style={{ width: '15%', backgroundColor: retourMode ? '#1a0a0a' : '#121212', borderRight: `1px solid ${retourMode ? '#ef4444' : '#333'}`, transition: 'background-color 0.3s ease' }}>
         {/* Guest number */}
         <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
@@ -543,59 +516,17 @@ export const TestPage = () => {
           </span>
         </div>
 
-        {/* Scrollable order list */}
+        {/* Scrollable order list - name + quantity only, live from DB */}
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
-          {/* Newly added items (this session) */}
-          {items.map((i) => (
-            <div key={i.product.id} className="flex justify-between items-center font-bold border-b" style={{ borderColor: '#2a2a2a', color: '#e5e5e5', fontSize: 'clamp(14px, 1.6vw, 26px)', padding: 'clamp(4px, 0.6vh, 10px) 0', whiteSpace: 'nowrap', transition: 'all 0.3s ease', ...(retourFlash === i.product.id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>
-                {retourFlash === i.product.id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
-                {i.quantity}× {i.product.full_name}
-              </span>
-              <span style={{ color: '#00ff00', flexShrink: 0 }}>€{(i.product.price * i.quantity).toFixed(2)}</span>
+          {liveDbLogs.map((item) => (
+            <div key={item.product_id} className="font-bold border-b" style={{ borderColor: '#2a2a2a', color: '#e5e5e5', fontSize: 'clamp(13px, 1.5vw, 24px)', padding: 'clamp(4px, 0.6vh, 10px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', transition: 'all 0.3s ease', ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
+              {retourFlash === item.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
+              {item.product_name} — {item.quantity}
             </div>
           ))}
-          {/* Live incoming from bar page */}
-          {liveOrder && liveOrder.items.length > 0 && (
-            <>
-              <div className="font-bold uppercase tracking-widest mt-2 mb-1" style={{ color: '#00cc13', fontSize: 'clamp(8px, 0.8vw, 12px)' }}>📡 Live Bar — {liveOrder.guestNumber}</div>
-              {liveOrder.items.map((li) => (
-                <div key={li.product_id} className="flex justify-between items-center font-bold border-b" style={{ borderColor: '#2a2a2a', color: '#00cc13', fontSize: 'clamp(14px, 1.6vw, 26px)', padding: 'clamp(4px, 0.6vh, 10px) 0', whiteSpace: 'nowrap', transition: 'all 0.4s ease', animation: liveFlash === li.product_id ? 'pulse 0.6s ease-out' : 'none', ...(liveFlash === li.product_id ? { backgroundColor: '#00cc1330', transform: 'scale(1.03)' } : {}) }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>
-                    {li.quantity}× {li.product_name}
-                  </span>
-                  <span style={{ color: '#00ff00', flexShrink: 0 }}>€{(li.price * li.quantity).toFixed(2)}</span>
-                </div>
-              ))}
-              <div className="flex justify-between items-center font-extrabold mt-1" style={{ color: '#00cc13', fontSize: 'clamp(12px, 1.4vw, 22px)' }}>
-                <span>Bar Totaal</span>
-                <span>€{liveOrder.totalAmount.toFixed(2)}</span>
-              </div>
-            </>
+          {liveDbLogs.length === 0 && (
+            <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1vw, 14px)' }}>Geen producten</div>
           )}
-          {/* Previously ordered */}
-          {existingLogs.length > 0 && (
-            <>
-              <div className="font-bold uppercase tracking-widest mt-2 mb-1" style={{ color: '#555', fontSize: 'clamp(8px, 0.8vw, 12px)' }}>Eerder</div>
-              {existingLogs.map((l, idx) => (
-                <div key={idx} className="flex justify-between items-center font-bold" style={{ color: '#777', fontSize: 'clamp(12px, 1.4vw, 22px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', transition: 'all 0.3s ease', ...(retourFlash === l.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>
-                    {retourFlash === l.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
-                    {l.quantity}× {l.product_name}
-                  </span>
-                  <span style={{ color: '#00aa00', flexShrink: 0 }}>€{(l.unit_price * l.quantity).toFixed(2)}</span>
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-
-        {/* Total at bottom */}
-        <div className="px-2 py-2 border-t" style={{ borderColor: '#333', backgroundColor: '#00cc13' }}>
-            <div className="flex justify-between items-center font-extrabold" style={{ color: '#fff', fontSize: '24px', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%' }}>
-             <span>TOTAAL</span>
-             <span style={{ marginLeft: '0.5em' }}>€{(existingTotal + total).toFixed(2)}</span>
-          </div>
         </div>
       </div>
 
