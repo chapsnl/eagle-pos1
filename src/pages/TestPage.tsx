@@ -390,7 +390,7 @@ export const TestPage = () => {
         return prev.filter((i) => i.product.id !== product.id);
       });
     }
-  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items]);
+  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs]);
 
   // Input phases: coat first, then bag
   if (phase === 'input-coat' || phase === 'input-bag') {
