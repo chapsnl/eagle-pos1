@@ -199,7 +199,7 @@ export const TestPage = () => {
       setExistingLogs([]); setPhase('input'); setActiveField('coat');
       setRetourMode(false); setLiveDbLogs([]);
       lastCoatLookupRef.current = null;
-    }, 15000);
+    }, 30000);
   }, [phase]);
 
   useEffect(() => {
