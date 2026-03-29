@@ -403,7 +403,7 @@ export const TestPage = () => {
 
   // Products phase - split screen
   return (
-    <div className="flex-1 flex overflow-hidden h-full" style={{ backgroundColor: '#1a1a1a', ...(retourMode ? { border: '4px solid #ef4444', boxShadow: 'inset 0 0 30px rgba(239,68,68,0.15)' } : {}) }}>
+    <div className="flex-1 flex overflow-hidden h-full relative" style={{ backgroundColor: '#1a1a1a', ...(retourMode ? { border: '4px solid #ef4444', boxShadow: 'inset 0 0 30px rgba(239,68,68,0.15)' } : {}) }}>
       <FeedbackOverlay type={feedback} />
       {bonDialog}
       {payDialog}
