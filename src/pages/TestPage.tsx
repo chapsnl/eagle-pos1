@@ -292,6 +292,35 @@ export const TestPage = () => {
     </Dialog>
   );
 
+  // Instant book on product click
+  const addAndBook = useCallback(async (product: DbProduct) => {
+    if (!sessionId) return;
+    setItems((prev) => {
+      const existing = prev.find((i) => i.product.id === product.id);
+      if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      return [{ product, quantity: 1 }, ...prev];
+    });
+    try {
+      await addDrinkLogs.mutateAsync([{
+        session_id: sessionId,
+        product_id: product.id,
+        price_at_time: product.price,
+      }]);
+      await updateSession.mutateAsync({
+        id: sessionId,
+        total_amount: sessionTotal + product.price,
+      });
+      setSessionTotal((prev) => prev + product.price);
+    } catch {
+      setItems((prev) => {
+        const item = prev.find((i) => i.product.id === product.id);
+        if (!item) return prev;
+        if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
+        return prev.filter((i) => i.product.id !== product.id);
+      });
+    }
+  }, [sessionId, sessionTotal, addDrinkLogs, updateSession]);
+
   // Input phases: coat first, then bag
   if (phase === 'input-coat' || phase === 'input-bag') {
     const value = phase === 'input-coat' ? coatNumber : bagNumber;
@@ -319,38 +348,6 @@ export const TestPage = () => {
       </div>
     );
   }
-
-  // Instant book on product click
-  const addAndBook = useCallback(async (product: DbProduct) => {
-    if (!sessionId) return;
-    // Add to local list immediately
-    setItems((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id);
-      if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [{ product, quantity: 1 }, ...prev];
-    });
-    // Book immediately
-    try {
-      await addDrinkLogs.mutateAsync([{
-        session_id: sessionId,
-        product_id: product.id,
-        price_at_time: product.price,
-      }]);
-      await updateSession.mutateAsync({
-        id: sessionId,
-        total_amount: sessionTotal + product.price,
-      });
-      setSessionTotal((prev) => prev + product.price);
-    } catch {
-      // revert on error
-      setItems((prev) => {
-        const item = prev.find((i) => i.product.id === product.id);
-        if (!item) return prev;
-        if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
-        return prev.filter((i) => i.product.id !== product.id);
-      });
-    }
-  }, [sessionId, sessionTotal, addDrinkLogs, updateSession]);
 
   // Products phase - split screen
   return (
