@@ -347,7 +347,7 @@ export const TestPage = () => {
     setPendingWardrobe(null);
     setCoatNumber('');
     setBagNumber('');
-    setActiveField(null);
+    setActiveField('coat');
     lastCoatLookupRef.current = null;
     lastBagLookupRef.current = null;
   }, []);
