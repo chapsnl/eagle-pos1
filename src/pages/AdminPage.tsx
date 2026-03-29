@@ -443,7 +443,7 @@ export const AdminPage = () => {
             <DialogFooter className="flex gap-3 sm:gap-3">
               <button
                 onClick={() => { setShowCloseShift(false); setCloseShiftResult(null); }}
-                className="flex-1 py-3 font-extrabold uppercase text-sm"
+                className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px]"
                 style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
                 disabled={closeShiftLoading}
               >
