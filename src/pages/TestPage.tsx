@@ -6,7 +6,7 @@ import { Send, X, Delete } from 'lucide-react';
 import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { onOrderUpdate, readOrder, broadcastOrder, clearOrder, SyncOrderState } from '@/lib/orderSync';
+import { broadcastOrder, clearOrder } from '@/lib/orderSync';
 
 interface TestOrderItem {
   product: DbProduct;
