@@ -11,7 +11,7 @@ const tabs: { view: AppView; label: string }[] = [
   { view: 'garderobe', label: 'COAT' },
   { view: 'betaling', label: 'PAY' },
   { view: 'arm-nummer', label: 'DESK' },
-  { view: 'test', label: 'TEST' },
+  { view: 'test', label: 'GAST' },
   { view: 'admin', label: 'ADMIN' },
 ];
 
