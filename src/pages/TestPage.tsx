@@ -510,8 +510,8 @@ export const TestPage = () => {
           <div className="shrink-0 px-4" style={{ paddingBottom: 'clamp(4px, 1vh, 12px)' }}>
             <div className="w-full mx-auto grid grid-cols-3 gap-0" style={{ maxWidth: 'min(320px, 70vw)' }}>
               {NUM_KEYS.map((key, i) => (
-                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333', fontSize: 'clamp(14px, 2.5vh, 28px)', padding: 'clamp(6px, 1.2vh, 16px) 0' }}>
-                  {key === 'DEL' ? <X className="mx-auto" style={{ width: 'clamp(16px, 2.5vh, 28px)', height: 'clamp(16px, 2.5vh, 28px)' }} /> : key}
+              <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : key === 'BACK' ? '#2a2a2a' : '#2a2a2a', color: '#fff', border: '1px solid #333', fontSize: 'clamp(14px, 2.5vh, 28px)', padding: 'clamp(6px, 1.2vh, 16px) 0' }}>
+                  {key === 'DEL' ? <X className="mx-auto" style={{ width: 'clamp(16px, 2.5vh, 28px)', height: 'clamp(16px, 2.5vh, 28px)' }} /> : key === 'BACK' ? <Delete className="mx-auto" style={{ width: 'clamp(16px, 2.5vh, 28px)', height: 'clamp(16px, 2.5vh, 28px)' }} /> : key}
                 </button>
               ))}
             </div>
