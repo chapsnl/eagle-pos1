@@ -61,9 +61,8 @@ export const TestPage = () => {
   }, []);
 
   const [phase, setPhase] = useState<Phase>('input');
-  const [activeField, setActiveField] = useState<'coat' | 'bag' | null>('coat');
+  const [activeField, setActiveField] = useState<'coat' | null>('coat');
   const [coatNumber, setCoatNumber] = useState('');
-  const [bagNumber, setBagNumber] = useState('');
   const [items, setItems] = useState<TestOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
