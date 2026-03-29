@@ -6,7 +6,7 @@ import { Send, X } from 'lucide-react';
 import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { onOrderUpdate, readOrder, SyncOrderState } from '@/lib/orderSync';
+import { onOrderUpdate, readOrder, broadcastOrder, clearOrder, SyncOrderState } from '@/lib/orderSync';
 
 interface TestOrderItem {
   product: DbProduct;
@@ -278,6 +278,29 @@ export const TestPage = () => {
     </Dialog>
   );
 
+  const handlePayVerwerk = useCallback(async () => {
+    if (!sessionId) return;
+    setShowPayDialog(false);
+    try {
+      // Delete all drink logs for this session
+      await supabase.from('drink_logs').delete().eq('session_id', sessionId);
+      // Archive the session
+      await updateSession.mutateAsync({ id: sessionId, status: 'archived' });
+      // Clear live sync
+      clearOrder();
+      // Reset everything and go to input
+      setFeedback('success');
+      setTimeout(() => {
+        setFeedback(null);
+        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField(null); setRetourMode(false); setLiveOrder(null);
+        lastCoatLookupRef.current = null; lastBagLookupRef.current = null;
+      }, 1500);
+    } catch {
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+    }
+  }, [sessionId, updateSession]);
+
   const payDialog = (
     <Dialog open={showPayDialog} onOpenChange={(open) => { if (!open) setShowPayDialog(false); }}>
       <DialogContent className="bg-card" style={{ borderColor: '#00cc1340', borderRadius: 12 }}>
@@ -287,7 +310,7 @@ export const TestPage = () => {
         {orderSummary}
         <DialogFooter className="flex gap-3 sm:gap-3">
           <button onClick={() => setShowPayDialog(false)} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 4 }}>CANCEL</button>
-          <button onClick={() => { setShowPayDialog(false); }} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 4 }}>VERWERK</button>
+          <button onClick={handlePayVerwerk} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 4 }}>VERWERK</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -418,11 +441,26 @@ export const TestPage = () => {
         product_id: product.id,
         price_at_time: product.price,
       }]);
+      const newTotal = sessionTotal + product.price;
       await updateSession.mutateAsync({
         id: sessionId,
-        total_amount: sessionTotal + product.price,
+        total_amount: newTotal,
       });
-      setSessionTotal((prev) => prev + product.price);
+      setSessionTotal(newTotal);
+
+      // Broadcast to live sync
+      const guestNum = coatNumber ? `C${coatNumber}` : bagNumber ? `B${bagNumber}` : '';
+      const updatedItems = [...items];
+      const ex = updatedItems.find((i) => i.product.id === product.id);
+      if (ex) ex.quantity++;
+      else updatedItems.unshift({ product, quantity: 1 });
+      broadcastOrder({
+        guestNumber: guestNum,
+        sessionId,
+        items: updatedItems.map((i) => ({ product_id: i.product.id, product_name: i.product.full_name, shorthand: i.product.shorthand, price: i.product.price, quantity: i.quantity })),
+        totalAmount: newTotal + existingTotal,
+        timestamp: Date.now(),
+      });
     } catch {
       setItems((prev) => {
         const item = prev.find((i) => i.product.id === product.id);
@@ -431,7 +469,7 @@ export const TestPage = () => {
         return prev.filter((i) => i.product.id !== product.id);
       });
     }
-  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs]);
+  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs, coatNumber, bagNumber, existingTotal]);
 
   // Input phase: both coat and bag fields on one page
   if (phase === 'input') {
