@@ -478,6 +478,18 @@ export const TestPage = () => {
                   </button>
                 );
               }
+              // Row 6 (index 5), second cell -> RETOUR button
+              if (ri === 5 && ci === 1) {
+                return (
+                  <button key={ci} onClick={() => setRetourMode((m) => !m)} style={{ flex: cell.span, backgroundColor: retourMode ? '#ef4444' : '#7c3aed', color: '#fff', transition: 'background-color 0.2s ease' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
+                    onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
+                    onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                    onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>RETOUR</span>
+                  </button>
+                );
+              }
               const product = productMap.get(cell.code);
               if (!product) return <div key={ci} style={{ flex: cell.span }} />;
               const textColor = getTextColor(product.category_color);
