@@ -493,12 +493,12 @@ export const TestPage = () => {
           </span>
         </div>
 
-        {/* Scrollable order list - name + quantity only, live from DB */}
+        {/* Scrollable order list - X x Product format, live from DB */}
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
           {liveDbLogs.map((item) => (
-            <div key={item.product_id} className="font-bold border-b" style={{ borderColor: '#2a2a2a', color: '#e5e5e5', fontSize: 'clamp(13px, 1.5vw, 24px)', padding: 'clamp(4px, 0.6vh, 10px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', transition: 'all 0.3s ease', ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
+            <div key={item.product_id} className="font-extrabold" style={{ color: '#e5e5e5', fontSize: 'clamp(14px, 1.8vw, 28px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', transition: 'all 0.3s ease', ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
               {retourFlash === item.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
-              {item.product_name} — {item.quantity}
+              {item.quantity} x {item.product_name}
             </div>
           ))}
           {liveDbLogs.length === 0 && (
