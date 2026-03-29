@@ -680,7 +680,7 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
               Kies of je de bestelling wilt behouden of op €0 wilt starten.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex flex-col gap-3 sm:flex-col">
+          <div className="flex flex-col gap-3 mt-4">
             <button
               onClick={() => reopenId && handleReopenKeep(reopenId)}
               className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px]"
@@ -702,7 +702,7 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
             >
               Annuleren
             </button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </>
