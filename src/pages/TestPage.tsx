@@ -157,6 +157,8 @@ export const TestPage = () => {
 
   const [showBonDialog, setShowBonDialog] = useState(false);
   const [showPayDialog, setShowPayDialog] = useState(false);
+  const [retourMode, setRetourMode] = useState(false);
+  const [retourFlash, setRetourFlash] = useState<string | null>(null);
 
   const handleSubmit = useCallback(async () => {
     if (items.length === 0 || !sessionId) return;
@@ -296,6 +298,52 @@ export const TestPage = () => {
   // Instant book on product click
   const addAndBook = useCallback(async (product: DbProduct) => {
     if (!sessionId) return;
+
+    // RETOUR MODE: remove one of this product from the bill
+    if (retourMode) {
+      const existingItem = items.find((i) => i.product.id === product.id);
+      if (!existingItem) return; // product not on bill, do nothing
+
+      // Flash animation
+      setRetourFlash(product.id);
+      setTimeout(() => setRetourFlash(null), 400);
+
+      // Optimistic update
+      setItems((prev) => {
+        const item = prev.find((i) => i.product.id === product.id);
+        if (!item) return prev;
+        if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
+        return prev.filter((i) => i.product.id !== product.id);
+      });
+
+      try {
+        // Find one drink_log for this product+session and delete it
+        const { data: logToDelete } = await supabase
+          .from('drink_logs')
+          .select('id')
+          .eq('session_id', sessionId)
+          .eq('product_id', product.id)
+          .limit(1)
+          .single();
+
+        if (logToDelete) {
+          await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
+          const newTotal = Math.max(0, sessionTotal - product.price);
+          await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
+          setSessionTotal(newTotal);
+        }
+      } catch {
+        // Revert on error
+        setItems((prev) => {
+          const existing = prev.find((i) => i.product.id === product.id);
+          if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+          return [{ product, quantity: 1 }, ...prev];
+        });
+      }
+      return;
+    }
+
+    // NORMAL MODE: add product
     setItems((prev) => {
       const existing = prev.find((i) => i.product.id === product.id);
       if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
@@ -320,7 +368,7 @@ export const TestPage = () => {
         return prev.filter((i) => i.product.id !== product.id);
       });
     }
-  }, [sessionId, sessionTotal, addDrinkLogs, updateSession]);
+  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items]);
 
   // Input phases: coat first, then bag
   if (phase === 'input-coat' || phase === 'input-bag') {
@@ -370,8 +418,11 @@ export const TestPage = () => {
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
           {/* Newly added items (this session) */}
           {items.map((i) => (
-            <div key={i.product.id} className="flex justify-between items-center font-bold border-b" style={{ borderColor: '#2a2a2a', color: '#e5e5e5', fontSize: 'clamp(14px, 1.6vw, 26px)', padding: 'clamp(4px, 0.6vh, 10px) 0', whiteSpace: 'nowrap' }}>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>{i.quantity}× {i.product.full_name}</span>
+            <div key={i.product.id} className="flex justify-between items-center font-bold border-b" style={{ borderColor: '#2a2a2a', color: '#e5e5e5', fontSize: 'clamp(14px, 1.6vw, 26px)', padding: 'clamp(4px, 0.6vh, 10px) 0', whiteSpace: 'nowrap', transition: 'all 0.3s ease', ...(retourFlash === i.product.id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>
+                {retourFlash === i.product.id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
+                {i.quantity}× {i.product.full_name}
+              </span>
               <span style={{ color: '#00ff00', flexShrink: 0 }}>€{(i.product.price * i.quantity).toFixed(2)}</span>
             </div>
           ))}
@@ -393,7 +444,7 @@ export const TestPage = () => {
         <div className="px-2 py-2 border-t" style={{ borderColor: '#333' }}>
           <div className="flex justify-between font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(22px, 3vw, 42px)', whiteSpace: 'nowrap' }}>
             <span>TOTAAL</span>
-            <span>€{(existingTotal + total).toFixed(2)}</span>
+            <span style={{ marginLeft: '8px' }}>€{(existingTotal + total).toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -424,6 +475,18 @@ export const TestPage = () => {
                     onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
                     <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>BON</span>
+                  </button>
+                );
+              }
+              // Row 6 (index 5), second cell -> RETOUR button
+              if (ri === 5 && ci === 1) {
+                return (
+                  <button key={ci} onClick={() => setRetourMode((m) => !m)} style={{ flex: cell.span, backgroundColor: retourMode ? '#ef4444' : '#7c3aed', color: '#fff', transition: 'background-color 0.2s ease' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
+                    onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
+                    onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                    onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>RETOUR</span>
                   </button>
                 );
               }
