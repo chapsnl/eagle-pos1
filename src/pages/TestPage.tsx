@@ -140,12 +140,18 @@ export const TestPage = () => {
   }, [bagNumber, phase, resolveSessionByWardrobe]);
 
   const handleNumKey = (key: string) => {
-    if (phase === 'input-coat') {
-      if (key === 'DEL') setCoatNumber('');
-      else if (coatNumber.length < 3) setCoatNumber(coatNumber + key);
-    } else if (phase === 'input-bag') {
-      if (key === 'DEL') setBagNumber('');
-      else if (bagNumber.length < 3) setBagNumber(bagNumber + key);
+    if (key === 'DEL') {
+      setCoatNumber('');
+      setBagNumber('');
+      setActiveField(null);
+      lastCoatLookupRef.current = null;
+      lastBagLookupRef.current = null;
+      return;
+    }
+    if (activeField === 'coat') {
+      if (coatNumber.length < 3) setCoatNumber(coatNumber + key);
+    } else if (activeField === 'bag') {
+      if (bagNumber.length < 3) setBagNumber(bagNumber + key);
     }
   };
 
