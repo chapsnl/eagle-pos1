@@ -312,10 +312,8 @@ export const TestPage = () => {
     setShowAddDialog(false);
     setPendingWardrobe(null);
     setCoatNumber('');
-    setBagNumber('');
     setActiveField('coat');
     lastCoatLookupRef.current = null;
-    lastBagLookupRef.current = null;
   }, []);
 
   const addDialog = (
