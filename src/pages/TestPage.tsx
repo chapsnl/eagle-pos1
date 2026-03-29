@@ -299,7 +299,7 @@ export const TestPage = () => {
       setFeedback('success');
       setTimeout(() => {
         setFeedback(null);
-        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField(null); setRetourMode(false); setLiveOrder(null);
+        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); setLiveOrder(null);
         lastCoatLookupRef.current = null; lastBagLookupRef.current = null;
       }, 1500);
     } catch {
