@@ -47,7 +47,7 @@ type Phase = 'input' | 'products';
 export const TestPage = () => {
 
   const [phase, setPhase] = useState<Phase>('input');
-  const [activeField, setActiveField] = useState<'coat' | 'bag' | null>(null);
+  const [activeField, setActiveField] = useState<'coat' | 'bag' | null>('coat');
   const [coatNumber, setCoatNumber] = useState('');
   const [bagNumber, setBagNumber] = useState('');
   const [items, setItems] = useState<TestOrderItem[]>([]);
@@ -144,7 +144,7 @@ export const TestPage = () => {
     if (key === 'DEL') {
       setCoatNumber('');
       setBagNumber('');
-      setActiveField(null);
+      setActiveField('coat');
       lastCoatLookupRef.current = null;
       lastBagLookupRef.current = null;
       return;
@@ -228,7 +228,7 @@ export const TestPage = () => {
       setFeedback('success');
       setTimeout(() => {
         setFeedback(null);
-        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField(null);
+        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat');
       }, 2000);
     } catch {
       setFeedback('error');
@@ -299,7 +299,7 @@ export const TestPage = () => {
       setFeedback('success');
       setTimeout(() => {
         setFeedback(null);
-        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField(null); setRetourMode(false); setLiveOrder(null);
+        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); setLiveOrder(null);
         lastCoatLookupRef.current = null; lastBagLookupRef.current = null;
       }, 1500);
     } catch {
@@ -347,7 +347,7 @@ export const TestPage = () => {
     setPendingWardrobe(null);
     setCoatNumber('');
     setBagNumber('');
-    setActiveField(null);
+    setActiveField('coat');
     lastCoatLookupRef.current = null;
     lastBagLookupRef.current = null;
   }, []);
@@ -608,7 +608,7 @@ export const TestPage = () => {
               // Row 5 (index 4), first cell -> NEXT button
               if (ri === 4 && ci === 0) {
                 return (
-                  <button key={ci} onClick={() => { setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField(null); setRetourMode(false); }} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
+                  <button key={ci} onClick={() => { setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); }} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
                     onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
                     onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                     onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
