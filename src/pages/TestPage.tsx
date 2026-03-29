@@ -397,29 +397,63 @@ export const TestPage = () => {
     }
   }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs]);
 
-  // Input phases: coat first, then bag
-  if (phase === 'input-coat' || phase === 'input-bag') {
-    const value = phase === 'input-coat' ? coatNumber : bagNumber;
-    const label = phase === 'input-coat' ? 'COAT NUMMER' : 'BAG NUMMER';
+  // Input phase: both coat and bag fields on one page
+  if (phase === 'input') {
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <FeedbackOverlay type={feedback} />
         {addDialog}
-        <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>{label}</h2>
-        <div className="flex-1 flex flex-col items-center justify-center px-4">
+        <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
+        <div className="flex-1 flex flex-col items-center justify-center px-4 gap-6">
+          {/* Coat input */}
           <div className="w-full" style={{ maxWidth: '280px' }}>
-            <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(16px, 3vh, 32px) 16px', border: '3px solid #00cc13', boxShadow: '0 0 12px #00cc1380, 0 0 24px #00cc1330' }}>
-              {value || <span style={{ color: '#9ca3af' }}>—</span>}
+            <div className="text-xs font-extrabold uppercase tracking-widest text-center mb-1" style={{ color: '#888' }}>COAT NUMMER</div>
+            <div
+              onClick={() => setActiveField('coat')}
+              className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center"
+              style={{
+                backgroundColor: '#d1d5db', color: '#111',
+                fontSize: 'clamp(48px, 10vw, 80px)',
+                padding: 'clamp(16px, 3vh, 32px) 16px',
+                border: activeField === 'coat' ? '3px solid #00cc13' : '3px solid #555',
+                boxShadow: activeField === 'coat' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
+                transition: 'border 0.2s, box-shadow 0.2s',
+              }}
+            >
+              {coatNumber || <span style={{ color: '#9ca3af' }}>—</span>}
+            </div>
+          </div>
+          {/* Bag input */}
+          <div className="w-full" style={{ maxWidth: '280px' }}>
+            <div className="text-xs font-extrabold uppercase tracking-widest text-center mb-1" style={{ color: '#888' }}>TAS NUMMER</div>
+            <div
+              onClick={() => setActiveField('bag')}
+              className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center"
+              style={{
+                backgroundColor: '#d1d5db', color: '#111',
+                fontSize: 'clamp(48px, 10vw, 80px)',
+                padding: 'clamp(16px, 3vh, 32px) 16px',
+                border: activeField === 'bag' ? '3px solid #00cc13' : '3px solid #555',
+                boxShadow: activeField === 'bag' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
+                transition: 'border 0.2s, box-shadow 0.2s',
+              }}
+            >
+              {bagNumber || <span style={{ color: '#9ca3af' }}>—</span>}
             </div>
           </div>
         </div>
-        <div className="px-4 pb-2">
-          <div className="w-full max-w-md mx-auto grid grid-cols-3 gap-0">
-            {NUM_KEYS.map((key, i) => (
-              <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="py-3 text-2xl font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: key === 'DEL' ? '#fff' : '#e5e5e5', border: '1px solid #333' }}>{key}</button>
-            ))}
+        {/* Numpad - only shown when a field is active */}
+        {activeField && (
+          <div className="px-4 pb-2">
+            <div className="w-full max-w-md mx-auto grid grid-cols-3 gap-0">
+              {NUM_KEYS.map((key, i) => (
+                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="py-3 text-2xl font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333' }}>
+                  {key === 'DEL' ? <X className="mx-auto" size={24} /> : key}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         <div className="h-4" />
       </div>
     );
