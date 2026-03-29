@@ -460,10 +460,15 @@ export const TestPage = () => {
       if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
       return [{ product, quantity: 1 }, ...prev];
     });
-    // Optimistic update liveDbLogs for instant 15% column refresh
+    // Optimistic update liveDbLogs for instant 15% column refresh - new item goes to top
     setLiveDbLogs((prev) => {
       const existing = prev.find((l) => l.product_id === product.id);
-      if (existing) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l);
+      if (existing) {
+        // Move updated item to top
+        const updated = prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l);
+        const item = updated.find((l) => l.product_id === product.id)!;
+        return [item, ...updated.filter((l) => l.product_id !== product.id)];
+      }
       return [{ product_id: product.id, product_name: product.full_name, quantity: 1 }, ...prev];
     });
     try {
