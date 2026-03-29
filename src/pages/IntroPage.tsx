@@ -1,12 +1,27 @@
-import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { LoginPage } from './LoginPage';
 
 interface IntroPageProps {
   onEnter: () => void;
 }
 
 export const IntroPage = ({ onEnter }: IntroPageProps) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#111' }}>
+        <span className="text-lg font-bold" style={{ color: '#00cc13' }}>Laden...</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage onAuthenticated={onEnter} />;
+  }
+
   return (
-    <div className="min-h-screen bg-[hsl(220,15%,8%)] flex flex-col items-center justify-center gap-8">
+    <div className="min-h-screen flex flex-col items-center justify-center gap-8" style={{ backgroundColor: 'hsl(220,15%,8%)' }}>
       <h1 className="text-4xl font-bold tracking-tight text-foreground font-mono">
         Eagle POS System
       </h1>
