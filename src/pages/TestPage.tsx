@@ -196,42 +196,6 @@ export const TestPage = () => {
   const [retourMode, setRetourMode] = useState(false);
   const [retourFlash, setRetourFlash] = useState<string | null>(null);
 
-  // Live sync state from bar page
-  const [liveOrder, setLiveOrder] = useState<SyncOrderState | null>(null);
-  const [liveFlash, setLiveFlash] = useState<string | null>(null);
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    const stored = readOrder();
-    if (stored) setLiveOrder(stored);
-  }, []);
-
-  // Listen for live updates from bar page (use ref to avoid stale closure)
-  const liveOrderRef = useRef<SyncOrderState | null>(null);
-  liveOrderRef.current = liveOrder;
-
-  useEffect(() => {
-    return onOrderUpdate((state) => {
-      if (state) {
-        const prev = liveOrderRef.current;
-        if (prev) {
-          const oldItems = new Map(prev.items.map((i) => [i.product_id, i.quantity]));
-          for (const item of state.items) {
-            const oldQty = oldItems.get(item.product_id) ?? 0;
-            if (item.quantity > oldQty) {
-              setLiveFlash(item.product_id);
-              setTimeout(() => setLiveFlash(null), 800);
-              break;
-            }
-          }
-        } else if (state.items.length > 0) {
-          setLiveFlash(state.items[0].product_id);
-          setTimeout(() => setLiveFlash(null), 800);
-        }
-      }
-      setLiveOrder(state);
-    });
-  }, []);
 
   const handleSubmit = useCallback(async () => {
     if (items.length === 0 || !sessionId) return;
