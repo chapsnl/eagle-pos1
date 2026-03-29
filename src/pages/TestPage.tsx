@@ -39,13 +39,14 @@ const gridLayout: { code: string; span: number; hideLabel?: boolean }[][] = [
   ],
 ];
 
-const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
+const NUM_KEYS = ['DEL', '1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0'];
 
-type Phase = 'input-coat' | 'input-bag' | 'products';
+type Phase = 'input' | 'products';
 
 export const TestPage = () => {
 
-  const [phase, setPhase] = useState<Phase>('input-coat');
+  const [phase, setPhase] = useState<Phase>('input');
+  const [activeField, setActiveField] = useState<'coat' | 'bag' | null>(null);
   const [coatNumber, setCoatNumber] = useState('');
   const [bagNumber, setBagNumber] = useState('');
   const [items, setItems] = useState<TestOrderItem[]>([]);
@@ -99,7 +100,7 @@ export const TestPage = () => {
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
       setFeedback('success');
-      setTimeout(() => { setFeedback(null); setPhase('products'); }, 1000);
+      setTimeout(() => { setFeedback(null); setPhase('products'); setActiveField(null); }, 1000);
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
@@ -108,7 +109,7 @@ export const TestPage = () => {
 
   // Auto-lookup coat number at 3 digits
   useEffect(() => {
-    if (phase !== 'input-coat') return;
+    if (phase !== 'input') return;
     if (coatNumber.length < 3) { lastCoatLookupRef.current = null; return; }
     const wardrobe = `C${coatNumber}`;
     if (lastCoatLookupRef.current === wardrobe) return;
@@ -124,7 +125,7 @@ export const TestPage = () => {
 
   // Auto-lookup bag number at 3 digits
   useEffect(() => {
-    if (phase !== 'input-bag') return;
+    if (phase !== 'input') return;
     if (bagNumber.length < 3) { lastBagLookupRef.current = null; return; }
     const wardrobe = `B${bagNumber}`;
     if (lastBagLookupRef.current === wardrobe) return;
@@ -139,12 +140,18 @@ export const TestPage = () => {
   }, [bagNumber, phase, resolveSessionByWardrobe]);
 
   const handleNumKey = (key: string) => {
-    if (phase === 'input-coat') {
-      if (key === 'DEL') setCoatNumber('');
-      else if (coatNumber.length < 3) setCoatNumber(coatNumber + key);
-    } else if (phase === 'input-bag') {
-      if (key === 'DEL') setBagNumber('');
-      else if (bagNumber.length < 3) setBagNumber(bagNumber + key);
+    if (key === 'DEL') {
+      setCoatNumber('');
+      setBagNumber('');
+      setActiveField(null);
+      lastCoatLookupRef.current = null;
+      lastBagLookupRef.current = null;
+      return;
+    }
+    if (activeField === 'coat') {
+      if (coatNumber.length < 3) setCoatNumber(coatNumber + key);
+    } else if (activeField === 'bag') {
+      if (bagNumber.length < 3) setBagNumber(bagNumber + key);
     }
   };
 
@@ -179,7 +186,7 @@ export const TestPage = () => {
       setFeedback('success');
       setTimeout(() => {
         setFeedback(null);
-        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input-coat');
+        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField(null);
       }, 2000);
     } catch {
       setFeedback('error');
@@ -262,7 +269,7 @@ export const TestPage = () => {
       setSessionTotal(Number(session.total_amount ?? 0));
       setPendingWardrobe(null);
       setFeedback('success');
-      setTimeout(() => { setFeedback(null); setPhase('products'); }, 1000);
+      setTimeout(() => { setFeedback(null); setPhase('products'); setActiveField(null); }, 1000);
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
@@ -272,11 +279,12 @@ export const TestPage = () => {
   const handleCancelAdd = useCallback(() => {
     setShowAddDialog(false);
     setPendingWardrobe(null);
-    if (phase === 'input-coat') setCoatNumber('');
-    else if (phase === 'input-bag') setBagNumber('');
+    setCoatNumber('');
+    setBagNumber('');
+    setActiveField(null);
     lastCoatLookupRef.current = null;
     lastBagLookupRef.current = null;
-  }, [phase]);
+  }, []);
 
   const addDialog = (
     <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) handleCancelAdd(); }}>
@@ -309,9 +317,6 @@ export const TestPage = () => {
       // Flash animation
       setRetourFlash(product.id);
       setTimeout(() => setRetourFlash(null), 600);
-
-      // Exit retour mode after one product
-      setRetourMode(false);
 
       // Optimistic update: prefer removing from items first, then existingLogs
       if (inItems) {
@@ -392,29 +397,63 @@ export const TestPage = () => {
     }
   }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs]);
 
-  // Input phases: coat first, then bag
-  if (phase === 'input-coat' || phase === 'input-bag') {
-    const value = phase === 'input-coat' ? coatNumber : bagNumber;
-    const label = phase === 'input-coat' ? 'COAT NUMMER' : 'BAG NUMMER';
+  // Input phase: both coat and bag fields on one page
+  if (phase === 'input') {
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <FeedbackOverlay type={feedback} />
         {addDialog}
-        <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>{label}</h2>
-        <div className="flex-1 flex flex-col items-center justify-center px-4">
+        <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
+        <div className="flex-1 flex flex-col items-center justify-center px-4 gap-6">
+          {/* Coat input */}
           <div className="w-full" style={{ maxWidth: '280px' }}>
-            <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(16px, 3vh, 32px) 16px', border: '3px solid #00cc13', boxShadow: '0 0 12px #00cc1380, 0 0 24px #00cc1330' }}>
-              {value || <span style={{ color: '#9ca3af' }}>—</span>}
+            <div className="text-xs font-extrabold uppercase tracking-widest text-center mb-1" style={{ color: '#888' }}>COAT NUMMER</div>
+            <div
+              onClick={() => setActiveField('coat')}
+              className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center"
+              style={{
+                backgroundColor: '#d1d5db', color: '#111',
+                fontSize: 'clamp(48px, 10vw, 80px)',
+                padding: 'clamp(16px, 3vh, 32px) 16px',
+                border: activeField === 'coat' ? '3px solid #00cc13' : '3px solid #555',
+                boxShadow: activeField === 'coat' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
+                transition: 'border 0.2s, box-shadow 0.2s',
+              }}
+            >
+              {coatNumber || <span style={{ color: '#9ca3af' }}>—</span>}
+            </div>
+          </div>
+          {/* Bag input */}
+          <div className="w-full" style={{ maxWidth: '280px' }}>
+            <div className="text-xs font-extrabold uppercase tracking-widest text-center mb-1" style={{ color: '#888' }}>TAS NUMMER</div>
+            <div
+              onClick={() => setActiveField('bag')}
+              className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center"
+              style={{
+                backgroundColor: '#d1d5db', color: '#111',
+                fontSize: 'clamp(48px, 10vw, 80px)',
+                padding: 'clamp(16px, 3vh, 32px) 16px',
+                border: activeField === 'bag' ? '3px solid #00cc13' : '3px solid #555',
+                boxShadow: activeField === 'bag' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
+                transition: 'border 0.2s, box-shadow 0.2s',
+              }}
+            >
+              {bagNumber || <span style={{ color: '#9ca3af' }}>—</span>}
             </div>
           </div>
         </div>
-        <div className="px-4 pb-2">
-          <div className="w-full max-w-md mx-auto grid grid-cols-3 gap-0">
-            {NUM_KEYS.map((key, i) => (
-              <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="py-3 text-2xl font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: key === 'DEL' ? '#fff' : '#e5e5e5', border: '1px solid #333' }}>{key}</button>
-            ))}
+        {/* Numpad - only shown when a field is active */}
+        {activeField && (
+          <div className="px-4 pb-2">
+            <div className="w-full max-w-md mx-auto grid grid-cols-3 gap-0">
+              {NUM_KEYS.map((key, i) => (
+                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="py-3 text-2xl font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333' }}>
+                  {key === 'DEL' ? <X className="mx-auto" size={24} /> : key}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         <div className="h-4" />
       </div>
     );
@@ -486,20 +525,8 @@ export const TestPage = () => {
         {gridLayout.map((row, ri) => (
           <div key={ri} className="flex-1 flex" style={{ minHeight: 0 }}>
             {row.map((cell, ci) => {
-              // Row 5 (index 4), first cell -> PAY button
+              // Row 5 (index 4), first cell -> BON button
               if (ri === 4 && ci === 0) {
-                return (
-                  <button key={ci} onClick={() => setShowPayDialog(true)} style={{ flex: cell.span, backgroundColor: '#ef4444', color: '#fff' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
-                    onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
-                    onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
-                    onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
-                  >
-                    <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>PAY</span>
-                  </button>
-                );
-              }
-              // Row 6 (index 5), first cell -> BON button
-              if (ri === 5 && ci === 0) {
                 return (
                   <button key={ci} onClick={() => setShowBonDialog(true)} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
                     onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
@@ -507,6 +534,18 @@ export const TestPage = () => {
                     onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
                     <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>BON</span>
+                  </button>
+                );
+              }
+              // Row 6 (index 5), first cell -> PAY button
+              if (ri === 5 && ci === 0) {
+                return (
+                  <button key={ci} onClick={() => setShowPayDialog(true)} style={{ flex: cell.span, backgroundColor: '#ef4444', color: '#fff' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
+                    onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
+                    onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                    onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>PAY</span>
                   </button>
                 );
               }
