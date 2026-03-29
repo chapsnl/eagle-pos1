@@ -474,20 +474,20 @@ export const TestPage = () => {
       )}
 
       {/* Left column - 20% - Guest overview */}
-      <div className="flex flex-col h-full" style={{ width: '20%', backgroundColor: retourMode ? '#1a0a0a' : '#121212', borderRight: `1px solid ${retourMode ? '#ef4444' : '#333'}`, transition: 'background-color 0.3s ease' }}>
+      <div className="flex flex-col h-full" style={{ width: '15%', backgroundColor: retourMode ? '#1a0a0a' : '#121212', borderRight: `1px solid ${retourMode ? '#ef4444' : '#333'}`, transition: 'background-color 0.3s ease' }}>
         {/* Guest number */}
         <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
-          <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(32px, 6vw, 56px)' }}>
+          <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(18px, 3.5vw, 56px)', whiteSpace: 'nowrap' }}>
             {coatNumber ? `C${coatNumber}` : ''}{bagNumber ? ` B${bagNumber}` : ''}
           </span>
         </div>
 
         {/* Scrollable order list */}
-        <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
+        <div className="flex-1 overflow-y-auto py-1" style={{ minHeight: 0, padding: '4px' }}>
           {/* Newly added items (this session) */}
           {items.map((i) => (
-            <div key={i.product.id} className="flex justify-between items-center font-bold border-b" style={{ borderColor: '#2a2a2a', color: '#e5e5e5', fontSize: 'clamp(14px, 1.6vw, 26px)', padding: 'clamp(4px, 0.6vh, 10px) 0', whiteSpace: 'nowrap', transition: 'all 0.3s ease', ...(retourFlash === i.product.id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>
+            <div key={i.product.id} className="flex justify-between items-center font-bold border-b" style={{ borderColor: '#2a2a2a', color: '#e5e5e5', fontSize: 'clamp(10px, 2vw, 24px)', padding: 'clamp(3px, 0.5vh, 8px) 4px', whiteSpace: 'nowrap', transition: 'all 0.3s ease', ...(retourFlash === i.product.id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '4px' }}>
                 {retourFlash === i.product.id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
                 {i.quantity}× {i.product.full_name}
               </span>
@@ -497,10 +497,10 @@ export const TestPage = () => {
           {/* Previously ordered */}
           {existingLogs.length > 0 && (
             <>
-              <div className="font-bold uppercase tracking-widest mt-2 mb-1" style={{ color: '#555', fontSize: 'clamp(8px, 0.8vw, 12px)' }}>Eerder</div>
+              <div className="font-bold uppercase tracking-widest mt-2 mb-1" style={{ color: '#555', fontSize: 'clamp(7px, 0.8vw, 12px)' }}>Eerder</div>
               {existingLogs.map((l, idx) => (
-                <div key={idx} className="flex justify-between items-center font-bold" style={{ color: '#777', fontSize: 'clamp(12px, 1.4vw, 22px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', transition: 'all 0.3s ease', ...(retourFlash === l.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>
+                <div key={idx} className="flex justify-between items-center font-bold" style={{ color: '#777', fontSize: 'clamp(10px, 1.8vw, 22px)', padding: 'clamp(3px, 0.5vh, 8px) 4px', whiteSpace: 'nowrap', transition: 'all 0.3s ease', ...(retourFlash === l.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '4px' }}>
                     {retourFlash === l.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
                     {l.quantity}× {l.product_name}
                   </span>
@@ -512,10 +512,10 @@ export const TestPage = () => {
         </div>
 
         {/* Total at bottom */}
-        <div className="px-2 py-2 border-t" style={{ borderColor: '#333', backgroundColor: '#00cc13' }}>
-          <div className="flex justify-between items-center font-extrabold" style={{ color: '#fff', fontSize: 'clamp(12px, 3vw, 52px)', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%' }}>
+        <div className="border-t" style={{ borderColor: '#00cc13', borderTopWidth: '2px', backgroundColor: '#00cc13', padding: '4px' }}>
+          <div className="flex justify-between items-center font-extrabold" style={{ color: '#fff', fontSize: 'clamp(10px, 3.5vw, 52px)', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%' }}>
             <span style={{ flexShrink: 0 }}>TOTAAL</span>
-            <span style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', marginLeft: '0.5em' }}>€{(existingTotal + total).toFixed(2)}</span>
+            <span style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', marginLeft: '0.3em' }}>€{(existingTotal + total).toFixed(2)}</span>
           </div>
         </div>
       </div>
