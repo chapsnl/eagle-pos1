@@ -52,7 +52,7 @@ export const TestPage = () => {
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionTotal, setSessionTotal] = useState(0);
-  const [existingLogs, setExistingLogs] = useState<{ product_name: string; quantity: number; unit_price: number }[]>([]);
+  const [existingLogs, setExistingLogs] = useState<{ product_id: string; product_name: string; quantity: number; unit_price: number }[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const lastCoatLookupRef = useRef<string | null>(null);
