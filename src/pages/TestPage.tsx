@@ -395,7 +395,7 @@ export const TestPage = () => {
         <div className="px-2 py-2 border-t" style={{ borderColor: '#333' }}>
           <div className="flex justify-between font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(22px, 3vw, 42px)', whiteSpace: 'nowrap' }}>
             <span>TOTAAL</span>
-            <span>€{(existingTotal + total).toFixed(2)}</span>
+            <span style={{ marginLeft: '8px' }}>€{(existingTotal + total).toFixed(2)}</span>
           </div>
         </div>
       </div>
