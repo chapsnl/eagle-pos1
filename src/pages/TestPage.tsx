@@ -399,7 +399,7 @@ export const TestPage = () => {
       </div>
 
       {/* Right column - 80% - Product grid */}
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ width: '85%' }}>
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ width: '80%' }}>
         {gridLayout.map((row, ri) => (
           <div key={ri} className="flex-1 flex" style={{ minHeight: 0 }}>
             {row.map((cell, ci) => {
