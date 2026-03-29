@@ -15,6 +15,7 @@ import { Send, X } from 'lucide-react';
 import { useCreateSession, useAddDrinkLogs, useUpdateSession, useFindActiveSessionByWardrobe } from '@/hooks/useSessions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { broadcastOrder, clearOrder, SyncOrderItem } from '@/lib/orderSync';
 
 export interface DbOrderItem {
   product: DbProduct;
