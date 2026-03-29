@@ -279,11 +279,12 @@ export const TestPage = () => {
   const handleCancelAdd = useCallback(() => {
     setShowAddDialog(false);
     setPendingWardrobe(null);
-    if (phase === 'input-coat') setCoatNumber('');
-    else if (phase === 'input-bag') setBagNumber('');
+    setCoatNumber('');
+    setBagNumber('');
+    setActiveField(null);
     lastCoatLookupRef.current = null;
     lastBagLookupRef.current = null;
-  }, [phase]);
+  }, []);
 
   const addDialog = (
     <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) handleCancelAdd(); }}>
