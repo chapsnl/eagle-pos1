@@ -308,6 +308,9 @@ export const TestPage = () => {
       setRetourFlash(product.id);
       setTimeout(() => setRetourFlash(null), 400);
 
+      // Exit retour mode after one product
+      setRetourMode(false);
+
       // Optimistic update
       setItems((prev) => {
         const item = prev.find((i) => i.product.id === product.id);
