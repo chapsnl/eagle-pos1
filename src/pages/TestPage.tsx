@@ -71,7 +71,6 @@ export const TestPage = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const lastCoatLookupRef = useRef<string | null>(null);
-  const lastBagLookupRef = useRef<string | null>(null);
   const { data: products } = useProducts();
   const findActiveSessionByWardrobe = useFindActiveSessionByWardrobe();
   const updateSession = useUpdateSession();
