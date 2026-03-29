@@ -380,13 +380,13 @@ export const AdminPage = () => {
             <DialogFooter className="flex gap-3 sm:gap-3">
               <button
                 onClick={() => setShowConfirm(false)}
-                className="flex-1 py-3 font-extrabold uppercase text-sm bg-secondary text-secondary-foreground"
+                className="flex-1 py-3 font-extrabold uppercase text-sm bg-secondary text-secondary-foreground rounded-[6px]"
               >
                 Annuleren
               </button>
               <button
                 onClick={startBatchErase}
-                className="flex-1 py-3 font-extrabold uppercase text-sm"
+                className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px]"
                 style={{ backgroundColor: '#00cc13', color: '#fff' }}
               >
                 Ja, Start Wissen
