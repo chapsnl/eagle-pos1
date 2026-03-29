@@ -418,8 +418,11 @@ export const TestPage = () => {
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
           {/* Newly added items (this session) */}
           {items.map((i) => (
-            <div key={i.product.id} className="flex justify-between items-center font-bold border-b" style={{ borderColor: '#2a2a2a', color: '#e5e5e5', fontSize: 'clamp(14px, 1.6vw, 26px)', padding: 'clamp(4px, 0.6vh, 10px) 0', whiteSpace: 'nowrap' }}>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>{i.quantity}× {i.product.full_name}</span>
+            <div key={i.product.id} className="flex justify-between items-center font-bold border-b" style={{ borderColor: '#2a2a2a', color: '#e5e5e5', fontSize: 'clamp(14px, 1.6vw, 26px)', padding: 'clamp(4px, 0.6vh, 10px) 0', whiteSpace: 'nowrap', transition: 'all 0.3s ease', ...(retourFlash === i.product.id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>
+                {retourFlash === i.product.id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
+                {i.quantity}× {i.product.full_name}
+              </span>
               <span style={{ color: '#00ff00', flexShrink: 0 }}>€{(i.product.price * i.quantity).toFixed(2)}</span>
             </div>
           ))}
