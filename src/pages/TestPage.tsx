@@ -109,7 +109,7 @@ export const TestPage = () => {
 
   // Auto-lookup coat number at 3 digits
   useEffect(() => {
-    if (phase !== 'input-coat') return;
+    if (phase !== 'input') return;
     if (coatNumber.length < 3) { lastCoatLookupRef.current = null; return; }
     const wardrobe = `C${coatNumber}`;
     if (lastCoatLookupRef.current === wardrobe) return;
