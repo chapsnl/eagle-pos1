@@ -420,7 +420,7 @@ export const TestPage = () => {
       setSessionTotal(newTotal);
 
       // Broadcast to live sync
-      const guestNum = coatNumber ? `C${coatNumber}` : bagNumber ? `B${bagNumber}` : '';
+      const guestNum = coatNumber ? `C${coatNumber}` : '';
       const updatedItems = [...items];
       const ex = updatedItems.find((i) => i.product.id === product.id);
       if (ex) ex.quantity++;
