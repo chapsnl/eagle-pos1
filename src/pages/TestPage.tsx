@@ -354,11 +354,10 @@ export const TestPage = () => {
         .limit(1)
         .maybeSingle();
       if (existing) {
-        setFeedback('error');
+        toast.error(`Gast ${pendingWardrobe} bestaat al als actieve klant!`);
         setPendingWardrobe(null);
         setCoatNumber('');
         lastCoatLookupRef.current = null;
-        setTimeout(() => setFeedback(null), 2000);
         return;
       }
       const session = await createSession.mutateAsync({
