@@ -1,11 +1,12 @@
+import { Button } from '@/components/ui/button';
+
 interface IntroPageProps {
   onEnter: () => void;
 }
 
 export const IntroPage = ({ onEnter }: IntroPageProps) => {
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-8" style={{ backgroundColor: 'hsl(220,15%,8%)' }}>
+    <div className="min-h-screen bg-[hsl(220,15%,8%)] flex flex-col items-center justify-center gap-8">
       <h1 className="text-4xl font-bold tracking-tight text-foreground font-mono">
         Eagle POS System
       </h1>
