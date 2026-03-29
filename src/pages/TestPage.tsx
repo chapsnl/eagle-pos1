@@ -205,7 +205,7 @@ export const TestPage = () => {
   const orderSummary = (
     <div className="space-y-2 my-2 max-h-[50vh] overflow-y-auto">
       <div className="text-xs font-bold uppercase tracking-widest" style={{ color: '#888' }}>
-        {coatNumber ? `C${coatNumber}` : ''}{bagNumber ? ` B${bagNumber}` : ''}
+        {coatNumber ? `C${coatNumber}` : ''}
       </div>
       {existingLogs.length > 0 && (
         <>
