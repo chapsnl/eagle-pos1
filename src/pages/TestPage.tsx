@@ -6,6 +6,7 @@ import { Send, X } from 'lucide-react';
 import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { onOrderUpdate, readOrder, SyncOrderState } from '@/lib/orderSync';
 
 interface TestOrderItem {
   product: DbProduct;
@@ -167,6 +168,40 @@ export const TestPage = () => {
   const [showPayDialog, setShowPayDialog] = useState(false);
   const [retourMode, setRetourMode] = useState(false);
   const [retourFlash, setRetourFlash] = useState<string | null>(null);
+
+  // Live sync state from bar page
+  const [liveOrder, setLiveOrder] = useState<SyncOrderState | null>(null);
+  const [liveFlash, setLiveFlash] = useState<string | null>(null);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const stored = readOrder();
+    if (stored) setLiveOrder(stored);
+  }, []);
+
+  // Listen for live updates from bar page
+  useEffect(() => {
+    return onOrderUpdate((state) => {
+      if (state) {
+        // Find new items for animation
+        if (liveOrder) {
+          const oldItems = new Map(liveOrder.items.map((i) => [i.product_id, i.quantity]));
+          for (const item of state.items) {
+            const oldQty = oldItems.get(item.product_id) ?? 0;
+            if (item.quantity > oldQty) {
+              setLiveFlash(item.product_id);
+              setTimeout(() => setLiveFlash(null), 800);
+              break;
+            }
+          }
+        } else if (state.items.length > 0) {
+          setLiveFlash(state.items[0].product_id);
+          setTimeout(() => setLiveFlash(null), 800);
+        }
+      }
+      setLiveOrder(state);
+    });
+  }, [liveOrder]);
 
   const handleSubmit = useCallback(async () => {
     if (items.length === 0 || !sessionId) return;
@@ -495,6 +530,24 @@ export const TestPage = () => {
               <span style={{ color: '#00ff00', flexShrink: 0 }}>€{(i.product.price * i.quantity).toFixed(2)}</span>
             </div>
           ))}
+          {/* Live incoming from bar page */}
+          {liveOrder && liveOrder.items.length > 0 && (
+            <>
+              <div className="font-bold uppercase tracking-widest mt-2 mb-1" style={{ color: '#00cc13', fontSize: 'clamp(8px, 0.8vw, 12px)' }}>📡 Live Bar — {liveOrder.guestNumber}</div>
+              {liveOrder.items.map((li) => (
+                <div key={li.product_id} className="flex justify-between items-center font-bold border-b" style={{ borderColor: '#2a2a2a', color: '#00cc13', fontSize: 'clamp(14px, 1.6vw, 26px)', padding: 'clamp(4px, 0.6vh, 10px) 0', whiteSpace: 'nowrap', transition: 'all 0.4s ease', animation: liveFlash === li.product_id ? 'pulse 0.6s ease-out' : 'none', ...(liveFlash === li.product_id ? { backgroundColor: '#00cc1330', transform: 'scale(1.03)' } : {}) }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>
+                    {li.quantity}× {li.product_name}
+                  </span>
+                  <span style={{ color: '#00ff00', flexShrink: 0 }}>€{(li.price * li.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+              <div className="flex justify-between items-center font-extrabold mt-1" style={{ color: '#00cc13', fontSize: 'clamp(12px, 1.4vw, 22px)' }}>
+                <span>Bar Totaal</span>
+                <span>€{liveOrder.totalAmount.toFixed(2)}</span>
+              </div>
+            </>
+          )}
           {/* Previously ordered */}
           {existingLogs.length > 0 && (
             <>
