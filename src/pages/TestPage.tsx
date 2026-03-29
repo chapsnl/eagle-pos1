@@ -440,7 +440,7 @@ export const TestPage = () => {
         return prev.filter((i) => i.product.id !== product.id);
       });
     }
-  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs, coatNumber, bagNumber, existingTotal]);
+  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs, coatNumber, existingTotal]);
 
   // Input phase: both coat and bag fields on one page
   if (phase === 'input') {
