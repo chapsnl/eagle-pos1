@@ -530,6 +530,24 @@ export const TestPage = () => {
               <span style={{ color: '#00ff00', flexShrink: 0 }}>€{(i.product.price * i.quantity).toFixed(2)}</span>
             </div>
           ))}
+          {/* Live incoming from bar page */}
+          {liveOrder && liveOrder.items.length > 0 && (
+            <>
+              <div className="font-bold uppercase tracking-widest mt-2 mb-1" style={{ color: '#00cc13', fontSize: 'clamp(8px, 0.8vw, 12px)' }}>📡 Live Bar — {liveOrder.guestNumber}</div>
+              {liveOrder.items.map((li) => (
+                <div key={li.product_id} className="flex justify-between items-center font-bold border-b" style={{ borderColor: '#2a2a2a', color: '#00cc13', fontSize: 'clamp(14px, 1.6vw, 26px)', padding: 'clamp(4px, 0.6vh, 10px) 0', whiteSpace: 'nowrap', transition: 'all 0.4s ease', animation: liveFlash === li.product_id ? 'pulse 0.6s ease-out' : 'none', ...(liveFlash === li.product_id ? { backgroundColor: '#00cc1330', transform: 'scale(1.03)' } : {}) }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>
+                    {li.quantity}× {li.product_name}
+                  </span>
+                  <span style={{ color: '#00ff00', flexShrink: 0 }}>€{(li.price * li.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+              <div className="flex justify-between items-center font-extrabold mt-1" style={{ color: '#00cc13', fontSize: 'clamp(12px, 1.4vw, 22px)' }}>
+                <span>Bar Totaal</span>
+                <span>€{liveOrder.totalAmount.toFixed(2)}</span>
+              </div>
+            </>
+          )}
           {/* Previously ordered */}
           {existingLogs.length > 0 && (
             <>
