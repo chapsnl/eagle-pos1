@@ -298,6 +298,52 @@ export const TestPage = () => {
   // Instant book on product click
   const addAndBook = useCallback(async (product: DbProduct) => {
     if (!sessionId) return;
+
+    // RETOUR MODE: remove one of this product from the bill
+    if (retourMode) {
+      const existingItem = items.find((i) => i.product.id === product.id);
+      if (!existingItem) return; // product not on bill, do nothing
+
+      // Flash animation
+      setRetourFlash(product.id);
+      setTimeout(() => setRetourFlash(null), 400);
+
+      // Optimistic update
+      setItems((prev) => {
+        const item = prev.find((i) => i.product.id === product.id);
+        if (!item) return prev;
+        if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
+        return prev.filter((i) => i.product.id !== product.id);
+      });
+
+      try {
+        // Find one drink_log for this product+session and delete it
+        const { data: logToDelete } = await supabase
+          .from('drink_logs')
+          .select('id')
+          .eq('session_id', sessionId)
+          .eq('product_id', product.id)
+          .limit(1)
+          .single();
+
+        if (logToDelete) {
+          await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
+          const newTotal = Math.max(0, sessionTotal - product.price);
+          await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
+          setSessionTotal(newTotal);
+        }
+      } catch {
+        // Revert on error
+        setItems((prev) => {
+          const existing = prev.find((i) => i.product.id === product.id);
+          if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+          return [{ product, quantity: 1 }, ...prev];
+        });
+      }
+      return;
+    }
+
+    // NORMAL MODE: add product
     setItems((prev) => {
       const existing = prev.find((i) => i.product.id === product.id);
       if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
@@ -322,7 +368,7 @@ export const TestPage = () => {
         return prev.filter((i) => i.product.id !== product.id);
       });
     }
-  }, [sessionId, sessionTotal, addDrinkLogs, updateSession]);
+  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items]);
 
   // Input phases: coat first, then bag
   if (phase === 'input-coat' || phase === 'input-bag') {
