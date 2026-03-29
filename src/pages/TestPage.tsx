@@ -4,6 +4,7 @@ import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { Send, X } from 'lucide-react';
 import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
+import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 interface TestOrderItem {
@@ -50,6 +51,7 @@ export const TestPage = () => {
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionTotal, setSessionTotal] = useState(0);
+  const [existingLogs, setExistingLogs] = useState<{ product_name: string; quantity: number; unit_price: number }[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const lastCoatLookupRef = useRef<string | null>(null);
@@ -61,7 +63,29 @@ export const TestPage = () => {
   const createSession = useCreateSession();
 
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
+  const existingTotal = existingLogs.reduce((sum, l) => sum + l.unit_price * l.quantity, 0);
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
+
+  // Fetch existing drink logs when session changes
+  useEffect(() => {
+    if (!sessionId) { setExistingLogs([]); return; }
+    const fetch = async () => {
+      const { data } = await supabase
+        .from('drink_logs')
+        .select('price_at_time, products(full_name)')
+        .eq('session_id', sessionId);
+      if (!data) return;
+      const map = new Map<string, { product_name: string; quantity: number; unit_price: number }>();
+      for (const log of data) {
+        const name = (log.products as any)?.full_name ?? 'Unknown';
+        const existing = map.get(name);
+        if (existing) existing.quantity++;
+        else map.set(name, { product_name: name, quantity: 1, unit_price: log.price_at_time });
+      }
+      setExistingLogs(Array.from(map.values()));
+    };
+    fetch();
+  }, [sessionId]);
 
   const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string, onNotFound: () => void) => {
     try {
@@ -151,7 +175,7 @@ export const TestPage = () => {
       setFeedback('success');
       setTimeout(() => {
         setFeedback(null);
-        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setPhase('input-coat');
+        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input-coat');
       }, 2000);
     } catch {
       setFeedback('error');
@@ -160,19 +184,35 @@ export const TestPage = () => {
   }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession]);
 
   const orderSummary = (
-    <div className="space-y-2 my-2">
+    <div className="space-y-2 my-2 max-h-[50vh] overflow-y-auto">
       <div className="text-xs font-bold uppercase tracking-widest" style={{ color: '#888' }}>
         {coatNumber ? `C${coatNumber}` : ''}{bagNumber ? ` B${bagNumber}` : ''}
       </div>
-      {items.map((i) => (
-        <div key={i.product.id} className="flex justify-between text-sm font-bold" style={{ color: '#e5e5e5' }}>
-          <span>{i.quantity}× {i.product.full_name}</span>
-          <span>€{(i.product.price * i.quantity).toFixed(2)}</span>
-        </div>
-      ))}
+      {existingLogs.length > 0 && (
+        <>
+          <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#666' }}>Eerder besteld</div>
+          {existingLogs.map((l, idx) => (
+            <div key={idx} className="flex justify-between text-sm font-bold" style={{ color: '#aaa' }}>
+              <span>{l.quantity}× {l.product_name}</span>
+              <span>€{(l.unit_price * l.quantity).toFixed(2)}</span>
+            </div>
+          ))}
+        </>
+      )}
+      {items.length > 0 && (
+        <>
+          {existingLogs.length > 0 && <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#666' }}>Nieuw</div>}
+          {items.map((i) => (
+            <div key={i.product.id} className="flex justify-between text-sm font-bold" style={{ color: '#e5e5e5' }}>
+              <span>{i.quantity}× {i.product.full_name}</span>
+              <span>€{(i.product.price * i.quantity).toFixed(2)}</span>
+            </div>
+          ))}
+        </>
+      )}
       <div className="border-t pt-2 flex justify-between font-extrabold text-base" style={{ borderColor: '#333', color: '#00cc13' }}>
         <span>TOTAAL</span>
-        <span>€{total.toFixed(2)}</span>
+        <span>€{(existingTotal + total).toFixed(2)}</span>
       </div>
     </div>
   );
@@ -318,6 +358,30 @@ export const TestPage = () => {
         {gridLayout.map((row, ri) => (
           <div key={ri} className="flex-1 flex" style={{ minHeight: 0 }}>
             {row.map((cell, ci) => {
+              // Row 5 (index 4), first cell -> PAY button
+              if (ri === 4 && ci === 0) {
+                return (
+                  <button key={ci} onClick={() => setShowPayDialog(true)} style={{ flex: cell.span, backgroundColor: '#ef4444', color: '#fff' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
+                    onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
+                    onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                    onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>PAY</span>
+                  </button>
+                );
+              }
+              // Row 6 (index 5), first cell -> BON button
+              if (ri === 5 && ci === 0) {
+                return (
+                  <button key={ci} onClick={() => setShowBonDialog(true)} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
+                    onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
+                    onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                    onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>BON</span>
+                  </button>
+                );
+              }
               const product = productMap.get(cell.code);
               if (!product) return <div key={ci} style={{ flex: cell.span }} />;
               const textColor = getTextColor(product.category_color);
@@ -336,24 +400,10 @@ export const TestPage = () => {
           </div>
         ))}
       </div>
-      <div className="flex">
-        <div className="flex flex-col" style={{ flex: 1 }}>
-          <button onClick={() => items.length > 0 && setShowBonDialog(true)} disabled={items.length === 0} className="pos-btn flex-1 py-3 text-lg font-extrabold uppercase flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed" style={{ backgroundColor: '#1a3a6a', color: '#fff' }}
-            onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
-            onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
-            onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
-          >BON</button>
-          <button onClick={() => items.length > 0 && setShowPayDialog(true)} disabled={items.length === 0} className="pos-btn flex-1 py-3 text-lg font-extrabold uppercase flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed" style={{ backgroundColor: '#ef4444', color: '#fff' }}
-            onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
-            onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
-            onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
-          >PAY</button>
-        </div>
-        <button onClick={handleSubmit} disabled={items.length === 0} className="pos-btn py-4 text-xl flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed" style={{ flex: 9, backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}>
-          <Send className="w-6 h-6" />
-          BOEK — €{total.toFixed(2)}
-        </button>
-      </div>
+      <button onClick={handleSubmit} disabled={items.length === 0} className="pos-btn py-4 text-xl flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed" style={{ backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}>
+        <Send className="w-6 h-6" />
+        BOEK — €{total.toFixed(2)}
+      </button>
     </div>
   );
 };
