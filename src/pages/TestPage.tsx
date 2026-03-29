@@ -306,10 +306,8 @@ export const TestPage = () => {
     if (!sessionId) return;
     setShowPayDialog(false);
     try {
-      // Delete all drink logs for this session
-      await supabase.from('drink_logs').delete().eq('session_id', sessionId);
-      // Archive the session
-      await updateSession.mutateAsync({ id: sessionId, status: 'archived' });
+      // Mark session as paid (keep drink_logs for admin overview)
+      await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
       // Clear live sync
       clearOrder();
       // Reset everything and go to input
