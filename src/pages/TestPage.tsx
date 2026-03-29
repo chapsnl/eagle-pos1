@@ -45,7 +45,8 @@ type Phase = 'input' | 'products';
 
 export const TestPage = () => {
 
-  const [phase, setPhase] = useState<Phase>('input-coat');
+  const [phase, setPhase] = useState<Phase>('input');
+  const [activeField, setActiveField] = useState<'coat' | 'bag' | null>(null);
   const [coatNumber, setCoatNumber] = useState('');
   const [bagNumber, setBagNumber] = useState('');
   const [items, setItems] = useState<TestOrderItem[]>([]);
