@@ -285,8 +285,8 @@ export const TestPage = () => {
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex gap-3 sm:gap-3">
-          <button onClick={handleCancelAdd} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}>NEE</button>
-          <button onClick={handleConfirmAdd} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}>JA</button>
+          <button onClick={handleCancelAdd} className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[4px]" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}>NEE</button>
+          <button onClick={handleConfirmAdd} className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[4px]" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}>JA</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
