@@ -380,7 +380,7 @@ export const TestPage = () => {
             <>
               <div className="text-[9px] font-bold uppercase tracking-widest mt-2 mb-1" style={{ color: '#555' }}>Eerder</div>
               {existingLogs.map((l, idx) => (
-                <div key={idx} className="flex justify-between font-bold py-1" style={{ color: '#777', fontSize: 12 }}>
+                <div key={idx} className="flex justify-between font-bold py-1" style={{ color: '#777', fontSize: 20 }}>
                   <span>{l.quantity}× {l.product_name}</span>
                   <span>€{(l.unit_price * l.quantity).toFixed(2)}</span>
                 </div>
