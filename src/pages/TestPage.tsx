@@ -39,7 +39,7 @@ const gridLayout: { code: string; span: number; hideLabel?: boolean }[][] = [
   ],
 ];
 
-const NUM_KEYS = ['DEL', '1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0'];
+const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', ''];
 
 type Phase = 'input' | 'products';
 
@@ -288,7 +288,7 @@ export const TestPage = () => {
 
   const addDialog = (
     <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) handleCancelAdd(); }}>
-      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
+      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340', borderRadius: 12 }}>
         <DialogHeader>
           <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Nummer niet gevonden</DialogTitle>
           <DialogDescription className="text-sm pt-2">
@@ -297,8 +297,8 @@ export const TestPage = () => {
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex gap-3 sm:gap-3">
-          <button onClick={handleCancelAdd} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}>NEE</button>
-          <button onClick={handleConfirmAdd} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}>JA</button>
+          <button onClick={handleCancelAdd} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 6 }}>NEE</button>
+          <button onClick={handleConfirmAdd} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 6 }}>JA</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -407,7 +407,7 @@ export const TestPage = () => {
         <div className="flex-1 flex flex-col items-center justify-center px-4 gap-6">
           {/* Coat input */}
           <div className="w-full" style={{ maxWidth: '280px' }}>
-            <div className="text-xs font-extrabold uppercase tracking-widest text-center mb-1" style={{ color: '#888' }}>COAT NUMMER</div>
+            <div className="font-extrabold uppercase tracking-[0.2em] text-center mb-1" style={{ color: '#00cc13', fontSize: 'clamp(1.2rem, 5vw, 2rem)' }}>JAS NUMMER</div>
             <div
               onClick={() => setActiveField('coat')}
               className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center"
@@ -425,7 +425,7 @@ export const TestPage = () => {
           </div>
           {/* Bag input */}
           <div className="w-full" style={{ maxWidth: '280px' }}>
-            <div className="text-xs font-extrabold uppercase tracking-widest text-center mb-1" style={{ color: '#888' }}>TAS NUMMER</div>
+            <div className="font-extrabold uppercase tracking-[0.2em] text-center mb-1" style={{ color: '#00cc13', fontSize: 'clamp(1.2rem, 5vw, 2rem)' }}>TAS NUMMER</div>
             <div
               onClick={() => setActiveField('bag')}
               className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center"
@@ -513,9 +513,9 @@ export const TestPage = () => {
 
         {/* Total at bottom */}
         <div className="px-2 py-2 border-t" style={{ borderColor: '#333', backgroundColor: '#00cc13' }}>
-          <div className="flex justify-between font-extrabold" style={{ color: '#fff', fontSize: 'clamp(22px, 3vw, 42px)', whiteSpace: 'nowrap' }}>
-            <span>TOTAAL</span>
-            <span style={{ marginLeft: '8px' }}>€{(existingTotal + total).toFixed(2)}</span>
+          <div className="flex justify-between font-extrabold" style={{ color: '#fff', fontSize: 'clamp(18px, 4vw, 52px)', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+            <span style={{ flexShrink: 0 }}>TOTAAL</span>
+            <span style={{ marginLeft: 'clamp(4px, 1vw, 12px)', overflow: 'hidden', textOverflow: 'ellipsis' }}>€{(existingTotal + total).toFixed(2)}</span>
           </div>
         </div>
       </div>
