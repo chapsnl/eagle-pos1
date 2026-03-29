@@ -192,7 +192,7 @@ export const TestPage = () => {
         <>
           <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#666' }}>Eerder besteld</div>
           {existingLogs.map((l, idx) => (
-            <div key={idx} className="flex justify-between text-sm font-bold" style={{ color: '#aaa' }}>
+            <div key={idx} className="flex justify-between font-bold" style={{ color: '#aaa', fontSize: 17 }}>
               <span>{l.quantity}× {l.product_name}</span>
               <span>€{(l.unit_price * l.quantity).toFixed(2)}</span>
             </div>
