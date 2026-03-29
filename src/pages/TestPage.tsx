@@ -144,7 +144,7 @@ export const TestPage = () => {
     if (key === 'DEL') {
       setCoatNumber('');
       setBagNumber('');
-      setActiveField(null);
+      setActiveField('coat');
       lastCoatLookupRef.current = null;
       lastBagLookupRef.current = null;
       return;
