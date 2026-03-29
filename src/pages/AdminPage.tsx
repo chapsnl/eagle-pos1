@@ -419,7 +419,7 @@ export const AdminPage = () => {
 
       {/* Close Shift confirmation dialog */}
       <Dialog open={showCloseShift} onOpenChange={(v) => { if (!closeShiftLoading) { setShowCloseShift(v); setCloseShiftResult(null); } }}>
-        <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
+        <DialogContent className="bg-card rounded-[12px]" style={{ borderColor: '#00cc1340' }}>
           <DialogHeader>
             <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>
               {closeShiftResult ? (closeShiftResult.success ? 'SHIFT AFGESLOTEN' : 'FOUT') : 'CLOSE SHIFT'}
