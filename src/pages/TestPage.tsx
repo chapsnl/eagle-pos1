@@ -70,22 +70,23 @@ export const TestPage = () => {
   // Fetch existing drink logs when session changes
   useEffect(() => {
     if (!sessionId) { setExistingLogs([]); return; }
-    const fetch = async () => {
+    const fetchLogs = async () => {
       const { data } = await supabase
         .from('drink_logs')
-        .select('price_at_time, products(full_name)')
+        .select('price_at_time, product_id, products(full_name)')
         .eq('session_id', sessionId);
       if (!data) return;
-      const map = new Map<string, { product_name: string; quantity: number; unit_price: number }>();
+      const map = new Map<string, { product_id: string; product_name: string; quantity: number; unit_price: number }>();
       for (const log of data) {
         const name = (log.products as any)?.full_name ?? 'Unknown';
-        const existing = map.get(name);
+        const pid = log.product_id;
+        const existing = map.get(pid);
         if (existing) existing.quantity++;
-        else map.set(name, { product_name: name, quantity: 1, unit_price: log.price_at_time });
+        else map.set(pid, { product_id: pid, product_name: name, quantity: 1, unit_price: log.price_at_time });
       }
       setExistingLogs(Array.from(map.values()));
     };
-    fetch();
+    fetchLogs();
   }, [sessionId]);
 
   const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string, onNotFound: () => void) => {
