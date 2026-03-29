@@ -209,7 +209,7 @@ export const TestPage = () => {
       setExistingLogs([]); setPhase('input'); setActiveField('coat');
       setRetourMode(false); setLiveDbLogs([]);
       lastCoatLookupRef.current = null;
-    }, 30000);
+    }, 60000);
   }, [phase]);
 
   useEffect(() => {
