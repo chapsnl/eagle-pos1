@@ -370,7 +370,7 @@ export const TestPage = () => {
         <div className="flex-1 overflow-y-auto px-2 py-2" style={{ minHeight: 0 }}>
           {/* Newly added items (this session) */}
           {items.map((i) => (
-            <div key={i.product.id} className="flex justify-between font-bold py-1 border-b" style={{ borderColor: '#2a2a2a', color: '#e5e5e5', fontSize: 13 }}>
+            <div key={i.product.id} className="flex justify-between font-bold py-1 border-b" style={{ borderColor: '#2a2a2a', color: '#e5e5e5', fontSize: 21 }}>
               <span>{i.quantity}× {i.product.full_name}</span>
               <span>€{(i.product.price * i.quantity).toFixed(2)}</span>
             </div>
