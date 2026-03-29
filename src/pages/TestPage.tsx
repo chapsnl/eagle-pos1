@@ -184,19 +184,35 @@ export const TestPage = () => {
   }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession]);
 
   const orderSummary = (
-    <div className="space-y-2 my-2">
+    <div className="space-y-2 my-2 max-h-[50vh] overflow-y-auto">
       <div className="text-xs font-bold uppercase tracking-widest" style={{ color: '#888' }}>
         {coatNumber ? `C${coatNumber}` : ''}{bagNumber ? ` B${bagNumber}` : ''}
       </div>
-      {items.map((i) => (
-        <div key={i.product.id} className="flex justify-between text-sm font-bold" style={{ color: '#e5e5e5' }}>
-          <span>{i.quantity}× {i.product.full_name}</span>
-          <span>€{(i.product.price * i.quantity).toFixed(2)}</span>
-        </div>
-      ))}
+      {existingLogs.length > 0 && (
+        <>
+          <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#666' }}>Eerder besteld</div>
+          {existingLogs.map((l, idx) => (
+            <div key={idx} className="flex justify-between text-sm font-bold" style={{ color: '#aaa' }}>
+              <span>{l.quantity}× {l.product_name}</span>
+              <span>€{(l.unit_price * l.quantity).toFixed(2)}</span>
+            </div>
+          ))}
+        </>
+      )}
+      {items.length > 0 && (
+        <>
+          {existingLogs.length > 0 && <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#666' }}>Nieuw</div>}
+          {items.map((i) => (
+            <div key={i.product.id} className="flex justify-between text-sm font-bold" style={{ color: '#e5e5e5' }}>
+              <span>{i.quantity}× {i.product.full_name}</span>
+              <span>€{(i.product.price * i.quantity).toFixed(2)}</span>
+            </div>
+          ))}
+        </>
+      )}
       <div className="border-t pt-2 flex justify-between font-extrabold text-base" style={{ borderColor: '#333', color: '#00cc13' }}>
         <span>TOTAAL</span>
-        <span>€{total.toFixed(2)}</span>
+        <span>€{(existingTotal + total).toFixed(2)}</span>
       </div>
     </div>
   );
