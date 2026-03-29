@@ -149,10 +149,8 @@ export const TestPage = () => {
   const handleNumKey = (key: string) => {
     if (key === 'DEL') {
       setCoatNumber('');
-      setBagNumber('');
       setActiveField('coat');
       lastCoatLookupRef.current = null;
-      lastBagLookupRef.current = null;
       return;
     }
     if (key === 'BACK') {
@@ -161,8 +159,6 @@ export const TestPage = () => {
     }
     if (activeField === 'coat') {
       if (coatNumber.length < 3) setCoatNumber(coatNumber + key);
-    } else if (activeField === 'bag') {
-      if (bagNumber.length < 3) setBagNumber(bagNumber + key);
     }
   };
 
