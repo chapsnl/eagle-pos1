@@ -480,7 +480,7 @@ export const AdminPage = () => {
             <DialogFooter>
               <button
                 onClick={() => { setShowCloseShift(false); setCloseShiftResult(null); }}
-                className="w-full py-3 font-extrabold uppercase text-sm"
+                className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px]"
                 style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
               >
                 OK
