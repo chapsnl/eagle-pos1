@@ -380,6 +380,7 @@ export const TestPage = () => {
       setRetourFlash(product.id);
       setTimeout(() => setRetourFlash(null), 600);
 
+      skipPollUntilRef.current = Date.now() + 3000;
       // Optimistic update: prefer removing from items first, then existingLogs
       if (inItems) {
         setItems((prev) => {
