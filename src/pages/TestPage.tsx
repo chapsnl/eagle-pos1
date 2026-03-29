@@ -149,6 +149,10 @@ export const TestPage = () => {
       lastBagLookupRef.current = null;
       return;
     }
+    if (key === 'BACK') {
+      if (activeField === 'coat') setCoatNumber(prev => prev.slice(0, -1));
+      return;
+    }
     if (activeField === 'coat') {
       if (coatNumber.length < 3) setCoatNumber(coatNumber + key);
     } else if (activeField === 'bag') {
