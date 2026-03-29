@@ -63,7 +63,29 @@ export const TestPage = () => {
   const createSession = useCreateSession();
 
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
+  const existingTotal = existingLogs.reduce((sum, l) => sum + l.unit_price * l.quantity, 0);
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
+
+  // Fetch existing drink logs when session changes
+  useEffect(() => {
+    if (!sessionId) { setExistingLogs([]); return; }
+    const fetch = async () => {
+      const { data } = await supabase
+        .from('drink_logs')
+        .select('price_at_time, products(full_name)')
+        .eq('session_id', sessionId);
+      if (!data) return;
+      const map = new Map<string, { product_name: string; quantity: number; unit_price: number }>();
+      for (const log of data) {
+        const name = (log.products as any)?.full_name ?? 'Unknown';
+        const existing = map.get(name);
+        if (existing) existing.quantity++;
+        else map.set(name, { product_name: name, quantity: 1, unit_price: log.price_at_time });
+      }
+      setExistingLogs(Array.from(map.values()));
+    };
+    fetch();
+  }, [sessionId]);
 
   const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string, onNotFound: () => void) => {
     try {
