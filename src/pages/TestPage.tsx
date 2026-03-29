@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { toast } from 'sonner';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
@@ -344,6 +345,21 @@ export const TestPage = () => {
     if (!pendingWardrobe) return;
     setShowAddDialog(false);
     try {
+      // Double-check: prevent duplicate active sessions for the same wardrobe number
+      const { data: existing } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('wardrobe_number', pendingWardrobe)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+      if (existing) {
+        toast.error(`Gast ${pendingWardrobe} bestaat al als actieve klant!`);
+        setPendingWardrobe(null);
+        setCoatNumber('');
+        lastCoatLookupRef.current = null;
+        return;
+      }
       const session = await createSession.mutateAsync({
         wardrobe_number: pendingWardrobe,
         is_event_numbered: true,
