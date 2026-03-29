@@ -516,7 +516,11 @@ const ActiveSessionsSection = () => {
         <div className="p-4 text-xs text-muted-foreground">Geen actieve sessies</div>
       )}
 
-      {sessions && sessions.map((session) => {
+      {sessions && [...sessions].sort((a, b) => {
+        const numA = parseInt((a.wardrobe_number || '').replace(/\D/g, '')) || Infinity;
+        const numB = parseInt((b.wardrobe_number || '').replace(/\D/g, '')) || Infinity;
+        return numA - numB;
+      }).map((session) => {
         const isExpanded = expandedId === session.id;
         const label = session.wardrobe_number || (session.nfc_uid ? `UID: ${session.nfc_uid.slice(0, 8)}…` : 'Anoniem');
         const drinkLogs = (session as any).drink_logs ?? [];
