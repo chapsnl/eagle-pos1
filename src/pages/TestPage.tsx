@@ -179,13 +179,16 @@ export const TestPage = () => {
     if (stored) setLiveOrder(stored);
   }, []);
 
-  // Listen for live updates from bar page
+  // Listen for live updates from bar page (use ref to avoid stale closure)
+  const liveOrderRef = useRef<SyncOrderState | null>(null);
+  liveOrderRef.current = liveOrder;
+
   useEffect(() => {
     return onOrderUpdate((state) => {
       if (state) {
-        // Find new items for animation
-        if (liveOrder) {
-          const oldItems = new Map(liveOrder.items.map((i) => [i.product_id, i.quantity]));
+        const prev = liveOrderRef.current;
+        if (prev) {
+          const oldItems = new Map(prev.items.map((i) => [i.product_id, i.quantity]));
           for (const item of state.items) {
             const oldQty = oldItems.get(item.product_id) ?? 0;
             if (item.quantity > oldQty) {
@@ -201,7 +204,7 @@ export const TestPage = () => {
       }
       setLiveOrder(state);
     });
-  }, [liveOrder]);
+  }, []);
 
   const handleSubmit = useCallback(async () => {
     if (items.length === 0 || !sessionId) return;
@@ -474,21 +477,21 @@ export const TestPage = () => {
   // Input phase: both coat and bag fields on one page
   if (phase === 'input') {
     return (
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
         <FeedbackOverlay type={feedback} />
         {addDialog}
-        <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
-        <div className="flex-1 flex flex-col items-center justify-center px-4 gap-6">
+        <h2 className="font-extrabold uppercase tracking-[0.2em] text-center shrink-0" style={{ color: '#00cc13', fontSize: 'clamp(1rem, 3vh, 2rem)', padding: 'clamp(4px, 1vh, 12px) 0' }}>GAST NUMMER</h2>
+        <div className="flex-1 flex flex-col items-center justify-center px-4 min-h-0" style={{ gap: 'clamp(8px, 2vh, 24px)' }}>
           {/* Coat input */}
-          <div className="w-full" style={{ maxWidth: '280px' }}>
-            <div className="font-extrabold uppercase tracking-[0.2em] text-center mb-1" style={{ color: '#00cc13', fontSize: 'clamp(1.2rem, 5vw, 2rem)' }}>JAS NUMMER</div>
+          <div className="w-full" style={{ maxWidth: 'min(280px, 60vw)' }}>
+            <div className="font-extrabold uppercase tracking-[0.2em] text-center" style={{ color: '#00cc13', fontSize: 'clamp(0.8rem, 2.5vh, 1.6rem)', marginBottom: 'clamp(2px, 0.5vh, 8px)' }}>JAS NUMMER</div>
             <div
               onClick={() => setActiveField('coat')}
               className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center"
               style={{
                 backgroundColor: '#d1d5db', color: '#111',
-                fontSize: 'clamp(48px, 10vw, 80px)',
-                padding: 'clamp(16px, 3vh, 32px) 16px',
+                fontSize: 'clamp(28px, 6vh, 72px)',
+                padding: 'clamp(8px, 1.5vh, 24px) 12px',
                 border: activeField === 'coat' ? '3px solid #00cc13' : '3px solid #555',
                 boxShadow: activeField === 'coat' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
                 transition: 'border 0.2s, box-shadow 0.2s',
@@ -498,15 +501,15 @@ export const TestPage = () => {
             </div>
           </div>
           {/* Bag input */}
-          <div className="w-full" style={{ maxWidth: '280px' }}>
-            <div className="font-extrabold uppercase tracking-[0.2em] text-center mb-1" style={{ color: '#00cc13', fontSize: 'clamp(1.2rem, 5vw, 2rem)' }}>TAS NUMMER</div>
+          <div className="w-full" style={{ maxWidth: 'min(280px, 60vw)' }}>
+            <div className="font-extrabold uppercase tracking-[0.2em] text-center" style={{ color: '#00cc13', fontSize: 'clamp(0.8rem, 2.5vh, 1.6rem)', marginBottom: 'clamp(2px, 0.5vh, 8px)' }}>TAS NUMMER</div>
             <div
               onClick={() => setActiveField('bag')}
               className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center"
               style={{
                 backgroundColor: '#d1d5db', color: '#111',
-                fontSize: 'clamp(48px, 10vw, 80px)',
-                padding: 'clamp(16px, 3vh, 32px) 16px',
+                fontSize: 'clamp(28px, 6vh, 72px)',
+                padding: 'clamp(8px, 1.5vh, 24px) 12px',
                 border: activeField === 'bag' ? '3px solid #00cc13' : '3px solid #555',
                 boxShadow: activeField === 'bag' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
                 transition: 'border 0.2s, box-shadow 0.2s',
@@ -518,17 +521,16 @@ export const TestPage = () => {
         </div>
         {/* Numpad - only shown when a field is active */}
         {activeField && (
-          <div className="px-4 pb-2">
-            <div className="w-full max-w-md mx-auto grid grid-cols-3 gap-0">
+          <div className="shrink-0 px-4" style={{ paddingBottom: 'clamp(4px, 1vh, 12px)' }}>
+            <div className="w-full mx-auto grid grid-cols-3 gap-0" style={{ maxWidth: 'min(320px, 70vw)' }}>
               {NUM_KEYS.map((key, i) => (
-                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="py-3 text-2xl font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333' }}>
-                  {key === 'DEL' ? <X className="mx-auto" size={24} /> : key}
+                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333', fontSize: 'clamp(14px, 2.5vh, 28px)', padding: 'clamp(6px, 1.2vh, 16px) 0' }}>
+                  {key === 'DEL' ? <X className="mx-auto" style={{ width: 'clamp(16px, 2.5vh, 28px)', height: 'clamp(16px, 2.5vh, 28px)' }} /> : key}
                 </button>
               ))}
             </div>
           </div>
         )}
-        <div className="h-4" />
       </div>
     );
   }
@@ -548,7 +550,7 @@ export const TestPage = () => {
       )}
 
       {/* Left column - 20% - Guest overview */}
-      <div className="flex flex-col h-full" style={{ width: '20%', backgroundColor: retourMode ? '#1a0a0a' : '#121212', borderRight: `1px solid ${retourMode ? '#ef4444' : '#333'}`, transition: 'background-color 0.3s ease' }}>
+      <div className="flex flex-col h-full" style={{ width: '15%', backgroundColor: retourMode ? '#1a0a0a' : '#121212', borderRight: `1px solid ${retourMode ? '#ef4444' : '#333'}`, transition: 'background-color 0.3s ease' }}>
         {/* Guest number */}
         <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
           <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(32px, 6vw, 56px)' }}>
@@ -613,7 +615,7 @@ export const TestPage = () => {
       </div>
 
       {/* Right column - 80% - Product grid */}
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ width: '80%' }}>
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ width: '85%' }}>
         {gridLayout.map((row, ri) => (
           <div key={ri} className="flex-1 flex" style={{ minHeight: 0 }}>
             {row.map((cell, ci) => {
