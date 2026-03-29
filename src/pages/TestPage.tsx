@@ -269,7 +269,7 @@ export const TestPage = () => {
       setSessionTotal(Number(session.total_amount ?? 0));
       setPendingWardrobe(null);
       setFeedback('success');
-      setTimeout(() => { setFeedback(null); setPhase('products'); }, 1000);
+      setTimeout(() => { setFeedback(null); setPhase('products'); setActiveField(null); }, 1000);
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
