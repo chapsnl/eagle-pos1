@@ -145,21 +145,6 @@ export const TestPage = () => {
     return () => window.clearTimeout(t);
   }, [coatNumber, phase, resolveSessionByWardrobe]);
 
-  // Auto-lookup bag number at 3 digits
-  useEffect(() => {
-    if (phase !== 'input') return;
-    if (bagNumber.length < 3) { lastBagLookupRef.current = null; return; }
-    const wardrobe = `B${bagNumber}`;
-    if (lastBagLookupRef.current === wardrobe) return;
-    lastBagLookupRef.current = wardrobe;
-    const t = window.setTimeout(() => {
-      void resolveSessionByWardrobe(wardrobe, () => {
-        setPendingWardrobe(wardrobe);
-        setShowAddDialog(true);
-      });
-    }, 300);
-    return () => window.clearTimeout(t);
-  }, [bagNumber, phase, resolveSessionByWardrobe]);
 
   const handleNumKey = (key: string) => {
     if (key === 'DEL') {
