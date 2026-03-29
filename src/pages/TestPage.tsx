@@ -460,8 +460,11 @@ export const TestPage = () => {
             <>
               <div className="font-bold uppercase tracking-widest mt-2 mb-1" style={{ color: '#555', fontSize: 'clamp(8px, 0.8vw, 12px)' }}>Eerder</div>
               {existingLogs.map((l, idx) => (
-                <div key={idx} className="flex justify-between items-center font-bold" style={{ color: '#777', fontSize: 'clamp(12px, 1.4vw, 22px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap' }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>{l.quantity}× {l.product_name}</span>
+                <div key={idx} className="flex justify-between items-center font-bold" style={{ color: '#777', fontSize: 'clamp(12px, 1.4vw, 22px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', transition: 'all 0.3s ease', ...(retourFlash === l.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>
+                    {retourFlash === l.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
+                    {l.quantity}× {l.product_name}
+                  </span>
                   <span style={{ color: '#00aa00', flexShrink: 0 }}>€{(l.unit_price * l.quantity).toFixed(2)}</span>
                 </div>
               ))}
