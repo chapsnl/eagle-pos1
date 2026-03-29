@@ -398,12 +398,6 @@ export const AdminPage = () => {
         {/* Active sessions overview */}
         <ActiveSessionsSection />
 
-        <AdminCard
-          title="FOOI UIT KAS"
-          description="Verschil gepind bedrag vs productwaarde"
-          value="€0.00"
-        />
-
         <AdminButton
           label="AFGESLOTEN KLANTEN"
           description="Bekijk betaalde sessies"
@@ -416,27 +410,6 @@ export const AdminPage = () => {
           description="Dagsaldo Resetten"
           variant="success"
           onClick={() => setShowCloseShift(true)}
-        />
-
-        <AdminButton
-          label="INCIDENT"
-          description="Probleem-sessie vlaggen"
-          variant="destructive"
-          onClick={() => console.log('Incident')}
-        />
-
-        <AdminButton
-          label="NFC UITLEZEN"
-          description="Lees data van een NFC-bandje"
-          variant="success"
-          onClick={startNfcRead}
-        />
-
-        <AdminButton
-          label="BATCH-ERASE"
-          description="Continu NFC-bandjes wissen"
-          variant="success"
-          onClick={() => setShowConfirm(true)}
         />
 
       </div>
