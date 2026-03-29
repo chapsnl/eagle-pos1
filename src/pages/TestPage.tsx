@@ -276,7 +276,7 @@ export const TestPage = () => {
 
   const addDialog = (
     <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) handleCancelAdd(); }}>
-      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
+      <DialogContent className="bg-card rounded-[12px]" style={{ borderColor: '#00cc1340' }}>
         <DialogHeader>
           <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Nummer niet gevonden</DialogTitle>
           <DialogDescription className="text-sm pt-2">
