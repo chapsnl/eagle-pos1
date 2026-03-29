@@ -368,10 +368,10 @@ export const AdminPage = () => {
 
         {/* Confirmation dialog */}
         <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-          <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
-            <DialogHeader>
-              <DialogTitle className="font-extrabold uppercase" style={{ color: '#00cc13' }}>
-                Batch-Erase Starten
+        <DialogContent className="bg-card rounded-[12px]" style={{ borderColor: '#00cc1340' }}>
+          <DialogHeader>
+            <DialogTitle className="font-extrabold uppercase" style={{ color: '#00cc13' }}>
+              Batch-Erase Starten
               </DialogTitle>
               <DialogDescription className="text-sm">
                 Weet je zeker dat je bandjes wilt wissen? Alle data gaat verloren.
