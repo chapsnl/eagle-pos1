@@ -83,10 +83,13 @@ export const TestPage = () => {
 
   // Polling: fetch drink logs for current session every 2s (like Admin's refetchInterval)
   const [liveDbLogs, setLiveDbLogs] = useState<{ product_id: string; product_name: string; quantity: number }[]>([]);
+  const skipPollUntilRef = useRef<number>(0);
 
   useEffect(() => {
     if (!sessionId) { setExistingLogs([]); setLiveDbLogs([]); return; }
     const fetchLogs = async () => {
+      // Skip poll if we recently did an optimistic update (allow DB to catch up)
+      if (Date.now() < skipPollUntilRef.current) return;
       const { data } = await supabase
         .from('drink_logs')
         .select('price_at_time, product_id, products(full_name)')
