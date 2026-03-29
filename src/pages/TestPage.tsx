@@ -130,6 +130,9 @@ export const TestPage = () => {
     });
   }, []);
 
+  const [showBonDialog, setShowBonDialog] = useState(false);
+  const [showPayDialog, setShowPayDialog] = useState(false);
+
   const handleSubmit = useCallback(async () => {
     if (items.length === 0 || !sessionId) return;
     try {
@@ -155,6 +158,53 @@ export const TestPage = () => {
       setTimeout(() => setFeedback(null), 2000);
     }
   }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession]);
+
+  const orderSummary = (
+    <div className="space-y-2 my-2">
+      <div className="text-xs font-bold uppercase tracking-widest" style={{ color: '#888' }}>
+        {coatNumber ? `C${coatNumber}` : ''}{bagNumber ? ` B${bagNumber}` : ''}
+      </div>
+      {items.map((i) => (
+        <div key={i.product.id} className="flex justify-between text-sm font-bold" style={{ color: '#e5e5e5' }}>
+          <span>{i.quantity}× {i.product.full_name}</span>
+          <span>€{(i.product.price * i.quantity).toFixed(2)}</span>
+        </div>
+      ))}
+      <div className="border-t pt-2 flex justify-between font-extrabold text-base" style={{ borderColor: '#333', color: '#00cc13' }}>
+        <span>TOTAAL</span>
+        <span>€{total.toFixed(2)}</span>
+      </div>
+    </div>
+  );
+
+  const bonDialog = (
+    <Dialog open={showBonDialog} onOpenChange={(open) => { if (!open) setShowBonDialog(false); }}>
+      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
+        <DialogHeader>
+          <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Bestelling</DialogTitle>
+        </DialogHeader>
+        {orderSummary}
+        <DialogFooter className="flex gap-3 sm:gap-3">
+          <button onClick={() => setShowBonDialog(false)} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}>CANCEL</button>
+          <button onClick={() => { setShowBonDialog(false); handleSubmit(); }} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}>VERWERK</button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const payDialog = (
+    <Dialog open={showPayDialog} onOpenChange={(open) => { if (!open) setShowPayDialog(false); }}>
+      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
+        <DialogHeader>
+          <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Bestelling</DialogTitle>
+        </DialogHeader>
+        {orderSummary}
+        <DialogFooter className="flex gap-3 sm:gap-3">
+          <button onClick={() => setShowPayDialog(false)} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}>CANCEL</button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 
   const handleConfirmAdd = useCallback(async () => {
     if (!pendingWardrobe) return;
