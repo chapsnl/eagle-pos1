@@ -175,6 +175,35 @@ export const TestPage = () => {
   const [retourMode, setRetourMode] = useState(false);
   const [retourFlash, setRetourFlash] = useState<string | null>(null);
 
+  // Inactivity timer: auto-reset to input after 15s of no interaction in products phase
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const resetInactivityTimer = useCallback(() => {
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    if (phase !== 'products') return;
+    inactivityTimerRef.current = setTimeout(() => {
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0);
+      setExistingLogs([]); setPhase('input'); setActiveField('coat');
+      setRetourMode(false); setLiveDbLogs([]);
+      lastCoatLookupRef.current = null;
+    }, 15000);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== 'products') {
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+      return;
+    }
+    resetInactivityTimer();
+    const events = ['pointerdown', 'touchstart', 'keydown'] as const;
+    const handler = () => resetInactivityTimer();
+    events.forEach((e) => window.addEventListener(e, handler, { passive: true }));
+    return () => {
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+      events.forEach((e) => window.removeEventListener(e, handler));
+    };
+  }, [phase, resetInactivityTimer]);
+
 
   const handleSubmit = useCallback(async () => {
     if (items.length === 0 || !sessionId) return;
