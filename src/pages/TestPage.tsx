@@ -203,7 +203,7 @@ export const TestPage = () => {
         <>
           {existingLogs.length > 0 && <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#666' }}>Nieuw</div>}
           {items.map((i) => (
-            <div key={i.product.id} className="flex justify-between text-sm font-bold" style={{ color: '#e5e5e5' }}>
+            <div key={i.product.id} className="flex justify-between font-bold" style={{ color: '#e5e5e5', fontSize: 17 }}>
               <span>{i.quantity}× {i.product.full_name}</span>
               <span>€{(i.product.price * i.quantity).toFixed(2)}</span>
             </div>
