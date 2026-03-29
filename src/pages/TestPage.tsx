@@ -87,23 +87,32 @@ export const TestPage = () => {
   const fetchLogsFromDb = useCallback(async (sid: string) => {
     const { data } = await supabase
       .from('drink_logs')
-      .select('price_at_time, product_id, products(full_name)')
+      .select('price_at_time, product_id, timestamp, products(full_name)')
       .eq('session_id', sid);
     if (!data) return;
     const map = new Map<string, { product_id: string; product_name: string; quantity: number; unit_price: number }>();
-    const dbMap = new Map<string, { product_id: string; product_name: string; quantity: number }>();
+    const dbMap = new Map<string, { product_id: string; product_name: string; quantity: number; last_touched_at: number }>();
     for (const log of data) {
       const name = (log.products as any)?.full_name ?? 'Unknown';
       const pid = log.product_id;
+      const touchedAt = new Date(log.timestamp).getTime();
       const existing = map.get(pid);
       if (existing) existing.quantity++;
       else map.set(pid, { product_id: pid, product_name: name, quantity: 1, unit_price: log.price_at_time });
       const dbExisting = dbMap.get(pid);
-      if (dbExisting) dbExisting.quantity++;
-      else dbMap.set(pid, { product_id: pid, product_name: name, quantity: 1 });
+      if (dbExisting) {
+        dbExisting.quantity++;
+        dbExisting.last_touched_at = Math.max(dbExisting.last_touched_at, touchedAt);
+      } else {
+        dbMap.set(pid, { product_id: pid, product_name: name, quantity: 1, last_touched_at: touchedAt });
+      }
     }
     setExistingLogs(Array.from(map.values()));
-    setLiveDbLogs(Array.from(dbMap.values()));
+    setLiveDbLogs(
+      Array.from(dbMap.values())
+        .sort((a, b) => b.last_touched_at - a.last_touched_at)
+        .map(({ last_touched_at, ...item }) => item)
+    );
   }, []);
 
   useEffect(() => {
@@ -464,10 +473,8 @@ export const TestPage = () => {
     setLiveDbLogs((prev) => {
       const existing = prev.find((l) => l.product_id === product.id);
       if (existing) {
-        // Move updated item to top
-        const updated = prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l);
-        const item = updated.find((l) => l.product_id === product.id)!;
-        return [item, ...updated.filter((l) => l.product_id !== product.id)];
+        const rest = prev.filter((l) => l.product_id !== product.id);
+        return [{ ...existing, quantity: existing.quantity + 1 }, ...rest];
       }
       return [{ product_id: product.id, product_name: product.full_name, quantity: 1 }, ...prev];
     });
@@ -561,7 +568,7 @@ export const TestPage = () => {
         {/* Scrollable order list - X x Product format, live from DB */}
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
         {liveDbLogs.map((item, index) => (
-            <div key={item.product_id} style={{ color: '#e5e5e5', fontSize: 'calc(clamp(14px, 1.8vw, 28px) - 3px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', transition: 'all 0.3s ease', fontWeight: index === 0 ? 800 : 400, ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
+            <div key={item.product_id} style={{ color: '#e5e5e5', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', transition: 'all 0.3s ease', fontWeight: index === 0 ? 800 : 400, ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
               {retourFlash === item.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
               {item.quantity} x {item.product_name}
             </div>
