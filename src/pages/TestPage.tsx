@@ -415,6 +415,9 @@ export const TestPage = () => {
         return prev.filter((l) => l.product_id !== product.id);
       });
 
+      // Auto-reset retour mode after single use
+      setRetourMode(false);
+
       try {
         // Find one drink_log for this product+session and delete it
         const { data: logToDelete } = await supabase
