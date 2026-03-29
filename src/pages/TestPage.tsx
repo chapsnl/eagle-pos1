@@ -425,7 +425,7 @@ export const TestPage = () => {
           </div>
           {/* Bag input */}
           <div className="w-full" style={{ maxWidth: '280px' }}>
-            <div className="text-xs font-extrabold uppercase tracking-widest text-center mb-1" style={{ color: '#888' }}>TAS NUMMER</div>
+            <div className="font-extrabold uppercase tracking-[0.2em] text-center mb-1" style={{ color: '#00cc13', fontSize: 'clamp(1.2rem, 5vw, 2rem)' }}>TAS NUMMER</div>
             <div
               onClick={() => setActiveField('bag')}
               className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center"
