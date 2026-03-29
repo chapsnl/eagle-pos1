@@ -52,7 +52,7 @@ export const TestPage = () => {
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionTotal, setSessionTotal] = useState(0);
-  const [existingLogs, setExistingLogs] = useState<{ product_name: string; quantity: number; unit_price: number }[]>([]);
+  const [existingLogs, setExistingLogs] = useState<{ product_id: string; product_name: string; quantity: number; unit_price: number }[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const lastCoatLookupRef = useRef<string | null>(null);
@@ -70,22 +70,23 @@ export const TestPage = () => {
   // Fetch existing drink logs when session changes
   useEffect(() => {
     if (!sessionId) { setExistingLogs([]); return; }
-    const fetch = async () => {
+    const fetchLogs = async () => {
       const { data } = await supabase
         .from('drink_logs')
-        .select('price_at_time, products(full_name)')
+        .select('price_at_time, product_id, products(full_name)')
         .eq('session_id', sessionId);
       if (!data) return;
-      const map = new Map<string, { product_name: string; quantity: number; unit_price: number }>();
+      const map = new Map<string, { product_id: string; product_name: string; quantity: number; unit_price: number }>();
       for (const log of data) {
         const name = (log.products as any)?.full_name ?? 'Unknown';
-        const existing = map.get(name);
+        const pid = log.product_id;
+        const existing = map.get(pid);
         if (existing) existing.quantity++;
-        else map.set(name, { product_name: name, quantity: 1, unit_price: log.price_at_time });
+        else map.set(pid, { product_id: pid, product_name: name, quantity: 1, unit_price: log.price_at_time });
       }
       setExistingLogs(Array.from(map.values()));
     };
-    fetch();
+    fetchLogs();
   }, [sessionId]);
 
   const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string, onNotFound: () => void) => {
@@ -301,23 +302,33 @@ export const TestPage = () => {
 
     // RETOUR MODE: remove one of this product from the bill
     if (retourMode) {
-      const existingItem = items.find((i) => i.product.id === product.id);
-      if (!existingItem) return; // product not on bill, do nothing
+      const inItems = items.find((i) => i.product.id === product.id);
+      const inExisting = existingLogs.find((l) => l.product_id === product.id);
+      if (!inItems && !inExisting) return; // product not on bill at all
 
       // Flash animation
       setRetourFlash(product.id);
-      setTimeout(() => setRetourFlash(null), 400);
+      setTimeout(() => setRetourFlash(null), 600);
 
       // Exit retour mode after one product
       setRetourMode(false);
 
-      // Optimistic update
-      setItems((prev) => {
-        const item = prev.find((i) => i.product.id === product.id);
-        if (!item) return prev;
-        if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
-        return prev.filter((i) => i.product.id !== product.id);
-      });
+      // Optimistic update: prefer removing from items first, then existingLogs
+      if (inItems) {
+        setItems((prev) => {
+          const item = prev.find((i) => i.product.id === product.id);
+          if (!item) return prev;
+          if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
+          return prev.filter((i) => i.product.id !== product.id);
+        });
+      } else {
+        setExistingLogs((prev) => {
+          const item = prev.find((l) => l.product_id === product.id);
+          if (!item) return prev;
+          if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
+          return prev.filter((l) => l.product_id !== product.id);
+        });
+      }
 
       try {
         // Find one drink_log for this product+session and delete it
@@ -327,7 +338,7 @@ export const TestPage = () => {
           .eq('session_id', sessionId)
           .eq('product_id', product.id)
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (logToDelete) {
           await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
@@ -337,11 +348,19 @@ export const TestPage = () => {
         }
       } catch {
         // Revert on error
-        setItems((prev) => {
-          const existing = prev.find((i) => i.product.id === product.id);
-          if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-          return [{ product, quantity: 1 }, ...prev];
-        });
+        if (inItems) {
+          setItems((prev) => {
+            const existing = prev.find((i) => i.product.id === product.id);
+            if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+            return [{ product, quantity: 1 }, ...prev];
+          });
+        } else {
+          setExistingLogs((prev) => {
+            const existing = prev.find((l) => l.product_id === product.id);
+            if (existing) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l);
+            return [{ product_id: product.id, product_name: product.full_name, quantity: 1, unit_price: product.price }, ...prev];
+          });
+        }
       }
       return;
     }
@@ -371,7 +390,7 @@ export const TestPage = () => {
         return prev.filter((i) => i.product.id !== product.id);
       });
     }
-  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items]);
+  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs]);
 
   // Input phases: coat first, then bag
   if (phase === 'input-coat' || phase === 'input-bag') {
@@ -441,8 +460,11 @@ export const TestPage = () => {
             <>
               <div className="font-bold uppercase tracking-widest mt-2 mb-1" style={{ color: '#555', fontSize: 'clamp(8px, 0.8vw, 12px)' }}>Eerder</div>
               {existingLogs.map((l, idx) => (
-                <div key={idx} className="flex justify-between items-center font-bold" style={{ color: '#777', fontSize: 'clamp(12px, 1.4vw, 22px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap' }}>
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>{l.quantity}× {l.product_name}</span>
+                <div key={idx} className="flex justify-between items-center font-bold" style={{ color: '#777', fontSize: 'clamp(12px, 1.4vw, 22px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', transition: 'all 0.3s ease', ...(retourFlash === l.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>
+                    {retourFlash === l.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
+                    {l.quantity}× {l.product_name}
+                  </span>
                   <span style={{ color: '#00aa00', flexShrink: 0 }}>€{(l.unit_price * l.quantity).toFixed(2)}</span>
                 </div>
               ))}
