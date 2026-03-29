@@ -9,7 +9,7 @@ export interface SyncOrderItem {
 }
 
 export interface SyncOrderState {
-  guestNumber: string; // e.g. "C123" or "B456"
+  guestNumber: string; // e.g. "C123"
   sessionId: string | null;
   items: SyncOrderItem[];
   totalAmount: number;
