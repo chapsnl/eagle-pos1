@@ -320,117 +320,90 @@ export const TestPage = () => {
     );
   }
 
-  // Products phase — landscape two-column layout
-  const allItems = [
-    ...items.map(i => ({ name: i.product.full_name, qty: i.quantity, price: i.product.price, isNew: true })),
-    ...existingLogs.map(l => ({ name: l.product_name, qty: l.quantity, price: l.unit_price, isNew: false })),
-  ];
-  const grandTotal = existingTotal + total;
-
+  // Products phase
   return (
-    <div className="flex-1 flex overflow-hidden h-full" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="flex-1 flex flex-col overflow-hidden h-full">
       <FeedbackOverlay type={feedback} />
       {bonDialog}
       {payDialog}
-
-      {/* Left column — 8% Guest Status */}
-      <div className="flex flex-col justify-between" style={{ width: '8%', minWidth: 0, backgroundColor: '#121212' }}>
-        {/* Guest number */}
-        <div className="text-center pt-3 pb-1">
-          <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(1.2rem, 3vw, 2.4rem)' }}>
-            {coatNumber || '—'}
-          </span>
+      <div className="min-h-10 bg-card border-b border-border flex items-center px-2 gap-1.5">
+        <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+          {coatNumber ? `C${coatNumber}` : ''}{bagNumber ? `B${bagNumber}` : ''}
+        </label>
+        <div className="flex-1 flex items-center gap-1.5 overflow-x-auto py-1">
+          {items.map((i) => (
+            <button
+              key={i.product.id}
+              onClick={() => setItems(prev => {
+                const item = prev.find(x => x.product.id === i.product.id);
+                if (!item) return prev;
+                if (item.quantity > 1) return prev.map(x => x.product.id === i.product.id ? { ...x, quantity: x.quantity - 1 } : x);
+                return prev.filter(x => x.product.id !== i.product.id);
+              })}
+              className="flex items-center gap-1 bg-secondary rounded px-2 py-1 text-[10px] font-bold uppercase shrink-0 hover:bg-destructive/20 transition-colors group"
+            >
+              <span>{i.quantity > 1 && `${i.quantity}×`}{i.product.shorthand}</span>
+              <X className="w-2.5 h-2.5 opacity-40 group-hover:opacity-100" />
+            </button>
+          ))}
         </div>
-
-        {/* Scrollable bon list — newest on top */}
-        <div className="flex-1 overflow-y-auto px-1" style={{ scrollbarWidth: 'none' }}>
-          <style>{`.test-bon-scroll::-webkit-scrollbar { display: none; }`}</style>
-          <div className="test-bon-scroll flex flex-col gap-0.5">
-            {allItems.map((item, idx) => (
-              <div
-                key={idx}
-                className="text-[9px] font-bold leading-tight truncate"
-                style={{
-                  color: item.isNew ? '#fff' : '#888',
-                  animation: item.isNew ? 'testSlideIn 0.25s ease-out' : undefined,
-                }}
-              >
-                {item.qty > 1 && `${item.qty}×`}{item.name}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Total */}
-        <div className="px-1 pb-2 pt-1" style={{ borderTop: '2px solid #00cc13' }}>
-          <div className="text-center font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(0.7rem, 2vw, 1.2rem)' }}>
-            €{grandTotal.toFixed(2)}
-          </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="font-extrabold text-sm" style={{ color: '#00cc13' }}>€{total.toFixed(2)}</span>
+          <button onClick={() => setItems([])} className="pos-btn text-[10px] text-muted-foreground hover:text-destructive px-1.5 py-0.5">
+            WISSEN
+          </button>
         </div>
       </div>
-
-      {/* Right column — 92% Product Grid */}
-      <div className="flex flex-col" style={{ width: '92%', minWidth: 0, backgroundColor: '#1a1a1a' }}>
-        <div className="flex-1 overflow-hidden">
-          <div className="h-full grid gap-[2px] p-[2px]" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gridAutoRows: 'minmax(120px, 1fr)' }}>
-            {/* PAY button */}
-            <button
-              onClick={() => setShowPayDialog(true)}
-              className="flex flex-col items-center justify-center font-extrabold uppercase transition-all duration-75"
-              style={{ backgroundColor: '#ef4444', color: '#fff', border: '1px solid #444', borderRadius: 0 }}
-              onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.95)'; }}
-              onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-              onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-            >
-              <span style={{ fontSize: 'clamp(0.9rem, 2vw, 1.4rem)' }}>PAY</span>
-            </button>
-
-            {/* BON button */}
-            <button
-              onClick={() => setShowBonDialog(true)}
-              className="flex flex-col items-center justify-center font-extrabold uppercase transition-all duration-75"
-              style={{ backgroundColor: '#1a3a6a', color: '#fff', border: '1px solid #444', borderRadius: 0 }}
-              onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.95)'; }}
-              onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-              onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-            >
-              <span style={{ fontSize: 'clamp(0.9rem, 2vw, 1.4rem)' }}>BON</span>
-            </button>
-
-            {/* Product buttons */}
-            {(products ?? []).map((product) => (
-              <button
-                key={product.id}
-                onClick={() => addProduct(product)}
-                className="flex flex-col items-center justify-center gap-1 font-bold uppercase transition-all duration-75"
-                style={{ backgroundColor: '#2a2a2a', border: '1px solid #333', borderRadius: 0 }}
-                onPointerDown={(e) => {
-                  e.currentTarget.style.backgroundColor = '#00cc13';
-                  e.currentTarget.style.transform = 'scale(0.95)';
-                }}
-                onPointerUp={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  setTimeout(() => { if (e.currentTarget) e.currentTarget.style.backgroundColor = '#2a2a2a'; }, 150);
-                }}
-                onPointerLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.backgroundColor = '#2a2a2a';
-                }}
-              >
-                <span className="text-white text-xs leading-tight text-center truncate w-full px-1">{product.full_name}</span>
-                <span style={{ color: '#00cc13', fontSize: '0.7rem' }}>€{product.price.toFixed(2)}</span>
-              </button>
-            ))}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {gridLayout.map((row, ri) => (
+          <div key={ri} className="flex-1 flex" style={{ minHeight: 0 }}>
+            {row.map((cell, ci) => {
+              // Row 5 (index 4), first cell -> PAY button
+              if (ri === 4 && ci === 0) {
+                return (
+                  <button key={ci} onClick={() => setShowPayDialog(true)} style={{ flex: cell.span, backgroundColor: '#ef4444', color: '#fff' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
+                    onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
+                    onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                    onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>PAY</span>
+                  </button>
+                );
+              }
+              // Row 6 (index 5), first cell -> BON button
+              if (ri === 5 && ci === 0) {
+                return (
+                  <button key={ci} onClick={() => setShowBonDialog(true)} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
+                    onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
+                    onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                    onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>BON</span>
+                  </button>
+                );
+              }
+              const product = productMap.get(cell.code);
+              if (!product) return <div key={ci} style={{ flex: cell.span }} />;
+              const textColor = getTextColor(product.category_color);
+              return (
+                <button key={ci} onClick={() => addProduct(product)} style={{ flex: cell.span, backgroundColor: product.category_color, color: textColor }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 active:brightness-[0.6] p-1 min-w-0 transition-all duration-75"
+                  onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
+                  onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  <span className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line" style={{ fontSize: cell.span === 2 ? 'clamp(0.96rem, 3.04vw, 2.48rem)' : 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>
+                    {cell.hideLabel ? '' : product.full_name}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        </div>
+        ))}
       </div>
-
-      <style>{`
-        @keyframes testSlideIn {
-          from { opacity: 0; transform: translateY(-8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      <button onClick={handleSubmit} disabled={items.length === 0} className="pos-btn py-4 text-xl flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed" style={{ backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}>
+        <Send className="w-6 h-6" />
+        BOEK — €{total.toFixed(2)}
+      </button>
     </div>
   );
 };
