@@ -44,6 +44,7 @@ const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
 type Phase = 'input-coat' | 'input-bag' | 'products';
 
 export const TestPage = () => {
+
   const [phase, setPhase] = useState<Phase>('input-coat');
   const [coatNumber, setCoatNumber] = useState('');
   const [bagNumber, setBagNumber] = useState('');
