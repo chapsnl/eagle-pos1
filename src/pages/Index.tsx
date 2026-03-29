@@ -264,6 +264,7 @@ const Index = () => {
       )}
 
       {activeView === 'arm-nummer' && <ArmNummerPage />}
+      {activeView === 'test' && <TestPage />}
       {activeView === 'admin' && <AdminPage />}
     </div>
   );
