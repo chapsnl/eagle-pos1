@@ -489,7 +489,7 @@ export const TestPage = () => {
         {/* Guest number */}
         <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
           <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(32px, 6vw, 56px)' }}>
-            {coatNumber ? `C${coatNumber}` : ''}{bagNumber ? ` B${bagNumber}` : ''}
+            {coatNumber ? `C${coatNumber}` : ''}
           </span>
         </div>
 
