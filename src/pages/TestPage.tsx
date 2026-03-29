@@ -502,7 +502,7 @@ export const TestPage = () => {
             </div>
           ))}
           {liveDbLogs.length === 0 && (
-            <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1vw, 14px)' }}>Geen producten</div>
+            <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1.2vw, 14px)' }}>Geen producten</div>
           )}
         </div>
       </div>
