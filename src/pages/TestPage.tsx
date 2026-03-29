@@ -61,9 +61,8 @@ export const TestPage = () => {
   }, []);
 
   const [phase, setPhase] = useState<Phase>('input');
-  const [activeField, setActiveField] = useState<'coat' | 'bag' | null>('coat');
+  const [activeField, setActiveField] = useState<'coat' | null>('coat');
   const [coatNumber, setCoatNumber] = useState('');
-  const [bagNumber, setBagNumber] = useState('');
   const [items, setItems] = useState<TestOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -72,7 +71,6 @@ export const TestPage = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const lastCoatLookupRef = useRef<string | null>(null);
-  const lastBagLookupRef = useRef<string | null>(null);
   const { data: products } = useProducts();
   const findActiveSessionByWardrobe = useFindActiveSessionByWardrobe();
   const updateSession = useUpdateSession();
@@ -147,29 +145,12 @@ export const TestPage = () => {
     return () => window.clearTimeout(t);
   }, [coatNumber, phase, resolveSessionByWardrobe]);
 
-  // Auto-lookup bag number at 3 digits
-  useEffect(() => {
-    if (phase !== 'input') return;
-    if (bagNumber.length < 3) { lastBagLookupRef.current = null; return; }
-    const wardrobe = `B${bagNumber}`;
-    if (lastBagLookupRef.current === wardrobe) return;
-    lastBagLookupRef.current = wardrobe;
-    const t = window.setTimeout(() => {
-      void resolveSessionByWardrobe(wardrobe, () => {
-        setPendingWardrobe(wardrobe);
-        setShowAddDialog(true);
-      });
-    }, 300);
-    return () => window.clearTimeout(t);
-  }, [bagNumber, phase, resolveSessionByWardrobe]);
 
   const handleNumKey = (key: string) => {
     if (key === 'DEL') {
       setCoatNumber('');
-      setBagNumber('');
       setActiveField('coat');
       lastCoatLookupRef.current = null;
-      lastBagLookupRef.current = null;
       return;
     }
     if (key === 'BACK') {
@@ -178,8 +159,6 @@ export const TestPage = () => {
     }
     if (activeField === 'coat') {
       if (coatNumber.length < 3) setCoatNumber(coatNumber + key);
-    } else if (activeField === 'bag') {
-      if (bagNumber.length < 3) setBagNumber(bagNumber + key);
     }
   };
 
@@ -215,7 +194,7 @@ export const TestPage = () => {
       setFeedback('success');
       setTimeout(() => {
         setFeedback(null);
-        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat');
+        setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat');
       }, 2000);
     } catch {
       setFeedback('error');
@@ -226,7 +205,7 @@ export const TestPage = () => {
   const orderSummary = (
     <div className="space-y-2 my-2 max-h-[50vh] overflow-y-auto">
       <div className="text-xs font-bold uppercase tracking-widest" style={{ color: '#888' }}>
-        {coatNumber ? `C${coatNumber}` : ''}{bagNumber ? ` B${bagNumber}` : ''}
+        {coatNumber ? `C${coatNumber}` : ''}
       </div>
       {existingLogs.length > 0 && (
         <>
@@ -286,8 +265,8 @@ export const TestPage = () => {
       setFeedback('success');
       setTimeout(() => {
         setFeedback(null);
-        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); setLiveDbLogs([]);
-        lastCoatLookupRef.current = null; lastBagLookupRef.current = null;
+        setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); setLiveDbLogs([]);
+        lastCoatLookupRef.current = null;
       }, 1500);
     } catch {
       setFeedback('error');
@@ -333,10 +312,8 @@ export const TestPage = () => {
     setShowAddDialog(false);
     setPendingWardrobe(null);
     setCoatNumber('');
-    setBagNumber('');
     setActiveField('coat');
     lastCoatLookupRef.current = null;
-    lastBagLookupRef.current = null;
   }, []);
 
   const addDialog = (
@@ -443,7 +420,7 @@ export const TestPage = () => {
       setSessionTotal(newTotal);
 
       // Broadcast to live sync
-      const guestNum = coatNumber ? `C${coatNumber}` : bagNumber ? `B${bagNumber}` : '';
+      const guestNum = coatNumber ? `C${coatNumber}` : '';
       const updatedItems = [...items];
       const ex = updatedItems.find((i) => i.product.id === product.id);
       if (ex) ex.quantity++;
@@ -463,7 +440,7 @@ export const TestPage = () => {
         return prev.filter((i) => i.product.id !== product.id);
       });
     }
-  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs, coatNumber, bagNumber, existingTotal]);
+  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs, coatNumber, existingTotal]);
 
   // Input phase: both coat and bag fields on one page
   if (phase === 'input') {
@@ -512,7 +489,7 @@ export const TestPage = () => {
         {/* Guest number */}
         <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
           <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(32px, 6vw, 56px)' }}>
-            {coatNumber ? `C${coatNumber}` : ''}{bagNumber ? ` B${bagNumber}` : ''}
+            {coatNumber ? `C${coatNumber}` : ''}
           </span>
         </div>
 
@@ -538,7 +515,7 @@ export const TestPage = () => {
               // Row 5 (index 4), first cell -> NEXT button
               if (ri === 4 && ci === 0) {
                 return (
-                  <button key={ci} onClick={() => { setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); }} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
+                  <button key={ci} onClick={() => { setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); }} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
                     onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
                     onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                     onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
