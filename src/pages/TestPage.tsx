@@ -278,6 +278,29 @@ export const TestPage = () => {
     </Dialog>
   );
 
+  const handlePayVerwerk = useCallback(async () => {
+    if (!sessionId) return;
+    setShowPayDialog(false);
+    try {
+      // Delete all drink logs for this session
+      await supabase.from('drink_logs').delete().eq('session_id', sessionId);
+      // Archive the session
+      await updateSession.mutateAsync({ id: sessionId, status: 'archived' });
+      // Clear live sync
+      clearOrder();
+      // Reset everything and go to input
+      setFeedback('success');
+      setTimeout(() => {
+        setFeedback(null);
+        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField(null); setRetourMode(false); setLiveOrder(null);
+        lastCoatLookupRef.current = null; lastBagLookupRef.current = null;
+      }, 1500);
+    } catch {
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+    }
+  }, [sessionId, updateSession]);
+
   const payDialog = (
     <Dialog open={showPayDialog} onOpenChange={(open) => { if (!open) setShowPayDialog(false); }}>
       <DialogContent className="bg-card" style={{ borderColor: '#00cc1340', borderRadius: 12 }}>
@@ -287,7 +310,7 @@ export const TestPage = () => {
         {orderSummary}
         <DialogFooter className="flex gap-3 sm:gap-3">
           <button onClick={() => setShowPayDialog(false)} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 4 }}>CANCEL</button>
-          <button onClick={() => { setShowPayDialog(false); }} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 4 }}>VERWERK</button>
+          <button onClick={handlePayVerwerk} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 4 }}>VERWERK</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
