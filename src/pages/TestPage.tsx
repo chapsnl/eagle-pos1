@@ -418,11 +418,26 @@ export const TestPage = () => {
         product_id: product.id,
         price_at_time: product.price,
       }]);
+      const newTotal = sessionTotal + product.price;
       await updateSession.mutateAsync({
         id: sessionId,
-        total_amount: sessionTotal + product.price,
+        total_amount: newTotal,
       });
-      setSessionTotal((prev) => prev + product.price);
+      setSessionTotal(newTotal);
+
+      // Broadcast to live sync
+      const guestNum = coatNumber ? `C${coatNumber}` : bagNumber ? `B${bagNumber}` : '';
+      const updatedItems = [...items];
+      const ex = updatedItems.find((i) => i.product.id === product.id);
+      if (ex) ex.quantity++;
+      else updatedItems.unshift({ product, quantity: 1 });
+      broadcastOrder({
+        guestNumber: guestNum,
+        sessionId,
+        items: updatedItems.map((i) => ({ product_id: i.product.id, product_name: i.product.full_name, shorthand: i.product.shorthand, price: i.product.price, quantity: i.quantity })),
+        totalAmount: newTotal + existingTotal,
+        timestamp: Date.now(),
+      });
     } catch {
       setItems((prev) => {
         const item = prev.find((i) => i.product.id === product.id);
@@ -431,7 +446,7 @@ export const TestPage = () => {
         return prev.filter((i) => i.product.id !== product.id);
       });
     }
-  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs]);
+  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs, coatNumber, bagNumber, existingTotal]);
 
   // Input phase: both coat and bag fields on one page
   if (phase === 'input') {
