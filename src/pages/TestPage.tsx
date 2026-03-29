@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
@@ -253,39 +253,41 @@ export const TestPage = () => {
     }
   }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession]);
 
-  const orderSummary = (
-    <div className="space-y-2 my-2 max-h-[50vh] overflow-y-auto">
-      <div className="text-xs font-bold uppercase tracking-widest" style={{ color: '#888' }}>
-        {coatNumber ? `C${coatNumber}` : ''}
+  const orderSummary = useMemo(() => {
+    // Merge existingLogs and current items into one combined view
+    const merged = new Map<string, { name: string; quantity: number; unitPrice: number }>();
+    for (const l of existingLogs) {
+      merged.set(l.product_id, { name: l.product_name, quantity: l.quantity, unitPrice: l.unit_price });
+    }
+    for (const i of items) {
+      const existing = merged.get(i.product.id);
+      if (existing) {
+        merged.set(i.product.id, { ...existing, quantity: existing.quantity + i.quantity });
+      } else {
+        merged.set(i.product.id, { name: i.product.full_name, quantity: i.quantity, unitPrice: i.product.price });
+      }
+    }
+    const allItems = Array.from(merged.values());
+    const grandTotal = allItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+
+    return (
+      <div className="space-y-2 my-2 max-h-[50vh] overflow-y-auto">
+        <div className="text-xs font-bold uppercase tracking-widest" style={{ color: '#888' }}>
+          {coatNumber ? `C${coatNumber}` : ''}
+        </div>
+        {allItems.map((item, idx) => (
+          <div key={idx} className="flex justify-between font-bold" style={{ color: '#e5e5e5', fontSize: 17 }}>
+            <span>{item.quantity}× {item.name}</span>
+            <span>€{(item.unitPrice * item.quantity).toFixed(2)}</span>
+          </div>
+        ))}
+        <div className="border-t pt-2 flex justify-between font-extrabold text-base" style={{ borderColor: '#333', color: '#00cc13' }}>
+          <span>TOTAAL</span>
+          <span>€{grandTotal.toFixed(2)}</span>
+        </div>
       </div>
-      {existingLogs.length > 0 && (
-        <>
-          <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#666' }}>Eerder besteld</div>
-          {existingLogs.map((l, idx) => (
-            <div key={idx} className="flex justify-between font-bold" style={{ color: '#aaa', fontSize: 17 }}>
-              <span>{l.quantity}× {l.product_name}</span>
-              <span>€{(l.unit_price * l.quantity).toFixed(2)}</span>
-            </div>
-          ))}
-        </>
-      )}
-      {items.length > 0 && (
-        <>
-          {existingLogs.length > 0 && <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#666' }}>Nieuw</div>}
-          {items.map((i) => (
-            <div key={i.product.id} className="flex justify-between font-bold" style={{ color: '#e5e5e5', fontSize: 17 }}>
-              <span>{i.quantity}× {i.product.full_name}</span>
-              <span>€{(i.product.price * i.quantity).toFixed(2)}</span>
-            </div>
-          ))}
-        </>
-      )}
-      <div className="border-t pt-2 flex justify-between font-extrabold text-base" style={{ borderColor: '#333', color: '#00cc13' }}>
-        <span>TOTAAL</span>
-        <span>€{(existingTotal + total).toFixed(2)}</span>
-      </div>
-    </div>
-  );
+    );
+  }, [existingLogs, items, coatNumber]);
 
   const bonDialog = (
     <Dialog open={showBonDialog} onOpenChange={(open) => { if (!open) setShowBonDialog(false); }}>
