@@ -10,6 +10,7 @@ import { GarderobePage } from './GarderobePage';
 import { BetalingPage } from './BetalingPage';
 import { ArmNummerPage } from './ArmNummerPage';
 import { AdminPage } from './AdminPage';
+import { Admin2Page } from './Admin2Page';
 import { TestPage } from './TestPage';
 import { Send, X } from 'lucide-react';
 import { useCreateSession, useAddDrinkLogs, useUpdateSession, useFindActiveSessionByWardrobe } from '@/hooks/useSessions';
