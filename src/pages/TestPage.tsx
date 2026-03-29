@@ -175,7 +175,7 @@ export const TestPage = () => {
       setFeedback('success');
       setTimeout(() => {
         setFeedback(null);
-        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setPhase('input-coat');
+        setCoatNumber(''); setBagNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input-coat');
       }, 2000);
     } catch {
       setFeedback('error');
