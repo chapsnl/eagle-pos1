@@ -415,6 +415,9 @@ export const TestPage = () => {
         return prev.filter((l) => l.product_id !== product.id);
       });
 
+      // Auto-reset retour mode after single use
+      setRetourMode(false);
+
       try {
         // Find one drink_log for this product+session and delete it
         const { data: logToDelete } = await supabase
@@ -457,10 +460,15 @@ export const TestPage = () => {
       if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
       return [{ product, quantity: 1 }, ...prev];
     });
-    // Optimistic update liveDbLogs for instant 15% column refresh
+    // Optimistic update liveDbLogs for instant 15% column refresh - new item goes to top
     setLiveDbLogs((prev) => {
       const existing = prev.find((l) => l.product_id === product.id);
-      if (existing) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l);
+      if (existing) {
+        // Move updated item to top
+        const updated = prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l);
+        const item = updated.find((l) => l.product_id === product.id)!;
+        return [item, ...updated.filter((l) => l.product_id !== product.id)];
+      }
       return [{ product_id: product.id, product_name: product.full_name, quantity: 1 }, ...prev];
     });
     try {
@@ -552,8 +560,8 @@ export const TestPage = () => {
 
         {/* Scrollable order list - X x Product format, live from DB */}
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
-          {liveDbLogs.map((item) => (
-            <div key={item.product_id} className="font-extrabold" style={{ color: '#e5e5e5', fontSize: 'clamp(14px, 1.8vw, 28px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', transition: 'all 0.3s ease', ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
+        {liveDbLogs.map((item, index) => (
+            <div key={item.product_id} style={{ color: '#e5e5e5', fontSize: 'clamp(14px, 1.8vw, 28px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', transition: 'all 0.3s ease', fontWeight: index === 0 ? 800 : 400, ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
               {retourFlash === item.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
               {item.quantity} x {item.product_name}
             </div>
