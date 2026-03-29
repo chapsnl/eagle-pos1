@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
-import { Send, X } from 'lucide-react';
+import { Send, X, Delete } from 'lucide-react';
 import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -40,7 +40,7 @@ const gridLayout: { code: string; span: number; hideLabel?: boolean }[][] = [
   ],
 ];
 
-const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', ''];
+const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
 
 type Phase = 'input' | 'products';
 
@@ -147,6 +147,11 @@ export const TestPage = () => {
       setActiveField(null);
       lastCoatLookupRef.current = null;
       lastBagLookupRef.current = null;
+      return;
+    }
+    if (key === 'BACK') {
+      if (activeField === 'coat') setCoatNumber(prev => prev.slice(0, -1));
+      else if (activeField === 'bag') setBagNumber(prev => prev.slice(0, -1));
       return;
     }
     if (activeField === 'coat') {
@@ -506,8 +511,8 @@ export const TestPage = () => {
           <div className="shrink-0 px-4" style={{ paddingBottom: 'clamp(4px, 1vh, 12px)' }}>
             <div className="w-full mx-auto grid grid-cols-3 gap-0" style={{ maxWidth: 'min(320px, 70vw)' }}>
               {NUM_KEYS.map((key, i) => (
-                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333', fontSize: 'clamp(14px, 2.5vh, 28px)', padding: 'clamp(6px, 1.2vh, 16px) 0' }}>
-                  {key === 'DEL' ? <X className="mx-auto" style={{ width: 'clamp(16px, 2.5vh, 28px)', height: 'clamp(16px, 2.5vh, 28px)' }} /> : key}
+                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : key === 'BACK' ? '#f59e0b' : '#2a2a2a', color: '#fff', border: '1px solid #333', fontSize: 'clamp(14px, 2.5vh, 28px)', padding: 'clamp(6px, 1.2vh, 16px) 0' }}>
+                  {key === 'DEL' ? <X className="mx-auto" style={{ width: 'clamp(16px, 2.5vh, 28px)', height: 'clamp(16px, 2.5vh, 28px)' }} /> : key === 'BACK' ? <Delete className="mx-auto" style={{ width: 'clamp(16px, 2.5vh, 28px)', height: 'clamp(16px, 2.5vh, 28px)' }} /> : key}
                 </button>
               ))}
             </div>
