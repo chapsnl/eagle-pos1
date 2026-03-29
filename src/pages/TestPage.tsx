@@ -393,6 +393,13 @@ export const TestPage = () => {
           return prev.filter((l) => l.product_id !== product.id);
         });
       }
+      // Optimistic update liveDbLogs for instant 15% column refresh
+      setLiveDbLogs((prev) => {
+        const item = prev.find((l) => l.product_id === product.id);
+        if (!item) return prev;
+        if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
+        return prev.filter((l) => l.product_id !== product.id);
+      });
 
       try {
         // Find one drink_log for this product+session and delete it
