@@ -391,7 +391,7 @@ export const TestPage = () => {
 
         {/* Total at bottom */}
         <div className="px-2 py-2 border-t" style={{ borderColor: '#333' }}>
-          <div className="flex justify-between font-extrabold" style={{ color: '#00ff00', fontSize: 15 }}>
+          <div className="flex justify-between font-extrabold" style={{ color: '#00ff00', fontSize: 31 }}>
             <span>TOTAAL</span>
             <span>€{(existingTotal + total).toFixed(2)}</span>
           </div>
