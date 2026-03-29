@@ -39,7 +39,7 @@ const gridLayout: { code: string; span: number; hideLabel?: boolean }[][] = [
   ],
 ];
 
-const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
+const NUM_KEYS = ['DEL', '1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0'];
 
 type Phase = 'input-coat' | 'input-bag' | 'products';
 
