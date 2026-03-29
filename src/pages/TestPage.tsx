@@ -81,39 +81,49 @@ export const TestPage = () => {
   const existingTotal = existingLogs.reduce((sum, l) => sum + l.unit_price * l.quantity, 0);
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
 
-  // Polling: fetch drink logs for current session every 2s (like Admin's refetchInterval)
+  // Live drink logs via Realtime subscription + initial fetch
   const [liveDbLogs, setLiveDbLogs] = useState<{ product_id: string; product_name: string; quantity: number }[]>([]);
-  const skipPollUntilRef = useRef<number>(0);
+
+  const fetchLogsFromDb = useCallback(async (sid: string) => {
+    const { data } = await supabase
+      .from('drink_logs')
+      .select('price_at_time, product_id, products(full_name)')
+      .eq('session_id', sid);
+    if (!data) return;
+    const map = new Map<string, { product_id: string; product_name: string; quantity: number; unit_price: number }>();
+    const dbMap = new Map<string, { product_id: string; product_name: string; quantity: number }>();
+    for (const log of data) {
+      const name = (log.products as any)?.full_name ?? 'Unknown';
+      const pid = log.product_id;
+      const existing = map.get(pid);
+      if (existing) existing.quantity++;
+      else map.set(pid, { product_id: pid, product_name: name, quantity: 1, unit_price: log.price_at_time });
+      const dbExisting = dbMap.get(pid);
+      if (dbExisting) dbExisting.quantity++;
+      else dbMap.set(pid, { product_id: pid, product_name: name, quantity: 1 });
+    }
+    setExistingLogs(Array.from(map.values()));
+    setLiveDbLogs(Array.from(dbMap.values()));
+  }, []);
 
   useEffect(() => {
     if (!sessionId) { setExistingLogs([]); setLiveDbLogs([]); return; }
-    const fetchLogs = async () => {
-      // Skip poll if we recently did an optimistic update (allow DB to catch up)
-      if (Date.now() < skipPollUntilRef.current) return;
-      const { data } = await supabase
-        .from('drink_logs')
-        .select('price_at_time, product_id, products(full_name)')
-        .eq('session_id', sessionId);
-      if (!data) return;
-      const map = new Map<string, { product_id: string; product_name: string; quantity: number; unit_price: number }>();
-      const dbMap = new Map<string, { product_id: string; product_name: string; quantity: number }>();
-      for (const log of data) {
-        const name = (log.products as any)?.full_name ?? 'Unknown';
-        const pid = log.product_id;
-        const existing = map.get(pid);
-        if (existing) existing.quantity++;
-        else map.set(pid, { product_id: pid, product_name: name, quantity: 1, unit_price: log.price_at_time });
-        const dbExisting = dbMap.get(pid);
-        if (dbExisting) dbExisting.quantity++;
-        else dbMap.set(pid, { product_id: pid, product_name: name, quantity: 1 });
-      }
-      setExistingLogs(Array.from(map.values()));
-      setLiveDbLogs(Array.from(dbMap.values()));
-    };
-    fetchLogs();
-    const interval = setInterval(fetchLogs, 2000);
-    return () => clearInterval(interval);
-  }, [sessionId]);
+    // Initial fetch
+    fetchLogsFromDb(sessionId);
+    // Realtime subscription for this session's drink_logs
+    const channel = supabase
+      .channel(`drink_logs_${sessionId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'drink_logs', filter: `session_id=eq.${sessionId}` },
+        () => {
+          // Re-fetch all logs on any change (insert/delete) for accurate aggregation
+          fetchLogsFromDb(sessionId);
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [sessionId, fetchLogsFromDb]);
 
   const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string, onNotFound: () => void) => {
     try {
@@ -380,7 +390,7 @@ export const TestPage = () => {
       setRetourFlash(product.id);
       setTimeout(() => setRetourFlash(null), 600);
 
-      skipPollUntilRef.current = Date.now() + 3000;
+      // Optimistic update (realtime will sync)
       // Optimistic update: prefer removing from items first, then existingLogs
       if (inItems) {
         setItems((prev) => {
@@ -441,7 +451,7 @@ export const TestPage = () => {
     }
 
     // NORMAL MODE: add product
-    skipPollUntilRef.current = Date.now() + 3000;
+    // Optimistic update (realtime will sync)
     setItems((prev) => {
       const existing = prev.find((i) => i.product.id === product.id);
       if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
