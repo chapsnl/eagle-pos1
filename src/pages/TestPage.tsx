@@ -157,6 +157,8 @@ export const TestPage = () => {
 
   const [showBonDialog, setShowBonDialog] = useState(false);
   const [showPayDialog, setShowPayDialog] = useState(false);
+  const [retourMode, setRetourMode] = useState(false);
+  const [retourFlash, setRetourFlash] = useState<string | null>(null);
 
   const handleSubmit = useCallback(async () => {
     if (items.length === 0 || !sessionId) return;
