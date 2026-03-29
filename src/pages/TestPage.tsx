@@ -407,7 +407,7 @@ export const TestPage = () => {
         <div className="flex-1 flex flex-col items-center justify-center px-4 gap-6">
           {/* Coat input */}
           <div className="w-full" style={{ maxWidth: '280px' }}>
-            <div className="text-xs font-extrabold uppercase tracking-widest text-center mb-1" style={{ color: '#888' }}>COAT NUMMER</div>
+            <div className="font-extrabold uppercase tracking-[0.2em] text-center mb-1" style={{ color: '#00cc13', fontSize: 'clamp(1.2rem, 5vw, 2rem)' }}>JAS NUMMER</div>
             <div
               onClick={() => setActiveField('coat')}
               className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center"
