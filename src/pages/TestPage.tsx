@@ -344,6 +344,22 @@ export const TestPage = () => {
     if (!pendingWardrobe) return;
     setShowAddDialog(false);
     try {
+      // Double-check: prevent duplicate active sessions for the same wardrobe number
+      const { data: existing } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('wardrobe_number', pendingWardrobe)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+      if (existing) {
+        setFeedback('error');
+        setPendingWardrobe(null);
+        setCoatNumber('');
+        lastCoatLookupRef.current = null;
+        setTimeout(() => setFeedback(null), 2000);
+        return;
+      }
       const session = await createSession.mutateAsync({
         wardrobe_number: pendingWardrobe,
         is_event_numbered: true,
