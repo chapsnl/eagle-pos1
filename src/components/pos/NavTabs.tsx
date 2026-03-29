@@ -10,6 +10,7 @@ const tabs: { view: AppView; label: string }[] = [
   { view: 'bar', label: 'POS' },
   { view: 'test', label: 'GAST' },
   { view: 'admin', label: 'ADMIN' },
+  { view: 'admin2', label: 'ADMIN 2' },
 ];
 
 export const NavTabs = ({ activeView, onViewChange, itemCount = 0 }: NavTabsProps) => {
