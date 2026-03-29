@@ -152,6 +152,25 @@ const Index = () => {
     lastLookupRef.current = null;
   }, []);
 
+  // Broadcast current order to localStorage whenever items/session change
+  useEffect(() => {
+    if (activeView !== 'bar' || barPhase !== 'products' || !barSessionId) return;
+    const syncItems: SyncOrderItem[] = items.map((i) => ({
+      product_id: i.product.id,
+      product_name: i.product.full_name,
+      shorthand: i.product.shorthand,
+      price: i.product.price,
+      quantity: i.quantity,
+    }));
+    broadcastOrder({
+      guestNumber: `C${barNumber}`,
+      sessionId: barSessionId,
+      items: syncItems,
+      totalAmount: barSessionTotal + total,
+      timestamp: Date.now(),
+    });
+  }, [items, barSessionId, barNumber, barSessionTotal, total, activeView, barPhase]);
+
   const handleBoek = useCallback(async () => {
     if (items.length === 0 || !barSessionId) return;
     try {
@@ -167,6 +186,16 @@ const Index = () => {
         id: barSessionId,
         total_amount: barSessionTotal + total,
       });
+
+      // Broadcast the booked order then clear
+      broadcastOrder({
+        guestNumber: `C${barNumber}`,
+        sessionId: barSessionId,
+        items: items.map((i) => ({ product_id: i.product.id, product_name: i.product.full_name, shorthand: i.product.shorthand, price: i.product.price, quantity: i.quantity })),
+        totalAmount: barSessionTotal + total,
+        timestamp: Date.now(),
+      });
+
       showFeedback('success');
       setTimeout(() => {
         setItems([]);
@@ -175,11 +204,12 @@ const Index = () => {
         setBarSessionTotal(0);
         setBarPhase('input-number');
         lastLookupRef.current = null;
+        clearOrder();
       }, 2000);
     } catch {
       showFeedback('error');
     }
-  }, [items, barSessionId, barSessionTotal, total, addDrinkLogs, updateSession, showFeedback]);
+  }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, showFeedback]);
 
   const handlePin = useCallback(() => setItems([]), []);
   const handleCash = useCallback(() => setItems([]), []);
