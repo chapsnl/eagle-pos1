@@ -125,7 +125,7 @@ export const TestPage = () => {
 
   // Auto-lookup bag number at 3 digits
   useEffect(() => {
-    if (phase !== 'input-bag') return;
+    if (phase !== 'input') return;
     if (bagNumber.length < 3) { lastBagLookupRef.current = null; return; }
     const wardrobe = `B${bagNumber}`;
     if (lastBagLookupRef.current === wardrobe) return;
