@@ -513,9 +513,9 @@ export const TestPage = () => {
 
         {/* Total at bottom */}
         <div className="px-2 py-2 border-t" style={{ borderColor: '#333', backgroundColor: '#00cc13' }}>
-          <div className="flex justify-between items-center font-extrabold" style={{ color: '#fff', fontSize: 'clamp(12px, 3vw, 52px)', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%' }}>
-            <span style={{ flexShrink: 0 }}>TOTAAL</span>
-            <span style={{ flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', marginLeft: '0.5em' }}>€{(existingTotal + total).toFixed(2)}</span>
+            <div className="flex justify-between items-center font-extrabold" style={{ color: '#fff', fontSize: '24px', whiteSpace: 'nowrap', overflow: 'hidden', width: '100%' }}>
+             <span>TOTAAL</span>
+             <span style={{ marginLeft: '0.5em' }}>€{(existingTotal + total).toFixed(2)}</span>
           </div>
         </div>
       </div>
