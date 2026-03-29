@@ -484,18 +484,18 @@ export const TestPage = () => {
       <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
         <FeedbackOverlay type={feedback} />
         {addDialog}
-        <h2 className="font-extrabold uppercase tracking-[0.2em] text-center shrink-0" style={{ color: '#00cc13', fontSize: 'clamp(1rem, 3vh, 2rem)', padding: 'clamp(4px, 1vh, 12px) 0' }}>GAST ZOEKEN</h2>
-        <div className="flex-1 flex flex-col items-center justify-center px-4 min-h-0" style={{ gap: 'clamp(8px, 2vh, 24px)' }}>
+        <h2 className="font-extrabold uppercase tracking-[0.2em] text-center shrink-0" style={{ color: '#00cc13', fontSize: 'clamp(1.2rem, 4vh, 3rem)', padding: 'clamp(8px, 2vh, 24px) 0' }}>GAST ZOEKEN</h2>
+        <div className="flex-1 flex flex-col items-center justify-center px-4 min-h-0" style={{ gap: 'clamp(12px, 3vh, 32px)' }}>
           {/* Guest number input */}
-          <div className="w-full" style={{ maxWidth: 'min(280px, 60vw)' }}>
-            <div className="font-extrabold uppercase tracking-[0.2em] text-center" style={{ color: '#00cc13', fontSize: 'clamp(0.8rem, 2.5vh, 1.6rem)', marginBottom: 'clamp(2px, 0.5vh, 8px)' }}>GAST NUMMER</div>
+          <div className="w-full" style={{ maxWidth: 'min(90vw, 500px)' }}>
+            <div className="font-extrabold uppercase tracking-[0.2em] text-center" style={{ color: '#00cc13', fontSize: 'clamp(1rem, 3.5vh, 2.4rem)', marginBottom: 'clamp(4px, 1vh, 12px)' }}>GAST NUMMER</div>
             <div
               onClick={() => setActiveField('coat')}
               className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center"
               style={{
                 backgroundColor: '#d1d5db', color: '#111',
-                fontSize: 'clamp(28px, 6vh, 72px)',
-                padding: 'clamp(8px, 1.5vh, 24px) 12px',
+                fontSize: 'clamp(36px, 8vh, 96px)',
+                padding: 'clamp(12px, 2vh, 32px) 16px',
                 border: activeField === 'coat' ? '3px solid #00cc13' : '3px solid #555',
                 boxShadow: activeField === 'coat' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
                 transition: 'border 0.2s, box-shadow 0.2s',
@@ -505,13 +505,13 @@ export const TestPage = () => {
             </div>
           </div>
         </div>
-        {/* Numpad - only shown when a field is active */}
+        {/* Numpad - always visible when field active, scales to fill */}
         {activeField && (
-          <div className="shrink-0 px-4" style={{ paddingBottom: 'clamp(4px, 1vh, 12px)' }}>
-            <div className="w-full mx-auto grid grid-cols-3 gap-0" style={{ maxWidth: 'min(320px, 70vw)' }}>
+          <div className="shrink-0 px-4" style={{ paddingBottom: 'clamp(8px, 2vh, 24px)' }}>
+            <div className="w-full mx-auto grid grid-cols-3 gap-0" style={{ maxWidth: 'min(90vw, 500px)' }}>
               {NUM_KEYS.map((key, i) => (
-              <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : key === 'BACK' ? '#2a2a2a' : '#2a2a2a', color: '#fff', border: '1px solid #333', fontSize: 'clamp(14px, 2.5vh, 28px)', padding: 'clamp(6px, 1.2vh, 16px) 0' }}>
-                  {key === 'DEL' ? <X className="mx-auto" style={{ width: 'clamp(16px, 2.5vh, 28px)', height: 'clamp(16px, 2.5vh, 28px)' }} /> : key === 'BACK' ? <Delete className="mx-auto" style={{ width: 'clamp(16px, 2.5vh, 28px)', height: 'clamp(16px, 2.5vh, 28px)' }} /> : key}
+              <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333', fontSize: 'clamp(18px, 4vh, 42px)', padding: 'clamp(10px, 2vh, 28px) 0' }}>
+                  {key === 'DEL' ? <X className="mx-auto" style={{ width: 'clamp(20px, 4vh, 42px)', height: 'clamp(20px, 4vh, 42px)' }} /> : key === 'BACK' ? <Delete className="mx-auto" style={{ width: 'clamp(20px, 4vh, 42px)', height: 'clamp(20px, 4vh, 42px)' }} /> : key}
                 </button>
               ))}
             </div>
