@@ -320,41 +320,88 @@ export const TestPage = () => {
     );
   }
 
-  // Products phase
+  // Instant book on product click
+  const addAndBook = useCallback(async (product: DbProduct) => {
+    if (!sessionId) return;
+    // Add to local list immediately
+    setItems((prev) => {
+      const existing = prev.find((i) => i.product.id === product.id);
+      if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      return [{ product, quantity: 1 }, ...prev];
+    });
+    // Book immediately
+    try {
+      await addDrinkLogs.mutateAsync([{
+        session_id: sessionId,
+        product_id: product.id,
+        price_at_time: product.price,
+      }]);
+      await updateSession.mutateAsync({
+        id: sessionId,
+        total_amount: sessionTotal + product.price,
+      });
+      setSessionTotal((prev) => prev + product.price);
+    } catch {
+      // revert on error
+      setItems((prev) => {
+        const item = prev.find((i) => i.product.id === product.id);
+        if (!item) return prev;
+        if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
+        return prev.filter((i) => i.product.id !== product.id);
+      });
+    }
+  }, [sessionId, sessionTotal, addDrinkLogs, updateSession]);
+
+  // Products phase - split screen
   return (
-    <div className="flex-1 flex flex-col overflow-hidden h-full">
+    <div className="flex-1 flex overflow-hidden h-full" style={{ backgroundColor: '#1a1a1a' }}>
       <FeedbackOverlay type={feedback} />
       {bonDialog}
       {payDialog}
-      <div className="min-h-10 bg-card border-b border-border flex items-center px-2 gap-1.5">
-        <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
-          {coatNumber ? `C${coatNumber}` : ''}{bagNumber ? `B${bagNumber}` : ''}
-        </label>
-        <div className="flex-1 flex items-center gap-1.5 overflow-x-auto py-1">
-          {items.map((i) => (
-            <button
-              key={i.product.id}
-              onClick={() => setItems(prev => {
-                const item = prev.find(x => x.product.id === i.product.id);
-                if (!item) return prev;
-                if (item.quantity > 1) return prev.map(x => x.product.id === i.product.id ? { ...x, quantity: x.quantity - 1 } : x);
-                return prev.filter(x => x.product.id !== i.product.id);
-              })}
-              className="flex items-center gap-1 bg-secondary rounded px-2 py-1 text-[10px] font-bold uppercase shrink-0 hover:bg-destructive/20 transition-colors group"
-            >
-              <span>{i.quantity > 1 && `${i.quantity}×`}{i.product.shorthand}</span>
-              <X className="w-2.5 h-2.5 opacity-40 group-hover:opacity-100" />
-            </button>
-          ))}
+
+      {/* Left column - 20% - Guest overview */}
+      <div className="flex flex-col h-full" style={{ width: '20%', backgroundColor: '#121212', borderRight: '1px solid #333' }}>
+        {/* Guest number */}
+        <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
+          <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(28px, 5vw, 48px)' }}>
+            {coatNumber ? `C${coatNumber}` : ''}{bagNumber ? ` B${bagNumber}` : ''}
+          </span>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="font-extrabold text-sm" style={{ color: '#00cc13' }}>€{total.toFixed(2)}</span>
-          <button onClick={() => setItems([])} className="pos-btn text-[10px] text-muted-foreground hover:text-destructive px-1.5 py-0.5">
-            WISSEN
-          </button>
+
+        {/* Scrollable order list */}
+        <div className="flex-1 overflow-y-auto px-2 py-2" style={{ minHeight: 0 }}>
+          {/* Newly added items (this session) */}
+          {items.map((i) => (
+            <div key={i.product.id} className="flex justify-between font-bold py-1 border-b" style={{ borderColor: '#2a2a2a', color: '#e5e5e5', fontSize: 13 }}>
+              <span>{i.quantity}× {i.product.full_name}</span>
+              <span>€{(i.product.price * i.quantity).toFixed(2)}</span>
+            </div>
+          ))}
+          {/* Previously ordered */}
+          {existingLogs.length > 0 && (
+            <>
+              <div className="text-[9px] font-bold uppercase tracking-widest mt-2 mb-1" style={{ color: '#555' }}>Eerder</div>
+              {existingLogs.map((l, idx) => (
+                <div key={idx} className="flex justify-between font-bold py-1" style={{ color: '#777', fontSize: 12 }}>
+                  <span>{l.quantity}× {l.product_name}</span>
+                  <span>€{(l.unit_price * l.quantity).toFixed(2)}</span>
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+
+        {/* Total at bottom */}
+        <div className="px-2 py-2 border-t" style={{ borderColor: '#333' }}>
+          <div className="flex justify-between font-extrabold" style={{ color: '#00ff00', fontSize: 15 }}>
+            <span>TOTAAL</span>
+            <span>€{(existingTotal + total).toFixed(2)}</span>
+          </div>
         </div>
       </div>
-      <div className="flex-1 overflow-hidden flex flex-col">
+
+      {/* Right column - 80% - Product grid */}
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ width: '80%' }}>
         {gridLayout.map((row, ri) => (
           <div key={ri} className="flex-1 flex" style={{ minHeight: 0 }}>
             {row.map((cell, ci) => {
@@ -386,7 +433,7 @@ export const TestPage = () => {
               if (!product) return <div key={ci} style={{ flex: cell.span }} />;
               const textColor = getTextColor(product.category_color);
               return (
-                <button key={ci} onClick={() => addProduct(product)} style={{ flex: cell.span, backgroundColor: product.category_color, color: textColor }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 active:brightness-[0.6] p-1 min-w-0 transition-all duration-75"
+                <button key={ci} onClick={() => addAndBook(product)} style={{ flex: cell.span, backgroundColor: product.category_color, color: textColor }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 active:brightness-[0.6] p-1 min-w-0 transition-all duration-75"
                   onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
                   onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                   onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
@@ -400,10 +447,6 @@ export const TestPage = () => {
           </div>
         ))}
       </div>
-      <button onClick={handleSubmit} disabled={items.length === 0} className="pos-btn py-4 text-xl flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed" style={{ backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}>
-        <Send className="w-6 h-6" />
-        BOEK — €{total.toFixed(2)}
-      </button>
     </div>
   );
 };
