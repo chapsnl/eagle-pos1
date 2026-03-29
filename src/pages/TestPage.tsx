@@ -252,6 +252,7 @@ export const TestPage = () => {
         {orderSummary}
         <DialogFooter className="flex gap-3 sm:gap-3">
           <button onClick={() => setShowPayDialog(false)} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 4 }}>CANCEL</button>
+          <button onClick={() => { setShowPayDialog(false); }} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 4 }}>VERWERK</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
