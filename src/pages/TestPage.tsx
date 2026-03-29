@@ -219,14 +219,14 @@ export const TestPage = () => {
 
   const bonDialog = (
     <Dialog open={showBonDialog} onOpenChange={(open) => { if (!open) setShowBonDialog(false); }}>
-      <DialogContent className="bg-card rounded-[12px]" style={{ borderColor: '#00cc1340' }}>
+      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
         <DialogHeader>
           <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Bestelling</DialogTitle>
         </DialogHeader>
         {orderSummary}
         <DialogFooter className="flex gap-3 sm:gap-3">
-          <button onClick={() => setShowBonDialog(false)} className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[4px]" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}>CANCEL</button>
-          <button onClick={() => { setShowBonDialog(false); handleSubmit(); }} className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[4px]" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}>VERWERK</button>
+          <button onClick={() => setShowBonDialog(false)} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}>CANCEL</button>
+          <button onClick={() => { setShowBonDialog(false); handleSubmit(); }} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}>VERWERK</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -234,13 +234,13 @@ export const TestPage = () => {
 
   const payDialog = (
     <Dialog open={showPayDialog} onOpenChange={(open) => { if (!open) setShowPayDialog(false); }}>
-      <DialogContent className="bg-card rounded-[12px]" style={{ borderColor: '#00cc1340' }}>
+      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
         <DialogHeader>
           <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Bestelling</DialogTitle>
         </DialogHeader>
         {orderSummary}
         <DialogFooter className="flex gap-3 sm:gap-3">
-          <button onClick={() => setShowPayDialog(false)} className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[4px]" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}>CANCEL</button>
+          <button onClick={() => setShowPayDialog(false)} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}>CANCEL</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -276,7 +276,7 @@ export const TestPage = () => {
 
   const addDialog = (
     <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) handleCancelAdd(); }}>
-      <DialogContent className="bg-card rounded-[12px]" style={{ borderColor: '#00cc1340' }}>
+      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
         <DialogHeader>
           <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Nummer niet gevonden</DialogTitle>
           <DialogDescription className="text-sm pt-2">
@@ -285,8 +285,8 @@ export const TestPage = () => {
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex gap-3 sm:gap-3">
-          <button onClick={handleCancelAdd} className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[4px]" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}>NEE</button>
-          <button onClick={handleConfirmAdd} className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[4px]" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}>JA</button>
+          <button onClick={handleCancelAdd} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}>NEE</button>
+          <button onClick={handleConfirmAdd} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}>JA</button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
