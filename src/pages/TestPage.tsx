@@ -403,13 +403,20 @@ export const TestPage = () => {
 
   // Products phase - split screen
   return (
-    <div className="flex-1 flex overflow-hidden h-full" style={{ backgroundColor: '#1a1a1a' }}>
+    <div className="flex-1 flex overflow-hidden h-full" style={{ backgroundColor: '#1a1a1a', ...(retourMode ? { border: '4px solid #ef4444', boxShadow: 'inset 0 0 30px rgba(239,68,68,0.15)' } : {}) }}>
       <FeedbackOverlay type={feedback} />
       {bonDialog}
       {payDialog}
 
+      {/* Retour mode banner */}
+      {retourMode && (
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 40, backgroundColor: '#ef4444', color: '#fff', textAlign: 'center', padding: '6px 0', fontSize: 'clamp(14px, 2vw, 22px)', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', animation: 'pulse 1.5s ease-in-out infinite' }}>
+          ⚠ RETOUR MODUS ACTIEF ⚠
+        </div>
+      )}
+
       {/* Left column - 20% - Guest overview */}
-      <div className="flex flex-col h-full" style={{ width: '20%', backgroundColor: '#121212', borderRight: '1px solid #333' }}>
+      <div className="flex flex-col h-full" style={{ width: '20%', backgroundColor: retourMode ? '#1a0a0a' : '#121212', borderRight: `1px solid ${retourMode ? '#ef4444' : '#333'}`, transition: 'background-color 0.3s ease' }}>
         {/* Guest number */}
         <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
           <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(32px, 6vw, 56px)' }}>
