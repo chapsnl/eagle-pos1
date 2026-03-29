@@ -480,11 +480,11 @@ export const TestPage = () => {
       <div className="h-[100dvh] flex flex-col overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
         <FeedbackOverlay type={feedback} />
         {addDialog}
-        <h2 className="font-extrabold uppercase tracking-[0.2em] text-center shrink-0" style={{ color: '#00cc13', fontSize: 'clamp(1rem, 3vh, 2rem)', padding: 'clamp(4px, 1vh, 12px) 0' }}>GAST NUMMER</h2>
+        <h2 className="font-extrabold uppercase tracking-[0.2em] text-center shrink-0" style={{ color: '#00cc13', fontSize: 'clamp(1rem, 3vh, 2rem)', padding: 'clamp(4px, 1vh, 12px) 0' }}>GAST ZOEKEN</h2>
         <div className="flex-1 flex flex-col items-center justify-center px-4 min-h-0" style={{ gap: 'clamp(8px, 2vh, 24px)' }}>
-          {/* Coat input */}
+          {/* Guest number input */}
           <div className="w-full" style={{ maxWidth: 'min(280px, 60vw)' }}>
-            <div className="font-extrabold uppercase tracking-[0.2em] text-center" style={{ color: '#00cc13', fontSize: 'clamp(0.8rem, 2.5vh, 1.6rem)', marginBottom: 'clamp(2px, 0.5vh, 8px)' }}>JAS NUMMER</div>
+            <div className="font-extrabold uppercase tracking-[0.2em] text-center" style={{ color: '#00cc13', fontSize: 'clamp(0.8rem, 2.5vh, 1.6rem)', marginBottom: 'clamp(2px, 0.5vh, 8px)' }}>GAST NUMMER</div>
             <div
               onClick={() => setActiveField('coat')}
               className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center"
@@ -498,24 +498,6 @@ export const TestPage = () => {
               }}
             >
               {coatNumber || <span style={{ color: '#9ca3af' }}>—</span>}
-            </div>
-          </div>
-          {/* Bag input */}
-          <div className="w-full" style={{ maxWidth: 'min(280px, 60vw)' }}>
-            <div className="font-extrabold uppercase tracking-[0.2em] text-center" style={{ color: '#00cc13', fontSize: 'clamp(0.8rem, 2.5vh, 1.6rem)', marginBottom: 'clamp(2px, 0.5vh, 8px)' }}>TAS NUMMER</div>
-            <div
-              onClick={() => setActiveField('bag')}
-              className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center"
-              style={{
-                backgroundColor: '#d1d5db', color: '#111',
-                fontSize: 'clamp(28px, 6vh, 72px)',
-                padding: 'clamp(8px, 1.5vh, 24px) 12px',
-                border: activeField === 'bag' ? '3px solid #00cc13' : '3px solid #555',
-                boxShadow: activeField === 'bag' ? '0 0 12px #00cc1380, 0 0 24px #00cc1330' : 'none',
-                transition: 'border 0.2s, box-shadow 0.2s',
-              }}
-            >
-              {bagNumber || <span style={{ color: '#9ca3af' }}>—</span>}
             </div>
           </div>
         </div>
