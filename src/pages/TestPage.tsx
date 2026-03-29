@@ -357,22 +357,22 @@ export const TestPage = () => {
       {bonDialog}
       {payDialog}
 
-      {/* Left column - 15% - Guest overview */}
+      {/* Left column - 20% - Guest overview */}
       <div className="flex flex-col h-full" style={{ width: '15%', backgroundColor: '#121212', borderRight: '1px solid #333' }}>
         {/* Guest number */}
         <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
-          <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(32px, 6vw, 56px)' }}>
+          <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(28px, 5vw, 48px)' }}>
             {coatNumber ? `C${coatNumber}` : ''}{bagNumber ? ` B${bagNumber}` : ''}
           </span>
         </div>
 
         {/* Scrollable order list */}
-        <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
+        <div className="flex-1 overflow-y-auto px-2 py-2" style={{ minHeight: 0 }}>
           {/* Newly added items (this session) */}
           {items.map((i) => (
-            <div key={i.product.id} className="flex justify-between items-baseline font-bold py-2 border-b" style={{ borderColor: '#2a2a2a', whiteSpace: 'nowrap', overflow: 'hidden' }}>
-              <span style={{ color: '#e5e5e5', fontSize: 'clamp(14px, 1.4vw, 26px)', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{i.quantity}× {i.product.full_name}</span>
-              <span className="ml-1 flex-shrink-0" style={{ color: '#00ff00', fontSize: 'clamp(14px, 1.4vw, 26px)' }}>€{(i.product.price * i.quantity).toFixed(2)}</span>
+            <div key={i.product.id} className="flex justify-between font-bold py-1 border-b" style={{ borderColor: '#2a2a2a', color: '#e5e5e5', fontSize: 21 }}>
+              <span>{i.quantity}× {i.product.full_name}</span>
+              <span>€{(i.product.price * i.quantity).toFixed(2)}</span>
             </div>
           ))}
           {/* Previously ordered */}
@@ -380,9 +380,9 @@ export const TestPage = () => {
             <>
               <div className="text-[9px] font-bold uppercase tracking-widest mt-2 mb-1" style={{ color: '#555' }}>Eerder</div>
               {existingLogs.map((l, idx) => (
-                <div key={idx} className="flex justify-between items-baseline font-bold py-2" style={{ whiteSpace: 'nowrap', overflow: 'hidden' }}>
-                  <span style={{ color: '#777', fontSize: 'clamp(13px, 1.3vw, 24px)', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{l.quantity}× {l.product_name}</span>
-                  <span className="ml-1 flex-shrink-0" style={{ color: '#00cc1399', fontSize: 'clamp(13px, 1.3vw, 24px)' }}>€{(l.unit_price * l.quantity).toFixed(2)}</span>
+                <div key={idx} className="flex justify-between font-bold py-1" style={{ color: '#777', fontSize: 20 }}>
+                  <span>{l.quantity}× {l.product_name}</span>
+                  <span>€{(l.unit_price * l.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </>
@@ -390,8 +390,8 @@ export const TestPage = () => {
         </div>
 
         {/* Total at bottom */}
-        <div className="px-2 py-3 border-t" style={{ borderColor: '#333' }}>
-          <div className="flex justify-between font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(22px, 2.4vw, 44px)', whiteSpace: 'nowrap' }}>
+        <div className="px-2 py-2 border-t" style={{ borderColor: '#333' }}>
+          <div className="flex justify-between font-extrabold" style={{ color: '#00ff00', fontSize: 31 }}>
             <span>TOTAAL</span>
             <span>€{(existingTotal + total).toFixed(2)}</span>
           </div>
