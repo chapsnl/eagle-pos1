@@ -46,6 +46,20 @@ type Phase = 'input' | 'products';
 
 export const TestPage = () => {
 
+  // Lock to landscape on this page
+  useEffect(() => {
+    const lockOrientation = async () => {
+      try {
+        const so = screen.orientation as any;
+        if (so?.lock) await so.lock('landscape');
+      } catch {}
+    };
+    lockOrientation();
+    return () => {
+      try { (screen.orientation as any)?.unlock?.(); } catch {}
+    };
+  }, []);
+
   const [phase, setPhase] = useState<Phase>('input');
   const [activeField, setActiveField] = useState<'coat' | 'bag' | null>('coat');
   const [coatNumber, setCoatNumber] = useState('');
