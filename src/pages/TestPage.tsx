@@ -318,9 +318,6 @@ export const TestPage = () => {
       setRetourFlash(product.id);
       setTimeout(() => setRetourFlash(null), 600);
 
-      // Exit retour mode after one product
-      setRetourMode(false);
-
       // Optimistic update: prefer removing from items first, then existingLogs
       if (inItems) {
         setItems((prev) => {
