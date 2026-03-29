@@ -368,10 +368,10 @@ export const AdminPage = () => {
 
         {/* Confirmation dialog */}
         <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
-          <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
-            <DialogHeader>
-              <DialogTitle className="font-extrabold uppercase" style={{ color: '#00cc13' }}>
-                Batch-Erase Starten
+        <DialogContent className="bg-card rounded-[12px]" style={{ borderColor: '#00cc1340' }}>
+          <DialogHeader>
+            <DialogTitle className="font-extrabold uppercase" style={{ color: '#00cc13' }}>
+              Batch-Erase Starten
               </DialogTitle>
               <DialogDescription className="text-sm">
                 Weet je zeker dat je bandjes wilt wissen? Alle data gaat verloren.
@@ -380,13 +380,13 @@ export const AdminPage = () => {
             <DialogFooter className="flex gap-3 sm:gap-3">
               <button
                 onClick={() => setShowConfirm(false)}
-                className="flex-1 py-3 font-extrabold uppercase text-sm bg-secondary text-secondary-foreground"
+                className="flex-1 py-3 font-extrabold uppercase text-sm bg-secondary text-secondary-foreground rounded-[6px]"
               >
                 Annuleren
               </button>
               <button
                 onClick={startBatchErase}
-                className="flex-1 py-3 font-extrabold uppercase text-sm"
+                className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px]"
                 style={{ backgroundColor: '#00cc13', color: '#fff' }}
               >
                 Ja, Start Wissen
@@ -419,7 +419,7 @@ export const AdminPage = () => {
 
       {/* Close Shift confirmation dialog */}
       <Dialog open={showCloseShift} onOpenChange={(v) => { if (!closeShiftLoading) { setShowCloseShift(v); setCloseShiftResult(null); } }}>
-        <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
+        <DialogContent className="bg-card rounded-[12px]" style={{ borderColor: '#00cc1340' }}>
           <DialogHeader>
             <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>
               {closeShiftResult ? (closeShiftResult.success ? 'SHIFT AFGESLOTEN' : 'FOUT') : 'CLOSE SHIFT'}
@@ -443,7 +443,7 @@ export const AdminPage = () => {
             <DialogFooter className="flex gap-3 sm:gap-3">
               <button
                 onClick={() => { setShowCloseShift(false); setCloseShiftResult(null); }}
-                className="flex-1 py-3 font-extrabold uppercase text-sm"
+                className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px]"
                 style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
                 disabled={closeShiftLoading}
               >
@@ -468,7 +468,7 @@ export const AdminPage = () => {
                     setCloseShiftLoading(false);
                   }
                 }}
-                className="flex-1 py-3 font-extrabold uppercase text-sm"
+                className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px]"
                 style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
                 disabled={closeShiftLoading}
               >
@@ -480,7 +480,7 @@ export const AdminPage = () => {
             <DialogFooter>
               <button
                 onClick={() => { setShowCloseShift(false); setCloseShiftResult(null); }}
-                className="w-full py-3 font-extrabold uppercase text-sm"
+                className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px]"
                 style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
               >
                 OK
@@ -581,17 +581,32 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
       .order('created_at', { ascending: false })
       .limit(50)
       .then(({ data }) => {
-        setSessions(data || []);
+        // Sort numerically ascending by wardrobe number
+        const sorted = (data || []).sort((a, b) => {
+          const numA = parseInt((a.wardrobe_number || '').replace(/\D/g, '')) || Infinity;
+          const numB = parseInt((b.wardrobe_number || '').replace(/\D/g, '')) || Infinity;
+          return numA - numB;
+        });
+        setSessions(sorted);
         setLoading(false);
       });
   }, [open]);
 
-  const handleReopen = async (id: string) => {
+  const handleReopenKeep = async (id: string) => {
     try {
-      // Keep existing total_amount so it carries over
       await updateSession.mutateAsync({ id, status: 'active' });
-      // Restore actual_paid_amount to null since it's reopened
       await supabase.from('sessions').update({ actual_paid_amount: null }).eq('id', id);
+      setSessions(prev => prev.filter(s => s.id !== id));
+      setReopenId(null);
+    } catch { /* error */ }
+  };
+
+  const handleReopenZero = async (id: string) => {
+    try {
+      await updateSession.mutateAsync({ id, status: 'active', total_amount: 0 });
+      await supabase.from('sessions').update({ actual_paid_amount: null }).eq('id', id);
+      // Delete all drink_logs for this session to reset
+      await supabase.from('drink_logs').delete().eq('session_id', id);
       setSessions(prev => prev.filter(s => s.id !== id));
       setReopenId(null);
     } catch { /* error */ }
@@ -600,13 +615,13 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="bg-card max-h-[80vh] overflow-y-auto" style={{ borderColor: '#00cc1340' }}>
+        <DialogContent className="bg-card max-h-[80vh] overflow-y-auto rounded-[12px]" style={{ borderColor: '#00cc1340' }}>
           <DialogHeader>
             <DialogTitle className="font-extrabold uppercase" style={{ color: '#00cc13' }}>
               Afgesloten Klanten
             </DialogTitle>
             <DialogDescription className="text-sm">
-              Betaalde en gearchiveerde sessies
+              Betaalde sessies – numeriek gesorteerd
             </DialogDescription>
           </DialogHeader>
           {loading ? (
@@ -618,7 +633,6 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
               {sessions.map((s) => {
                 const label = s.wardrobe_number || (s.nfc_uid ? `UID: ${s.nfc_uid.slice(0, 8)}…` : 'Anoniem');
                 const drinks = s.drink_logs || [];
-                // Aggregate drinks by product shorthand
                 const drinkMap: Record<string, number> = {};
                 drinks.forEach((d: any) => {
                   const name = d.products?.shorthand || '?';
@@ -633,14 +647,10 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
                         <span className="text-xs text-muted-foreground ml-2">
                           €{Number(s.total_amount).toFixed(2)}
                         </span>
-                        <span className="text-xs ml-2 px-1.5 py-0.5 rounded-full uppercase font-bold"
-                          style={s.status === 'paid' ? { backgroundColor: '#00cc1330', color: '#00cc13' } : { backgroundColor: '#6b728030', color: '#6b7280' }}>
-                          {s.status}
-                        </span>
                       </div>
                       <button
                         onClick={() => setReopenId(s.id)}
-                        className="px-4 py-2 text-xs font-extrabold uppercase"
+                        className="px-4 py-2 text-xs font-extrabold uppercase rounded-[6px]"
                         style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
                       >
                         HEROPEN
@@ -659,31 +669,38 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
         </DialogContent>
       </Dialog>
 
-      {/* Reopen confirmation */}
+      {/* Reopen confirmation with two options */}
       <Dialog open={!!reopenId} onOpenChange={() => setReopenId(null)}>
-        <DialogContent className="bg-card" style={{ borderColor: '#f59e0b40' }}>
+        <DialogContent className="bg-card rounded-[12px]" style={{ borderColor: '#00cc1340' }}>
           <DialogHeader>
-            <DialogTitle className="font-extrabold uppercase" style={{ color: '#f59e0b' }}>
-              Weet je het zeker?
+            <DialogTitle className="font-extrabold uppercase" style={{ color: '#00cc13' }}>
+              Hoe wil je heropenen?
             </DialogTitle>
             <DialogDescription className="text-sm">
-              Deze sessie wordt heropend als actief.
+              Kies of je de bestelling wilt behouden of op €0 wilt starten.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex gap-3 sm:gap-3">
+          <DialogFooter className="flex flex-col gap-3 sm:flex-col">
+            <button
+              onClick={() => reopenId && handleReopenKeep(reopenId)}
+              className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px]"
+              style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
+            >
+              Behoud Bestelling
+            </button>
+            <button
+              onClick={() => reopenId && handleReopenZero(reopenId)}
+              className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px]"
+              style={{ backgroundColor: '#f59e0b', color: '#fff', boxShadow: '0 0 12px #f59e0b80' }}
+            >
+              Open en bedrag op 0 zetten
+            </button>
             <button
               onClick={() => setReopenId(null)}
-              className="flex-1 py-3 font-extrabold uppercase text-sm"
+              className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px]"
               style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
             >
               Annuleren
-            </button>
-            <button
-              onClick={() => reopenId && handleReopen(reopenId)}
-              className="flex-1 py-3 font-extrabold uppercase text-sm"
-              style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
-            >
-              Ja, Heropen
             </button>
           </DialogFooter>
         </DialogContent>
