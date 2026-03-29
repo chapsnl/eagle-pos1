@@ -358,7 +358,7 @@ export const TestPage = () => {
       {payDialog}
 
       {/* Left column - 20% - Guest overview */}
-      <div className="flex flex-col h-full" style={{ width: '20%', backgroundColor: '#121212', borderRight: '1px solid #333' }}>
+      <div className="flex flex-col h-full" style={{ width: '15%', backgroundColor: '#121212', borderRight: '1px solid #333' }}>
         {/* Guest number */}
         <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
           <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(28px, 5vw, 48px)' }}>
