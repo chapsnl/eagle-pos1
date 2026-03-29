@@ -130,6 +130,9 @@ export const TestPage = () => {
     });
   }, []);
 
+  const [showBonDialog, setShowBonDialog] = useState(false);
+  const [showPayDialog, setShowPayDialog] = useState(false);
+
   const handleSubmit = useCallback(async () => {
     if (items.length === 0 || !sessionId) return;
     try {
@@ -155,6 +158,53 @@ export const TestPage = () => {
       setTimeout(() => setFeedback(null), 2000);
     }
   }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession]);
+
+  const orderSummary = (
+    <div className="space-y-2 my-2">
+      <div className="text-xs font-bold uppercase tracking-widest" style={{ color: '#888' }}>
+        {coatNumber ? `C${coatNumber}` : ''}{bagNumber ? ` B${bagNumber}` : ''}
+      </div>
+      {items.map((i) => (
+        <div key={i.product.id} className="flex justify-between text-sm font-bold" style={{ color: '#e5e5e5' }}>
+          <span>{i.quantity}× {i.product.full_name}</span>
+          <span>€{(i.product.price * i.quantity).toFixed(2)}</span>
+        </div>
+      ))}
+      <div className="border-t pt-2 flex justify-between font-extrabold text-base" style={{ borderColor: '#333', color: '#00cc13' }}>
+        <span>TOTAAL</span>
+        <span>€{total.toFixed(2)}</span>
+      </div>
+    </div>
+  );
+
+  const bonDialog = (
+    <Dialog open={showBonDialog} onOpenChange={(open) => { if (!open) setShowBonDialog(false); }}>
+      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
+        <DialogHeader>
+          <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Bestelling</DialogTitle>
+        </DialogHeader>
+        {orderSummary}
+        <DialogFooter className="flex gap-3 sm:gap-3">
+          <button onClick={() => setShowBonDialog(false)} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}>CANCEL</button>
+          <button onClick={() => { setShowBonDialog(false); handleSubmit(); }} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}>VERWERK</button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const payDialog = (
+    <Dialog open={showPayDialog} onOpenChange={(open) => { if (!open) setShowPayDialog(false); }}>
+      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
+        <DialogHeader>
+          <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Bestelling</DialogTitle>
+        </DialogHeader>
+        {orderSummary}
+        <DialogFooter className="flex gap-3 sm:gap-3">
+          <button onClick={() => setShowPayDialog(false)} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}>CANCEL</button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 
   const handleConfirmAdd = useCallback(async () => {
     if (!pendingWardrobe) return;
@@ -234,6 +284,8 @@ export const TestPage = () => {
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full">
       <FeedbackOverlay type={feedback} />
+      {bonDialog}
+      {payDialog}
       <div className="min-h-10 bg-card border-b border-border flex items-center px-2 gap-1.5">
         <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
           {coatNumber ? `C${coatNumber}` : ''}{bagNumber ? `B${bagNumber}` : ''}
@@ -284,10 +336,24 @@ export const TestPage = () => {
           </div>
         ))}
       </div>
-      <button onClick={handleSubmit} disabled={items.length === 0} className="pos-btn py-4 text-xl flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed" style={{ backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}>
-        <Send className="w-6 h-6" />
-        BOEK — €{total.toFixed(2)}
-      </button>
+      <div className="flex">
+        <div className="flex flex-col" style={{ flex: 1 }}>
+          <button onClick={() => items.length > 0 && setShowBonDialog(true)} disabled={items.length === 0} className="pos-btn flex-1 py-3 text-lg font-extrabold uppercase flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed" style={{ backgroundColor: '#1a3a6a', color: '#fff' }}
+            onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
+            onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+            onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+          >BON</button>
+          <button onClick={() => items.length > 0 && setShowPayDialog(true)} disabled={items.length === 0} className="pos-btn flex-1 py-3 text-lg font-extrabold uppercase flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed" style={{ backgroundColor: '#ef4444', color: '#fff' }}
+            onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
+            onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+            onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
+          >PAY</button>
+        </div>
+        <button onClick={handleSubmit} disabled={items.length === 0} className="pos-btn py-4 text-xl flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed" style={{ flex: 9, backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340' }}>
+          <Send className="w-6 h-6" />
+          BOEK — €{total.toFixed(2)}
+        </button>
+      </div>
     </div>
   );
 };
