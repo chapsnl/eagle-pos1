@@ -234,7 +234,7 @@ export const TestPage = () => {
 
   const payDialog = (
     <Dialog open={showPayDialog} onOpenChange={(open) => { if (!open) setShowPayDialog(false); }}>
-      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340' }}>
+      <DialogContent className="bg-card rounded-[12px]" style={{ borderColor: '#00cc1340' }}>
         <DialogHeader>
           <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Bestelling</DialogTitle>
         </DialogHeader>
