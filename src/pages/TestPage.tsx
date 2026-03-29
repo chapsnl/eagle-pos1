@@ -302,23 +302,33 @@ export const TestPage = () => {
 
     // RETOUR MODE: remove one of this product from the bill
     if (retourMode) {
-      const existingItem = items.find((i) => i.product.id === product.id);
-      if (!existingItem) return; // product not on bill, do nothing
+      const inItems = items.find((i) => i.product.id === product.id);
+      const inExisting = existingLogs.find((l) => l.product_id === product.id);
+      if (!inItems && !inExisting) return; // product not on bill at all
 
       // Flash animation
       setRetourFlash(product.id);
-      setTimeout(() => setRetourFlash(null), 400);
+      setTimeout(() => setRetourFlash(null), 600);
 
       // Exit retour mode after one product
       setRetourMode(false);
 
-      // Optimistic update
-      setItems((prev) => {
-        const item = prev.find((i) => i.product.id === product.id);
-        if (!item) return prev;
-        if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
-        return prev.filter((i) => i.product.id !== product.id);
-      });
+      // Optimistic update: prefer removing from items first, then existingLogs
+      if (inItems) {
+        setItems((prev) => {
+          const item = prev.find((i) => i.product.id === product.id);
+          if (!item) return prev;
+          if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
+          return prev.filter((i) => i.product.id !== product.id);
+        });
+      } else {
+        setExistingLogs((prev) => {
+          const item = prev.find((l) => l.product_id === product.id);
+          if (!item) return prev;
+          if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
+          return prev.filter((l) => l.product_id !== product.id);
+        });
+      }
 
       try {
         // Find one drink_log for this product+session and delete it
@@ -328,7 +338,7 @@ export const TestPage = () => {
           .eq('session_id', sessionId)
           .eq('product_id', product.id)
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (logToDelete) {
           await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
@@ -338,11 +348,19 @@ export const TestPage = () => {
         }
       } catch {
         // Revert on error
-        setItems((prev) => {
-          const existing = prev.find((i) => i.product.id === product.id);
-          if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-          return [{ product, quantity: 1 }, ...prev];
-        });
+        if (inItems) {
+          setItems((prev) => {
+            const existing = prev.find((i) => i.product.id === product.id);
+            if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+            return [{ product, quantity: 1 }, ...prev];
+          });
+        } else {
+          setExistingLogs((prev) => {
+            const existing = prev.find((l) => l.product_id === product.id);
+            if (existing) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l);
+            return [{ product_id: product.id, product_name: product.full_name, quantity: 1, unit_price: product.price }, ...prev];
+          });
+        }
       }
       return;
     }
