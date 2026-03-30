@@ -137,7 +137,7 @@ const Index = () => {
       lastLookupRef.current = null;
       return;
     }
-    const wardrobe = `C${barNumber}`;
+    const wardrobe = barNumber;
     if (lastLookupRef.current === wardrobe) return;
     lastLookupRef.current = wardrobe;
 
@@ -192,7 +192,7 @@ const Index = () => {
       quantity: i.quantity,
     }));
     broadcastOrder({
-      guestNumber: `C${barNumber}`,
+      guestNumber: barNumber,
       sessionId: barSessionId,
       items: syncItems,
       totalAmount: barSessionTotal + total,
@@ -217,7 +217,7 @@ const Index = () => {
       });
 
       broadcastOrder({
-        guestNumber: `C${barNumber}`,
+        guestNumber: barNumber,
         sessionId: barSessionId,
         items: items.map((i) => ({ product_id: i.product.id, product_name: i.product.full_name, shorthand: i.product.shorthand, price: i.product.price, quantity: i.quantity })),
         totalAmount: barSessionTotal + total,

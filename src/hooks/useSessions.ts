@@ -13,7 +13,7 @@ export const useCreateSession = () => {
           .from('sessions')
           .select('*')
           .eq('status', 'active')
-          .or(`wardrobe_number.like.%C${lookup_wardrobe.replace(/[CB]/g, '')}%,wardrobe_number.like.%B${lookup_wardrobe.replace(/[CB]/g, '')}%`)
+          .eq('wardrobe_number', lookup_wardrobe.replace(/[CB]/g, ''))
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();

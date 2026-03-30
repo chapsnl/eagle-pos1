@@ -157,7 +157,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   useEffect(() => {
     if (phase !== 'input') return;
     if (coatNumber.length < 3) { lastCoatLookupRef.current = null; return; }
-    const wardrobe = `C${coatNumber}`;
+    const wardrobe = coatNumber;
     if (lastCoatLookupRef.current === wardrobe) return;
     lastCoatLookupRef.current = wardrobe;
     const t = window.setTimeout(() => {
@@ -178,7 +178,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     setSessionTotal(initialSessionData.totalAmount);
     setPhase('products');
     setActiveField(null);
-    lastCoatLookupRef.current = `C${num}`;
+    lastCoatLookupRef.current = num;
     onGuestNumberConsumed?.();
   }, [initialSessionData, onGuestNumberConsumed]);
 
@@ -261,7 +261,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     return (
       <div className="space-y-2 my-2 max-h-[50vh] overflow-y-auto">
         <div className="text-xs font-bold uppercase tracking-widest" style={{ color: '#888' }}>
-          {coatNumber ? `C${coatNumber}` : ''}
+          {coatNumber || ''}
         </div>
         {allItems.map((item, idx) => (
           <div key={idx} className="flex justify-between font-bold" style={{ color: '#e5e5e5', fontSize: 17 }}>
@@ -481,7 +481,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       });
       setSessionTotal(newTotal);
 
-      const guestNum = coatNumber ? `C${coatNumber}` : '';
+      const guestNum = coatNumber || '';
       const updatedItems = [...items];
       const ex = updatedItems.find((i) => i.product.id === product.id);
       if (ex) ex.quantity++;
@@ -549,7 +549,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       <div className="flex flex-col h-full" style={{ width: '20%', backgroundColor: retourMode ? '#1a0a0a' : '#121212', borderRight: `1px solid ${retourMode ? '#ef4444' : '#333'}`, transition: 'background-color 0.3s ease' }}>
         <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
           <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(32px, 6vw, 56px)' }}>
-            {coatNumber ? `C${coatNumber}` : ''}
+            {coatNumber || ''}
           </span>
         </div>
 
