@@ -58,9 +58,9 @@ export const ProductGrid = ({ onAddProduct }: ProductGridProps) => {
   const productMap = new Map(products.map((p) => [p.shorthand, p]));
 
   const renderGrid = (layout: { code: string; hideLabel?: boolean }[][]) => (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col gap-[1px]" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
       {layout.map((row, ri) => (
-        <div key={ri} className="flex-1 flex" style={{ minHeight: 0 }}>
+        <div key={ri} className="flex-1 flex gap-[1px]" style={{ minHeight: 0 }}>
           {row.map((cell, ci) => {
             const product = productMap.get(cell.code);
             if (!product) return <div key={ci} className="flex-1" />;
