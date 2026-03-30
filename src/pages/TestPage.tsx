@@ -51,7 +51,7 @@ interface TestPageProps {
   onGuestNumberConsumed?: () => void;
 }
 
-export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPageProps) => {
+export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumberConsumed }: TestPageProps) => {
 
   // Lock to landscape on this page
   useEffect(() => {
