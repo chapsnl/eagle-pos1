@@ -79,13 +79,15 @@ export const AdminPage = () => {
     try {
       const { error } = await supabase.functions.invoke('close-shift');
       if (error) throw error;
-      setCloseShiftResult('Rapport verstuurd!');
+      qc.invalidateQueries({ queryKey: ['active-sessions'] });
+      qc.invalidateQueries({ queryKey: ['closed-sessions'] });
+      setCloseShiftResult('Shift afgesloten en data gewist!');
     } catch (err: any) {
       setCloseShiftResult(`Fout: ${err.message}`);
     } finally {
       setCloseShiftLoading(false);
     }
-  }, []);
+  }, [qc]);
 
   const kpis = [
     { label: 'Nog te ontvangen', value: nogTeOntvangen },
