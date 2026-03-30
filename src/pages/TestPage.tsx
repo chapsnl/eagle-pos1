@@ -47,6 +47,7 @@ type Phase = 'input' | 'products';
 
 interface TestPageProps {
   initialGuestNumber?: string | null;
+  initialSessionData?: { sessionId: string; wardrobeNumber: string; totalAmount: number } | null;
   onGuestNumberConsumed?: () => void;
 }
 
