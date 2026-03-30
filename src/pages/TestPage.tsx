@@ -552,11 +552,11 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
             {row.map((cell, ci) => {
               // Row 4 (index 3), first cell -> ENT button (same color as '10' product = second cell)
               if (ri === 3 && ci === 0) {
-                const tenProduct = productMap.get('10');
-                const entBg = tenProduct?.category_color || '#888';
-                const entTextColor = tenProduct ? getTextColor(tenProduct.category_color) : '#fff';
+                const eightProduct = productMap.get('8');
+                const entBg = eightProduct?.category_color || '#888';
+                const entTextColor = eightProduct ? getTextColor(eightProduct.category_color) : '#fff';
                 return (
-                  <button key={ci} onClick={() => { /* ENT action placeholder */ }} style={{ flex: cell.span, backgroundColor: entBg, color: entTextColor }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75"
+                  <button key={ci} onClick={() => { if (eightProduct) addAndBook(eightProduct); }} style={{ flex: cell.span, backgroundColor: entBg, color: entTextColor }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75"
                     onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
                     onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                     onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
