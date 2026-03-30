@@ -192,7 +192,7 @@ export const AdminPage = () => {
 
       {/* Close Shift Button */}
       <button
-        onClick={() => setShowCloseShift(true)}
+        onClick={() => setCloseShiftStep(1)}
         className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px] transition-all active:scale-[0.98]"
         style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
       >
