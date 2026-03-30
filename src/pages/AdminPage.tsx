@@ -50,7 +50,7 @@ export const AdminPage = () => {
 
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const [selectedType, setSelectedType] = useState<'active' | 'closed'>('active');
-  const [showCloseShift, setShowCloseShift] = useState(false);
+  const [closeShiftStep, setCloseShiftStep] = useState<0 | 1 | 2>(0);
   const [closeShiftLoading, setCloseShiftLoading] = useState(false);
   const [closeShiftResult, setCloseShiftResult] = useState<string | null>(null);
 
@@ -62,11 +62,6 @@ export const AdminPage = () => {
     (sum, s) => sum + Number(s.total_amount ?? 0), 0
   );
   const verwachtTotaal = nogTeOntvangen + reedsOntvangen;
-  const totaleFooi = (closedSessions ?? []).reduce((sum, s) => {
-    const paid = Number(s.actual_paid_amount ?? 0);
-    const amount = Number(s.total_amount ?? 0);
-    return sum + Math.max(0, paid - amount);
-  }, 0);
 
   const sortedActive = sortByWardrobe(activeSessions ?? []);
   const sortedClosed = sortByWardrobe(closedSessions ?? []);
@@ -84,25 +79,26 @@ export const AdminPage = () => {
     try {
       const { error } = await supabase.functions.invoke('close-shift');
       if (error) throw error;
-      setCloseShiftResult('Rapport verstuurd!');
+      qc.invalidateQueries({ queryKey: ['active-sessions'] });
+      qc.invalidateQueries({ queryKey: ['closed-sessions'] });
+      setCloseShiftResult('Shift afgesloten en data gewist!');
     } catch (err: any) {
       setCloseShiftResult(`Fout: ${err.message}`);
     } finally {
       setCloseShiftLoading(false);
     }
-  }, []);
+  }, [qc]);
 
   const kpis = [
     { label: 'Nog te ontvangen', value: nogTeOntvangen },
     { label: 'Reeds ontvangen', value: reedsOntvangen },
     { label: 'Verwacht Totaal', value: verwachtTotaal },
-    { label: 'Totale Fooi', value: totaleFooi },
   ];
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden p-3 gap-3">
       {/* KPI Row */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {kpis.map((kpi) => (
           <Card key={kpi.label} className="border-0" style={{ backgroundColor: '#1a1a1a' }}>
             <CardContent className="p-3 text-center">
@@ -198,7 +194,7 @@ export const AdminPage = () => {
 
       {/* Close Shift Button */}
       <button
-        onClick={() => setShowCloseShift(true)}
+        onClick={() => setCloseShiftStep(1)}
         className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px] transition-all active:scale-[0.98]"
         style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
       >
@@ -223,16 +219,30 @@ export const AdminPage = () => {
         }
       />
 
-      {/* Close Shift Confirmation Popup */}
+      {/* Close Shift Step 1: Show total + confirm */}
       <SessionPopup
-        open={showCloseShift && !closeShiftResult}
-        onClose={() => { if (!closeShiftLoading) setShowCloseShift(false); }}
+        open={closeShiftStep === 1}
+        onClose={() => setCloseShiftStep(0)}
         title="CLOSE SHIFT"
-        subtitle="Weet u zeker dat u de shift wilt afsluiten en alle data wilt wissen?"
+        subtitle={`Totaal ontvangen: €${reedsOntvangen.toFixed(2)}`}
         orderLines={[]}
         showTotal={false}
         actions={[
-          { label: 'NEE', onClick: () => setShowCloseShift(false), variant: 'cancel' as const },
+          { label: 'NEE', onClick: () => setCloseShiftStep(0), variant: 'cancel' as const },
+          { label: 'JA', onClick: () => setCloseShiftStep(2), variant: 'confirm' as const },
+        ]}
+      />
+
+      {/* Close Shift Step 2: Double safety check */}
+      <SessionPopup
+        open={closeShiftStep === 2 && !closeShiftResult}
+        onClose={() => { if (!closeShiftLoading) setCloseShiftStep(0); }}
+        title="CLOSE SHIFT"
+        subtitle="Weet je het zeker?"
+        orderLines={[]}
+        showTotal={false}
+        actions={[
+          { label: 'NEE', onClick: () => setCloseShiftStep(0), variant: 'cancel' as const },
           {
             label: closeShiftLoading ? 'BEZIG...' : 'JA',
             onClick: handleCloseShift,
@@ -244,13 +254,13 @@ export const AdminPage = () => {
       {/* Close Shift Result Popup */}
       <SessionPopup
         open={!!closeShiftResult}
-        onClose={() => { setCloseShiftResult(null); setShowCloseShift(false); }}
+        onClose={() => { setCloseShiftResult(null); setCloseShiftStep(0); }}
         title={closeShiftResult?.startsWith('Fout') ? 'FOUT' : 'SHIFT AFGESLOTEN'}
         subtitle={closeShiftResult ?? ''}
         orderLines={[]}
         showTotal={false}
         actions={[
-          { label: 'OK', onClick: () => { setCloseShiftResult(null); setShowCloseShift(false); }, variant: 'confirm' as const },
+          { label: 'OK', onClick: () => { setCloseShiftResult(null); setCloseShiftStep(0); }, variant: 'confirm' as const },
         ]}
       />
     </div>

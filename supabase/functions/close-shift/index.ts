@@ -192,11 +192,17 @@ ${tableRows}
       conn.close();
     }
 
-    // Archive all active sessions after report
+    // Delete all drink_logs first (foreign key dependency)
+    await supabase
+      .from('drink_logs')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+
+    // Delete all sessions
     await supabase
       .from('sessions')
-      .update({ status: 'archived' })
-      .in('status', ['active', 'paid']);
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000');
 
     return new Response(JSON.stringify({ 
       success: true, 
