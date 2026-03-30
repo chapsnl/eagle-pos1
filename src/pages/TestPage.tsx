@@ -157,7 +157,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   useEffect(() => {
     if (phase !== 'input') return;
     if (coatNumber.length < 3) { lastCoatLookupRef.current = null; return; }
-    const wardrobe = `C${coatNumber}`;
+    const wardrobe = coatNumber;
     if (lastCoatLookupRef.current === wardrobe) return;
     lastCoatLookupRef.current = wardrobe;
     const t = window.setTimeout(() => {
