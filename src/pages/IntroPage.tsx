@@ -52,34 +52,32 @@ export const IntroPage = ({ onEnter }: IntroPageProps) => {
     if (key === 'DEL') {
       setPin((p) => p.slice(0, -1));
     } else if (pin.length < 6) {
-      setPin((p) => p + key);
+      const newPin = pin + key;
+      setPin(newPin);
+      if (newPin.length === 6) {
+        setTimeout(() => {
+          if (newPin === CORRECT_PIN) {
+            localStorage.removeItem(ATTEMPTS_KEY);
+            onEnter();
+          } else {
+            const attempts = Number(localStorage.getItem(ATTEMPTS_KEY) || 0) + 1;
+            localStorage.setItem(ATTEMPTS_KEY, String(attempts));
+            if (attempts >= MAX_ATTEMPTS) {
+              const until = Date.now() + LOCKOUT_MS;
+              localStorage.setItem(LOCKOUT_KEY, String(until));
+              setLocked(true);
+              setRemainingMs(LOCKOUT_MS);
+              setPin('');
+              setError('');
+            } else {
+              setError(`Verkeerde pincode (${MAX_ATTEMPTS - attempts} pogingen over)`);
+              setPin('');
+            }
+          }
+        }, 150);
+      }
     }
-  }, [locked, pin]);
-
-  const handleSubmit = useCallback(() => {
-    if (locked || pin.length !== 6) return;
-
-    if (pin === CORRECT_PIN) {
-      localStorage.removeItem(ATTEMPTS_KEY);
-      onEnter();
-      return;
-    }
-
-    const attempts = Number(localStorage.getItem(ATTEMPTS_KEY) || 0) + 1;
-    localStorage.setItem(ATTEMPTS_KEY, String(attempts));
-
-    if (attempts >= MAX_ATTEMPTS) {
-      const until = Date.now() + LOCKOUT_MS;
-      localStorage.setItem(LOCKOUT_KEY, String(until));
-      setLocked(true);
-      setRemainingMs(LOCKOUT_MS);
-      setPin('');
-      setError('');
-    } else {
-      setError(`Verkeerde pincode (${MAX_ATTEMPTS - attempts} pogingen over)`);
-      setPin('');
-    }
-  }, [pin, locked, onEnter]);
+  }, [locked, pin, onEnter]);
 
   const formatTime = (ms: number) => {
     const mins = Math.floor(ms / 60000);
@@ -89,6 +87,11 @@ export const IntroPage = ({ onEnter }: IntroPageProps) => {
 
   return (
     <div className="min-h-screen bg-[hsl(220,15%,8%)] flex flex-col items-center justify-center gap-6">
+      <img
+        src="/placeholder.svg"
+        alt="Eagle POS Logo"
+        className="w-32 h-32 opacity-80"
+      />
       <h1 className="text-4xl font-bold tracking-tight text-foreground font-mono">
         Eagle POS System
       </h1>
@@ -142,19 +145,6 @@ export const IntroPage = ({ onEnter }: IntroPageProps) => {
             ))}
           </div>
 
-          {/* Enter button */}
-          <button
-            onClick={handleSubmit}
-            disabled={pin.length !== 6}
-            className="text-lg font-bold px-12 py-4 rounded-md tracking-wide disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{
-              backgroundColor: '#00cc13',
-              color: '#ffffff',
-              boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340, inset 0 1px 0 #ffffff20',
-            }}
-          >
-            ENTER
-          </button>
         </>
       )}
     </div>
