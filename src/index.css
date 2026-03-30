@@ -80,13 +80,24 @@
   }
 
   body {
-    @apply bg-background text-foreground font-mono;
+    @apply bg-background text-foreground;
+    font-family: 'JetBrains Mono', monospace;
     -webkit-user-select: none;
     user-select: none;
     overscroll-behavior: none;
     touch-action: manipulation;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Uniform button radius */
+  button, .btn, [role="button"] {
+    border-radius: var(--radius-btn);
+  }
+
+  /* Uniform popup/dialog radius */
+  [role="dialog"], [role="alertdialog"], .dialog-content {
+    border-radius: var(--radius-popup) !important;
   }
 }
 
