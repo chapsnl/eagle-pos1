@@ -12,7 +12,7 @@ import { ClosedPage } from './ClosedPage';
 import { TestPage } from './TestPage';
 import { Send } from 'lucide-react';
 import { useCreateSession, useAddDrinkLogs, useUpdateSession, useFindActiveSessionByWardrobe } from '@/hooks/useSessions';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { SessionPopup } from '@/components/pos/SessionPopup';
 import { broadcastOrder, clearOrder, SyncOrderItem } from '@/lib/orderSync';
 
 export interface DbOrderItem {
