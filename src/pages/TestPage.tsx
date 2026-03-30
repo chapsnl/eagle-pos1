@@ -173,6 +173,16 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
     return () => window.clearTimeout(t);
   }, [coatNumber, phase, resolveSessionByWardrobe]);
 
+  // Handle external navigation with a guest number (e.g. from OVERZICHT page)
+  useEffect(() => {
+    if (!initialGuestNumber) return;
+    const num = initialGuestNumber.replace(/\D/g, '');
+    if (!num) return;
+    setCoatNumber(num);
+    lastCoatLookupRef.current = null;
+    onGuestNumberConsumed?.();
+  }, [initialGuestNumber, onGuestNumberConsumed]);
+
 
   const handleNumKey = (key: string) => {
     if (key === 'DEL') {
