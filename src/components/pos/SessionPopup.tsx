@@ -31,6 +31,7 @@ const SessionPopup = ({
   subtitle,
   orderLines,
   showTotal = false,
+  showPrices = false,
   totalAmount = 0,
   actions = [],
 }: SessionPopupProps) => {
