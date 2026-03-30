@@ -93,7 +93,7 @@ const ClosedPage = () => {
         title={selectedSession?.wardrobe_number ?? ''}
         subtitle={`Status: ${selectedSession?.status ?? ''}`}
         orderLines={selectedSession ? getOrderLines(selectedSession) : []}
-        showTotal
+        showTotal={false}
         totalAmount={Number(selectedSession?.total_amount ?? 0)}
       />
     </div>
