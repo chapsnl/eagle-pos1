@@ -481,7 +481,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       });
       setSessionTotal(newTotal);
 
-      const guestNum = coatNumber ? `C${coatNumber}` : '';
+      const guestNum = coatNumber || '';
       const updatedItems = [...items];
       const ex = updatedItems.find((i) => i.product.id === product.id);
       if (ex) ex.quantity++;
