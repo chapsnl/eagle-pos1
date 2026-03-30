@@ -50,6 +50,8 @@ export const IntroPage = ({ onEnter }: IntroPageProps) => {
     if (locked) return;
     setError('');
     if (key === 'DEL') {
+      setPin('');
+    } else if (key === '⌫') {
       setPin((p) => p.slice(0, -1));
     } else if (pin.length < 6) {
       const newPin = pin + key;
