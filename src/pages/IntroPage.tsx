@@ -10,7 +10,7 @@ const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
 const LOCKOUT_KEY = 'pos_lockout_until';
 const ATTEMPTS_KEY = 'pos_pin_attempts';
 
-const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
+const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', '⌫'];
 
 export const IntroPage = ({ onEnter }: IntroPageProps) => {
   const [pin, setPin] = useState('');
@@ -50,6 +50,8 @@ export const IntroPage = ({ onEnter }: IntroPageProps) => {
     if (locked) return;
     setError('');
     if (key === 'DEL') {
+      setPin('');
+    } else if (key === '⌫') {
       setPin((p) => p.slice(0, -1));
     } else if (pin.length < 6) {
       const newPin = pin + key;
@@ -135,8 +137,8 @@ export const IntroPage = ({ onEnter }: IntroPageProps) => {
                 disabled={!key}
                 className="py-4 text-2xl font-extrabold disabled:invisible"
                 style={{
-                  backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
-                  color: key === 'DEL' ? '#fff' : '#e5e5e5',
+                  backgroundColor: key === 'DEL' ? '#ef4444' : key === '⌫' ? '#f59e0b' : '#2a2a2a',
+                  color: '#fff',
                   border: '1px solid #333',
                 }}
               >
