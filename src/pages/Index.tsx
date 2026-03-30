@@ -219,7 +219,7 @@ const Index = () => {
   const handleCash = useCallback(() => setItems([]), []);
 
   if (!started) {
-    return <IntroPage onEnter={() => setStarted(true)} />;
+    return <IntroPage onEnter={() => { sessionStorage.setItem('pos_started', 'true'); setStarted(true); }} />;
   }
 
   const addDialog = (
