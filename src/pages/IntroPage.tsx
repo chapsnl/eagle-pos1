@@ -79,31 +79,6 @@ export const IntroPage = ({ onEnter }: IntroPageProps) => {
     }
   }, [locked, pin, onEnter]);
 
-  const handleSubmit = useCallback(() => {
-    if (locked || pin.length !== 6) return;
-
-    if (pin === CORRECT_PIN) {
-      localStorage.removeItem(ATTEMPTS_KEY);
-      onEnter();
-      return;
-    }
-
-    const attempts = Number(localStorage.getItem(ATTEMPTS_KEY) || 0) + 1;
-    localStorage.setItem(ATTEMPTS_KEY, String(attempts));
-
-    if (attempts >= MAX_ATTEMPTS) {
-      const until = Date.now() + LOCKOUT_MS;
-      localStorage.setItem(LOCKOUT_KEY, String(until));
-      setLocked(true);
-      setRemainingMs(LOCKOUT_MS);
-      setPin('');
-      setError('');
-    } else {
-      setError(`Verkeerde pincode (${MAX_ATTEMPTS - attempts} pogingen over)`);
-      setPin('');
-    }
-  }, [pin, locked, onEnter]);
-
   const formatTime = (ms: number) => {
     const mins = Math.floor(ms / 60000);
     const secs = Math.floor((ms % 60000) / 1000);
