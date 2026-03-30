@@ -19,6 +19,7 @@ interface SessionPopupProps {
   subtitle?: string;
   orderLines: OrderLine[];
   showTotal?: boolean;
+  showPrices?: boolean;
   totalAmount?: number;
   actions?: SessionPopupAction[];
 }
