@@ -7,6 +7,7 @@ import { Send, X, Delete } from 'lucide-react';
 import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { broadcastOrder, clearOrder } from '@/lib/orderSync';
 
 interface TestOrderItem {
@@ -247,50 +248,13 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     }
   }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession]);
 
-  const orderSummary = useMemo(() => {
-    const allItems = liveDbLogs.map((l) => {
-      const product = (products ?? []).find((p) => p.id === l.product_id);
-      return {
-        name: l.product_name,
-        quantity: l.quantity,
-        unitPrice: product?.price ?? 0,
-      };
-    });
-    const grandTotal = allItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
-
-    return (
-      <div className="space-y-2 my-2 max-h-[50vh] overflow-y-auto">
-        <div className="text-xs font-bold uppercase tracking-widest" style={{ color: '#888' }}>
-          {coatNumber || ''}
-        </div>
-        {allItems.map((item, idx) => (
-          <div key={idx} className="flex justify-between font-bold" style={{ color: '#e5e5e5', fontSize: 17 }}>
-            <span>{item.quantity}× {item.name}</span>
-            <span>€{(item.unitPrice * item.quantity).toFixed(2)}</span>
-          </div>
-        ))}
-        <div className="border-t pt-2 flex justify-between font-extrabold text-base" style={{ borderColor: '#333', color: '#00cc13' }}>
-          <span>TOTAAL</span>
-          <span>€{grandTotal.toFixed(2)}</span>
-        </div>
-      </div>
-    );
-  }, [liveDbLogs, coatNumber, products]);
-
-  const bonDialog = (
-    <Dialog open={showBonDialog} onOpenChange={(open) => { if (!open) setShowBonDialog(false); }}>
-      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340', borderRadius: 12 }}>
-        <DialogHeader>
-          <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Bestelling</DialogTitle>
-        </DialogHeader>
-        {orderSummary}
-        <DialogFooter className="flex gap-3 sm:gap-3">
-          <button onClick={() => setShowBonDialog(false)} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 4 }}>CANCEL</button>
-          <button onClick={() => { setShowBonDialog(false); handleSubmit(); }} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 4 }}>VERWERK</button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+  const popupOrderLines: OrderLine[] = useMemo(() => {
+    return liveDbLogs.map((l) => ({
+      name: l.product_name,
+      qty: l.quantity,
+      price: 0,
+    }));
+  }, [liveDbLogs]);
 
   const handlePayVerwerk = useCallback(async () => {
     if (!sessionId) return;
@@ -310,19 +274,34 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     }
   }, [sessionId, updateSession]);
 
+  const bonDialog = (
+    <SessionPopup
+      open={showBonDialog}
+      onClose={() => setShowBonDialog(false)}
+      title="Bestelling"
+      subtitle={coatNumber || ''}
+      orderLines={popupOrderLines}
+      showTotal={false}
+      actions={[
+        { label: 'CANCEL', onClick: () => setShowBonDialog(false), variant: 'cancel' },
+        { label: 'VERWERK', onClick: () => { setShowBonDialog(false); handleSubmit(); }, variant: 'confirm' },
+      ]}
+    />
+  );
+
   const payDialog = (
-    <Dialog open={showPayDialog} onOpenChange={(open) => { if (!open) setShowPayDialog(false); }}>
-      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340', borderRadius: 12 }}>
-        <DialogHeader>
-          <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Bestelling</DialogTitle>
-        </DialogHeader>
-        {orderSummary}
-        <DialogFooter className="flex gap-3 sm:gap-3">
-          <button onClick={() => setShowPayDialog(false)} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 4 }}>CANCEL</button>
-          <button onClick={handlePayVerwerk} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 4 }}>VERWERK</button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <SessionPopup
+      open={showPayDialog}
+      onClose={() => setShowPayDialog(false)}
+      title="Bestelling"
+      subtitle={coatNumber || ''}
+      orderLines={popupOrderLines}
+      showTotal={false}
+      actions={[
+        { label: 'CANCEL', onClick: () => setShowPayDialog(false), variant: 'cancel' },
+        { label: 'VERWERK', onClick: handlePayVerwerk, variant: 'confirm' },
+      ]}
+    />
   );
 
   const handleConfirmAdd = useCallback(async () => {
