@@ -192,7 +192,7 @@ const Index = () => {
       quantity: i.quantity,
     }));
     broadcastOrder({
-      guestNumber: `C${barNumber}`,
+      guestNumber: barNumber,
       sessionId: barSessionId,
       items: syncItems,
       totalAmount: barSessionTotal + total,
