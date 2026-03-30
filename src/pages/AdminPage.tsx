@@ -213,6 +213,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
         subtitle={selectedType === 'active' ? 'Actieve sessie' : `Status: ${selectedSession?.status ?? ''}`}
         orderLines={selectedSession ? getOrderLines(selectedSession) : []}
         showTotal={true}
+        showPrices={true}
         totalAmount={Number(selectedSession?.total_amount ?? 0)}
         actions={
           selectedType === 'active'

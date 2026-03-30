@@ -19,6 +19,7 @@ interface SessionPopupProps {
   subtitle?: string;
   orderLines: OrderLine[];
   showTotal?: boolean;
+  showPrices?: boolean;
   totalAmount?: number;
   actions?: SessionPopupAction[];
 }
@@ -30,6 +31,7 @@ const SessionPopup = ({
   subtitle,
   orderLines,
   showTotal = false,
+  showPrices = false,
   totalAmount = 0,
   actions = [],
 }: SessionPopupProps) => {
@@ -72,6 +74,9 @@ const SessionPopup = ({
                 >
                   <span style={{ color: '#e5e5e5' }}>
                     {line.qty}× {line.name}
+                    {showPrices && (
+                      <span style={{ color: '#888' }}> – €{line.price.toFixed(2)} (€{(line.qty * line.price).toFixed(2)})</span>
+                    )}
                   </span>
                 </div>
               ))}
