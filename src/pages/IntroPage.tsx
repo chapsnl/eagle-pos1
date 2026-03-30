@@ -137,8 +137,8 @@ export const IntroPage = ({ onEnter }: IntroPageProps) => {
                 disabled={!key}
                 className="py-4 text-2xl font-extrabold disabled:invisible"
                 style={{
-                  backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
-                  color: key === 'DEL' ? '#fff' : '#e5e5e5',
+                  backgroundColor: key === 'DEL' ? '#ef4444' : key === '⌫' ? '#f59e0b' : '#2a2a2a',
+                  color: '#fff',
                   border: '1px solid #333',
                 }}
               >
