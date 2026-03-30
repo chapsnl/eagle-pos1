@@ -255,20 +255,15 @@ export const TestPage = () => {
   }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession]);
 
   const orderSummary = useMemo(() => {
-    // Merge existingLogs and current items into one combined view
-    const merged = new Map<string, { name: string; quantity: number; unitPrice: number }>();
-    for (const l of existingLogs) {
-      merged.set(l.product_id, { name: l.product_name, quantity: l.quantity, unitPrice: l.unit_price });
-    }
-    for (const i of items) {
-      const existing = merged.get(i.product.id);
-      if (existing) {
-        merged.set(i.product.id, { ...existing, quantity: existing.quantity + i.quantity });
-      } else {
-        merged.set(i.product.id, { name: i.product.full_name, quantity: i.quantity, unitPrice: i.product.price });
-      }
-    }
-    const allItems = Array.from(merged.values());
+    // Use liveDbLogs as the single source of truth (already reflects all booked items)
+    const allItems = liveDbLogs.map((l) => {
+      const product = (products ?? []).find((p) => p.id === l.product_id);
+      return {
+        name: l.product_name,
+        quantity: l.quantity,
+        unitPrice: product?.price ?? 0,
+      };
+    });
     const grandTotal = allItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
 
     return (
