@@ -8,9 +8,9 @@ interface NavTabsProps {
 
 const tabs: { view: AppView; label: string }[] = [
   { view: 'bar', label: 'POS' },
-  { view: 'test', label: 'GAST' },
+  { view: 'test', label: 'NR' },
   { view: 'admin', label: 'ADMIN' },
-  { view: 'admin2', label: 'ADMIN 2' },
+  { view: 'admin2', label: 'OVERZICHT' },
 ];
 
 export const NavTabs = ({ activeView, onViewChange, itemCount = 0 }: NavTabsProps) => {
