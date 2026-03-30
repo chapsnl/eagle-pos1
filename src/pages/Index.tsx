@@ -217,7 +217,7 @@ const Index = () => {
       });
 
       broadcastOrder({
-        guestNumber: `C${barNumber}`,
+        guestNumber: barNumber,
         sessionId: barSessionId,
         items: items.map((i) => ({ product_id: i.product.id, product_name: i.product.full_name, shorthand: i.product.shorthand, price: i.product.price, quantity: i.quantity })),
         totalAmount: barSessionTotal + total,
