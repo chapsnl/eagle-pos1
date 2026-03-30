@@ -234,7 +234,7 @@ const Index = () => {
     </Dialog>
   );
 
-  if (!started) return <IntroPage onEnter={() => setStarted(true)} />;
+  if (!started) return <IntroPage onEnter={handleEnter} />;
 
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
