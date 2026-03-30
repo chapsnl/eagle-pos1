@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { DbProduct } from '@/hooks/useProducts';
 import { FeedbackType, AppView } from '@/types/pos';
+import IntroPage from './IntroPage';
 import { NavTabs } from '@/components/pos/NavTabs';
 import { OrderBar } from '@/components/pos/OrderBar';
 import { ProductGrid } from '@/components/pos/ProductGrid';
@@ -24,6 +25,7 @@ type BarPhase = 'input-number' | 'products';
 
 const Index = () => {
   
+  const [started, setStarted] = useState(false);
   const [activeView, setActiveView] = useState<AppView>('test');
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
@@ -225,6 +227,8 @@ const Index = () => {
       </DialogContent>
     </Dialog>
   );
+
+  if (!started) return <IntroPage onEnter={() => setStarted(true)} />;
 
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
