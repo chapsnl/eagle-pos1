@@ -52,9 +52,32 @@ export const IntroPage = ({ onEnter }: IntroPageProps) => {
     if (key === 'DEL') {
       setPin((p) => p.slice(0, -1));
     } else if (pin.length < 6) {
-      setPin((p) => p + key);
+      const newPin = pin + key;
+      setPin(newPin);
+      if (newPin.length === 6) {
+        setTimeout(() => {
+          if (newPin === CORRECT_PIN) {
+            localStorage.removeItem(ATTEMPTS_KEY);
+            onEnter();
+          } else {
+            const attempts = Number(localStorage.getItem(ATTEMPTS_KEY) || 0) + 1;
+            localStorage.setItem(ATTEMPTS_KEY, String(attempts));
+            if (attempts >= MAX_ATTEMPTS) {
+              const until = Date.now() + LOCKOUT_MS;
+              localStorage.setItem(LOCKOUT_KEY, String(until));
+              setLocked(true);
+              setRemainingMs(LOCKOUT_MS);
+              setPin('');
+              setError('');
+            } else {
+              setError(`Verkeerde pincode (${MAX_ATTEMPTS - attempts} pogingen over)`);
+              setPin('');
+            }
+          }
+        }, 150);
+      }
     }
-  }, [locked, pin]);
+  }, [locked, pin, onEnter]);
 
   const handleSubmit = useCallback(() => {
     if (locked || pin.length !== 6) return;
