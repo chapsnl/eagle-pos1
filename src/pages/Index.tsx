@@ -299,7 +299,7 @@ const Index = () => {
       )}
 
       {activeView === 'arm-nummer' && <ArmNummerPage />}
-      {activeView === 'test' && <TestPage />}
+      {activeView === 'test' && <TestPage initialGuestNumber={pendingGuestNumber} onGuestNumberConsumed={() => setPendingGuestNumber(null)} />}
       {activeView === 'admin' && <AdminPage />}
       {activeView === 'admin2' && <Admin2Page onNavigateToGuest={(num) => {
         setBarNumber(num);
