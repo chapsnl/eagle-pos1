@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { IntroPage } from './IntroPage';
 import { DbProduct } from '@/hooks/useProducts';
 import { FeedbackType, AppView } from '@/types/pos';
 import { NavTabs } from '@/components/pos/NavTabs';
@@ -24,7 +23,7 @@ const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
 type BarPhase = 'input-number' | 'products';
 
 const Index = () => {
-  const [started, setStarted] = useState(() => sessionStorage.getItem('pos_started') === 'true');
+  
   const [activeView, setActiveView] = useState<AppView>('test');
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
@@ -208,9 +207,6 @@ const Index = () => {
     }
   }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, showFeedback]);
 
-  if (!started) {
-    return <IntroPage onEnter={() => { sessionStorage.setItem('pos_started', 'true'); setStarted(true); }} />;
-  }
 
   const addDialog = (
     <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) handleCancelAdd(); }}>
