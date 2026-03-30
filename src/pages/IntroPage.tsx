@@ -10,7 +10,7 @@ const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
 const LOCKOUT_KEY = 'pos_lockout_until';
 const ATTEMPTS_KEY = 'pos_pin_attempts';
 
-const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
+const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', '⌫'];
 
 export const IntroPage = ({ onEnter }: IntroPageProps) => {
   const [pin, setPin] = useState('');
