@@ -283,7 +283,7 @@ export const TestPage = () => {
         </div>
       </div>
     );
-  }, [existingLogs, items, coatNumber]);
+  }, [liveDbLogs, coatNumber, products]);
 
   const bonDialog = (
     <Dialog open={showBonDialog} onOpenChange={(open) => { if (!open) setShowBonDialog(false); }}>
