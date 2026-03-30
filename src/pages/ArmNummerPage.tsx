@@ -213,7 +213,7 @@ export const ArmNummerPage = () => {
 
   if (phase === 'input-arm' || phase === 'input-bag') {
     const value = phase === 'input-arm' ? armNumber : bagNumber;
-    const label = phase === 'input-arm' ? 'GAST NUMMER' : 'TAS NUMMER';
+    const label = phase === 'input-arm' ? 'GAST ZOEKEN' : 'TAS NUMMER';
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <FeedbackOverlay type={feedback} />
