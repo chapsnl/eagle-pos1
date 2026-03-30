@@ -85,26 +85,7 @@ const Index = () => {
     }
   }, [activeView]);
 
-  // Global inactivity timer: after 1 minute, switch to NR (test) page input phase (no logout)
-  const globalInactivityRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const resetGlobalInactivity = useCallback(() => {
-    if (globalInactivityRef.current) clearTimeout(globalInactivityRef.current);
-    globalInactivityRef.current = setTimeout(() => {
-      setActiveView('test');
-    }, 60000);
-  }, []);
-
-  useEffect(() => {
-    resetGlobalInactivity();
-    const events = ['pointerdown', 'touchstart', 'keydown'] as const;
-    const handler = () => resetGlobalInactivity();
-    events.forEach((e) => window.addEventListener(e, handler, { passive: true }));
-    return () => {
-      if (globalInactivityRef.current) clearTimeout(globalInactivityRef.current);
-      events.forEach((e) => window.removeEventListener(e, handler));
-    };
-  }, [resetGlobalInactivity]);
 
   const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string, onNotFound: () => void) => {
     try {
