@@ -59,6 +59,7 @@ const Index = () => {
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [pendingGuestNumber, setPendingGuestNumber] = useState<string | null>(null);
+  const [pendingSessionData, setPendingSessionData] = useState<{ sessionId: string; wardrobeNumber: string; totalAmount: number } | null>(null);
 
   // Bar number entry state
   const [barPhase, setBarPhase] = useState<BarPhase>('input-number');
@@ -304,10 +305,10 @@ const Index = () => {
         </>
       )}
 
-      {activeView === 'test' && <TestPage initialGuestNumber={pendingGuestNumber} onGuestNumberConsumed={() => setPendingGuestNumber(null)} />}
+      {activeView === 'test' && <TestPage initialGuestNumber={pendingGuestNumber} initialSessionData={pendingSessionData} onGuestNumberConsumed={() => { setPendingGuestNumber(null); setPendingSessionData(null); }} />}
       {activeView === 'admin' && <AdminPage />}
-      {activeView === 'open' && <OpenPage onNavigateToGuest={(num) => {
-        setPendingGuestNumber(num);
+      {activeView === 'open' && <OpenPage onNavigateToGuest={(wardrobe, sessionId, totalAmount) => {
+        setPendingSessionData({ sessionId, wardrobeNumber: wardrobe, totalAmount });
         setActiveView('test');
       }} />}
       {activeView === 'closed' && <ClosedPage />}
