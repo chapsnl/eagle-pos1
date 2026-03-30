@@ -3,7 +3,7 @@ import { useActiveSessions } from '@/hooks/useSessions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface OpenPageProps {
-  onNavigateToGuest?: (wardrobeNumber: string) => void;
+  onNavigateToGuest?: (wardrobeNumber: string, sessionId: string, totalAmount: number) => void;
 }
 
 const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
