@@ -42,7 +42,11 @@ const getOrderLines = (session: any): OrderLine[] => {
   return Array.from(map.values());
 };
 
-export const AdminPage = () => {
+interface AdminPageProps {
+  onNavigateToGuest?: (wardrobeNumber: string, sessionId: string, totalAmount: number) => void;
+}
+
+export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const { data: activeSessions } = useActiveSessions();
   const { data: closedSessions } = useClosedSessions();
   const updateSession = useUpdateSession();
