@@ -59,6 +59,7 @@ const Index = () => {
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [pendingGuestNumber, setPendingGuestNumber] = useState<string | null>(null);
+  const [pendingSessionData, setPendingSessionData] = useState<{ sessionId: string; wardrobeNumber: string; totalAmount: number } | null>(null);
 
   // Bar number entry state
   const [barPhase, setBarPhase] = useState<BarPhase>('input-number');
