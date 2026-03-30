@@ -302,10 +302,8 @@ const Index = () => {
       {activeView === 'test' && <TestPage initialGuestNumber={pendingGuestNumber} onGuestNumberConsumed={() => setPendingGuestNumber(null)} />}
       {activeView === 'admin' && <AdminPage />}
       {activeView === 'admin2' && <Admin2Page onNavigateToGuest={(num) => {
-        setBarNumber(num);
-        setActiveView('bar');
-        lastLookupRef.current = null;
-        setBarPhase('input-number');
+        setPendingGuestNumber(num);
+        setActiveView('test');
       }} />}
     </div>
   );
