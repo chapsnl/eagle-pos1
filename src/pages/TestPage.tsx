@@ -169,15 +169,28 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     return () => window.clearTimeout(t);
   }, [coatNumber, phase, resolveSessionByWardrobe]);
 
+  // Handle direct navigation with full session data (e.g. from OPEN page BEWERK button)
+  useEffect(() => {
+    if (!initialSessionData) return;
+    const num = initialSessionData.wardrobeNumber.replace(/\D/g, '');
+    setCoatNumber(num);
+    setSessionId(initialSessionData.sessionId);
+    setSessionTotal(initialSessionData.totalAmount);
+    setPhase('products');
+    setActiveField(null);
+    lastCoatLookupRef.current = `C${num}`;
+    onGuestNumberConsumed?.();
+  }, [initialSessionData, onGuestNumberConsumed]);
+
   // Handle external navigation with a guest number (e.g. from OVERZICHT page)
   useEffect(() => {
-    if (!initialGuestNumber) return;
+    if (!initialGuestNumber || initialSessionData) return;
     const num = initialGuestNumber.replace(/\D/g, '');
     if (!num) return;
     setCoatNumber(num);
     lastCoatLookupRef.current = null;
     onGuestNumberConsumed?.();
-  }, [initialGuestNumber, onGuestNumberConsumed]);
+  }, [initialGuestNumber, initialSessionData, onGuestNumberConsumed]);
 
   const handleNumKey = (key: string) => {
     if (key === 'DEL') {
