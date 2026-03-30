@@ -637,32 +637,29 @@ const ClosedSessionsDialog = ({ open, onOpenChange }: { open: boolean; onOpenCha
               {sessions.map((s) => {
                 const label = s.wardrobe_number || (s.nfc_uid ? `UID: ${s.nfc_uid.slice(0, 8)}…` : 'Anoniem');
                 const drinks = s.drink_logs || [];
-                const drinkMap: Record<string, number> = {};
+                const drinkMap: Record<string, { qty: number; fullName: string; unitPrice: number }> = {};
                 drinks.forEach((d: any) => {
                   const name = d.products?.shorthand || '?';
-                  drinkMap[name] = (drinkMap[name] || 0) + 1;
+                  const fullName = d.products?.full_name || name;
+                  if (!drinkMap[name]) drinkMap[name] = { qty: 0, fullName, unitPrice: Number(d.price_at_time) };
+                  drinkMap[name].qty++;
                 });
-                const drinkSummary = Object.entries(drinkMap).map(([name, qty]) => `${qty}x ${name}`).join(', ');
                 return (
                   <div key={s.id} className="bg-secondary px-3 py-2 rounded">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-sm font-bold">{label}</span>
-                        <span className="text-xs text-muted-foreground ml-2">
-                          €{Number(s.total_amount).toFixed(2)}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => setReopenId(s.id)}
-                        className="px-4 py-2 text-xs font-extrabold uppercase rounded-[6px]"
-                        style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
-                      >
-                        HEROPEN
-                      </button>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-bold">{label}</span>
+                      <span className="text-sm font-extrabold" style={{ color: '#00cc13' }}>
+                        €{Number(s.total_amount).toFixed(2)}
+                      </span>
                     </div>
-                    {drinkSummary && (
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {drinkSummary}
+                    {Object.entries(drinkMap).length > 0 && (
+                      <div className="space-y-0.5">
+                        {Object.entries(drinkMap).map(([key, { qty, fullName, unitPrice }]) => (
+                          <div key={key} className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">{qty} x {fullName}</span>
+                            <span className="text-muted-foreground">€{(qty * unitPrice).toFixed(2)}</span>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
