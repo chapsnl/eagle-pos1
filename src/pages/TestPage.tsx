@@ -178,7 +178,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     setSessionTotal(initialSessionData.totalAmount);
     setPhase('products');
     setActiveField(null);
-    lastCoatLookupRef.current = `C${num}`;
+    lastCoatLookupRef.current = num;
     onGuestNumberConsumed?.();
   }, [initialSessionData, onGuestNumberConsumed]);
 
