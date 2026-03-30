@@ -91,7 +91,6 @@ export const AdminPage = () => {
     { label: 'Nog te ontvangen', value: nogTeOntvangen },
     { label: 'Reeds ontvangen', value: reedsOntvangen },
     { label: 'Verwacht Totaal', value: verwachtTotaal },
-    { label: 'Totale Fooi', value: totaleFooi },
   ];
 
   return (
