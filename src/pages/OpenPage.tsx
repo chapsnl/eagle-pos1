@@ -115,41 +115,28 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto my-2" style={{ maxHeight: '40vh' }}>
+          <div className="flex-1 overflow-y-auto my-2" style={{ maxHeight: '50vh' }}>
             {selectedSession && (() => {
               const lines = getOrderLines(selectedSession);
               if (lines.length === 0) {
-                return <p className="text-center py-4" style={{ color: '#666' }}>Geen bestellingen</p>;
+                return <p className="text-center py-4" style={{ color: '#666', fontSize: '1.25rem' }}>Geen bestellingen</p>;
               }
               return (
                 <div className="space-y-1">
                   {lines.map((line, idx) => (
                     <div
                       key={idx}
-                      className="flex justify-between items-center px-3 py-2 font-bold"
-                      style={{ backgroundColor: '#1a1a1a', borderRadius: '8px' }}
+                      className="flex items-center px-3 py-3 font-bold"
+                      style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', fontSize: 'clamp(1.1rem, 2.5vw, 1.6rem)' }}
                     >
                       <span style={{ color: '#e5e5e5' }}>
                         {line.qty}× {line.name}
-                      </span>
-                      <span style={{ color: '#00cc13' }}>
-                        €{(line.qty * line.price).toFixed(2)}
                       </span>
                     </div>
                   ))}
                 </div>
               );
             })()}
-          </div>
-
-          <div
-            className="flex justify-between items-center px-3 py-2 font-extrabold text-lg"
-            style={{ borderTop: '2px solid #00cc1340' }}
-          >
-            <span style={{ color: '#e5e5e5' }}>TOTAAL</span>
-            <span style={{ color: '#00cc13' }}>
-              €{Number(selectedSession?.total_amount ?? 0).toFixed(2)}
-            </span>
           </div>
 
           <div className="flex gap-3 mt-2">
