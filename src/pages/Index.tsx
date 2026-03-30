@@ -228,6 +228,8 @@ const Index = () => {
     </Dialog>
   );
 
+  if (!started) return <IntroPage onEnter={() => setStarted(true)} />;
+
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
