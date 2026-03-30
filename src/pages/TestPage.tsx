@@ -569,6 +569,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       <FeedbackOverlay type={feedback} />
       {bonDialog}
       {payDialog}
+      {entreeWarningDialog}
 
       {/* Retour mode banner */}
       {retourMode && (
