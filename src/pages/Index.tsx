@@ -278,10 +278,11 @@ const Index = () => {
 
       {activeView === 'test' && <TestPage initialGuestNumber={pendingGuestNumber} onGuestNumberConsumed={() => setPendingGuestNumber(null)} />}
       {activeView === 'admin' && <AdminPage />}
-      {activeView === 'admin2' && <Admin2Page onNavigateToGuest={(num) => {
+      {activeView === 'open' && <OpenPage onNavigateToGuest={(num) => {
         setPendingGuestNumber(num);
         setActiveView('test');
       }} />}
+      {activeView === 'closed' && <ClosedPage />}
     </div>
   );
 };

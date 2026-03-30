@@ -189,4 +189,4 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
   );
 };
 
-export { Admin2Page };
+export { OpenPage };
