@@ -212,12 +212,22 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
         title={selectedSession?.wardrobe_number ?? ''}
         subtitle={selectedType === 'active' ? 'Actieve sessie' : `Status: ${selectedSession?.status ?? ''}`}
         orderLines={selectedSession ? getOrderLines(selectedSession) : []}
-        showTotal={false}
+        showTotal={true}
+        totalAmount={Number(selectedSession?.total_amount ?? 0)}
         actions={
           selectedType === 'active'
-            ? [{ label: 'BEWERK', onClick: () => setSelectedSession(null), variant: 'confirm' as const }]
+            ? [
+                { label: 'CANCEL', onClick: () => setSelectedSession(null), variant: 'cancel' as const },
+                { label: 'BEWERK', onClick: () => {
+                    if (selectedSession && onNavigateToGuest) {
+                      const s = selectedSession;
+                      setSelectedSession(null);
+                      onNavigateToGuest(s.wardrobe_number ?? '', s.id, Number(s.total_amount ?? 0));
+                    }
+                  }, variant: 'confirm' as const },
+              ]
             : [
-                { label: 'SLUITEN', onClick: () => setSelectedSession(null), variant: 'cancel' as const },
+                { label: 'CANCEL', onClick: () => setSelectedSession(null), variant: 'cancel' as const },
                 { label: 'HEROPEN', onClick: () => selectedSession && handleReopen(selectedSession), variant: 'confirm' as const },
               ]
         }
