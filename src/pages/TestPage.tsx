@@ -550,15 +550,18 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         {gridLayout.map((row, ri) => (
           <div key={ri} className="flex-1 flex" style={{ minHeight: 0 }}>
             {row.map((cell, ci) => {
-              // Row 4 (index 3), first cell -> PAY button (duplicate)
+              // Row 4 (index 3), first cell -> ENT button (same color as '10' product = second cell)
               if (ri === 3 && ci === 0) {
+                const tenProduct = productMap.get('10');
+                const entBg = tenProduct?.category_color || '#888';
+                const entTextColor = tenProduct ? getTextColor(tenProduct.category_color) : '#fff';
                 return (
-                  <button key={ci} onClick={() => setShowPayDialog(true)} style={{ flex: cell.span, backgroundColor: '#ef4444', color: '#fff' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
+                  <button key={ci} onClick={() => { /* ENT action placeholder */ }} style={{ flex: cell.span, backgroundColor: entBg, color: entTextColor }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
                     onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
                     onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                     onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
-                    <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>PAY</span>
+                    <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>ENT</span>
                   </button>
                 );
               }
