@@ -47,7 +47,7 @@ const SessionPopup = ({
             {title}
           </DialogTitle>
           {subtitle && (
-            <DialogDescription className="text-sm" style={{ color: '#888' }}>
+            <DialogDescription className="text-base font-bold" style={{ color: '#888' }}>
               {subtitle}
             </DialogDescription>
           )}
