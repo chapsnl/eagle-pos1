@@ -6,16 +6,12 @@ import { NavTabs } from '@/components/pos/NavTabs';
 import { OrderBar } from '@/components/pos/OrderBar';
 import { ProductGrid } from '@/components/pos/ProductGrid';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
-import { GarderobePage } from './GarderobePage';
-import { BetalingPage } from './BetalingPage';
-import { ArmNummerPage } from './ArmNummerPage';
 import { AdminPage } from './AdminPage';
 import { Admin2Page } from './Admin2Page';
 import { TestPage } from './TestPage';
-import { Send, X } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { useCreateSession, useAddDrinkLogs, useUpdateSession, useFindActiveSessionByWardrobe } from '@/hooks/useSessions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { broadcastOrder, clearOrder, SyncOrderItem } from '@/lib/orderSync';
 
 export interface DbOrderItem {
@@ -67,7 +63,7 @@ const Index = () => {
     });
   }, []);
 
-  const clearOrder = useCallback(() => setItems([]), []);
+  const clearItems = useCallback(() => setItems([]), []);
 
   const showFeedback = useCallback((type: FeedbackType) => {
     setFeedback(type);
@@ -85,8 +81,6 @@ const Index = () => {
       lastLookupRef.current = null;
     }
   }, [activeView]);
-
-
 
   const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string, onNotFound: () => void) => {
     try {
@@ -191,7 +185,6 @@ const Index = () => {
         total_amount: barSessionTotal + total,
       });
 
-      // Broadcast the booked order then clear
       broadcastOrder({
         guestNumber: `C${barNumber}`,
         sessionId: barSessionId,
@@ -214,9 +207,6 @@ const Index = () => {
       showFeedback('error');
     }
   }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, showFeedback]);
-
-  const handlePin = useCallback(() => setItems([]), []);
-  const handleCash = useCallback(() => setItems([]), []);
 
   if (!started) {
     return <IntroPage onEnter={() => { sessionStorage.setItem('pos_started', 'true'); setStarted(true); }} />;
@@ -269,7 +259,7 @@ const Index = () => {
 
       {activeView === 'bar' && barPhase === 'products' && (
         <>
-          <OrderBar items={items} total={total} onRemoveItem={removeItem} onClear={clearOrder} />
+          <OrderBar items={items} total={total} onRemoveItem={removeItem} onClear={clearItems} />
           <ProductGrid onAddProduct={addProduct} />
           <div className="pb-[max(0px,env(safe-area-inset-bottom))]">
             <button
@@ -285,20 +275,6 @@ const Index = () => {
         </>
       )}
 
-      {activeView === 'garderobe' && <GarderobePage />}
-
-      {activeView === 'betaling' && (
-        <BetalingPage
-          items={items}
-          total={total}
-          onRemoveItem={removeItem}
-          onClear={clearOrder}
-          onPin={handlePin}
-          onCash={handleCash}
-        />
-      )}
-
-      {activeView === 'arm-nummer' && <ArmNummerPage />}
       {activeView === 'test' && <TestPage initialGuestNumber={pendingGuestNumber} onGuestNumberConsumed={() => setPendingGuestNumber(null)} />}
       {activeView === 'admin' && <AdminPage />}
       {activeView === 'admin2' && <Admin2Page onNavigateToGuest={(num) => {

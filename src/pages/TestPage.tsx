@@ -123,18 +123,13 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
 
   useEffect(() => {
     if (!sessionId) { setExistingLogs([]); setLiveDbLogs([]); return; }
-    // Initial fetch
     fetchLogsFromDb(sessionId);
-    // Realtime subscription for this session's drink_logs
     const channel = supabase
       .channel(`drink_logs_${sessionId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'drink_logs', filter: `session_id=eq.${sessionId}` },
-        () => {
-          // Re-fetch all logs on any change (insert/delete) for accurate aggregation
-          fetchLogsFromDb(sessionId);
-        }
+        () => { fetchLogsFromDb(sessionId); }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -183,7 +178,6 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
     onGuestNumberConsumed?.();
   }, [initialGuestNumber, onGuestNumberConsumed]);
 
-
   const handleNumKey = (key: string) => {
     if (key === 'DEL') {
       setCoatNumber('');
@@ -213,8 +207,6 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
   const [retourMode, setRetourMode] = useState(false);
   const [retourFlash, setRetourFlash] = useState<string | null>(null);
 
-
-
   const handleSubmit = useCallback(async () => {
     if (items.length === 0 || !sessionId) return;
     try {
@@ -242,7 +234,6 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
   }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession]);
 
   const orderSummary = useMemo(() => {
-    // Use liveDbLogs as the single source of truth (already reflects all booked items)
     const allItems = liveDbLogs.map((l) => {
       const product = (products ?? []).find((p) => p.id === l.product_id);
       return {
@@ -291,11 +282,8 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
     if (!sessionId) return;
     setShowPayDialog(false);
     try {
-      // Mark session as paid (keep drink_logs for admin overview)
       await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
-      // Clear live sync
       clearOrder();
-      // Reset everything and go to input
       setFeedback('success');
       setTimeout(() => {
         setFeedback(null);
@@ -327,7 +315,6 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
     if (!pendingWardrobe) return;
     setShowAddDialog(false);
     try {
-      // Double-check: prevent duplicate active sessions for the same wardrobe number
       const { data: existing } = await supabase
         .from('sessions')
         .select('id')
@@ -391,14 +378,11 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
     if (retourMode) {
       const inItems = items.find((i) => i.product.id === product.id);
       const inExisting = existingLogs.find((l) => l.product_id === product.id);
-      if (!inItems && !inExisting) return; // product not on bill at all
+      if (!inItems && !inExisting) return;
 
-      // Flash animation
       setRetourFlash(product.id);
       setTimeout(() => setRetourFlash(null), 600);
 
-      // Optimistic update (realtime will sync)
-      // Optimistic update: prefer removing from items first, then existingLogs
       if (inItems) {
         setItems((prev) => {
           const item = prev.find((i) => i.product.id === product.id);
@@ -414,7 +398,6 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
           return prev.filter((l) => l.product_id !== product.id);
         });
       }
-      // Optimistic update liveDbLogs for instant 15% column refresh
       setLiveDbLogs((prev) => {
         const item = prev.find((l) => l.product_id === product.id);
         if (!item) return prev;
@@ -422,11 +405,9 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
         return prev.filter((l) => l.product_id !== product.id);
       });
 
-      // Auto-reset retour mode after single use
       setRetourMode(false);
 
       try {
-        // Find one drink_log for this product+session and delete it
         const { data: logToDelete } = await supabase
           .from('drink_logs')
           .select('id')
@@ -442,7 +423,6 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
           setSessionTotal(newTotal);
         }
       } catch {
-        // Revert on error
         if (inItems) {
           setItems((prev) => {
             const existing = prev.find((i) => i.product.id === product.id);
@@ -461,13 +441,11 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
     }
 
     // NORMAL MODE: add product
-    // Optimistic update (realtime will sync)
     setItems((prev) => {
       const existing = prev.find((i) => i.product.id === product.id);
       if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
       return [{ product, quantity: 1 }, ...prev];
     });
-    // Optimistic update liveDbLogs for instant 15% column refresh - new item goes to top
     setLiveDbLogs((prev) => {
       const existing = prev.find((l) => l.product_id === product.id);
       if (existing) {
@@ -489,7 +467,6 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
       });
       setSessionTotal(newTotal);
 
-      // Broadcast to live sync
       const guestNum = coatNumber ? `C${coatNumber}` : '';
       const updatedItems = [...items];
       const ex = updatedItems.find((i) => i.product.id === product.id);
@@ -512,7 +489,7 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
     }
   }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs, coatNumber, existingTotal]);
 
-  // Input phase: both coat and bag fields on one page
+  // Input phase
   if (phase === 'input') {
     return (
       <div className="flex-1 flex flex-col h-full overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
@@ -554,16 +531,14 @@ export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPage
         </div>
       )}
 
-      {/* Left column - 15% - Guest overview */}
+      {/* Left column - 20% - Guest overview */}
       <div className="flex flex-col h-full" style={{ width: '20%', backgroundColor: retourMode ? '#1a0a0a' : '#121212', borderRight: `1px solid ${retourMode ? '#ef4444' : '#333'}`, transition: 'background-color 0.3s ease' }}>
-        {/* Guest number */}
         <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
           <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(32px, 6vw, 56px)' }}>
             {coatNumber ? `C${coatNumber}` : ''}
           </span>
         </div>
 
-        {/* Scrollable order list - X x Product format, live from DB */}
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
         {liveDbLogs.map((item, index) => (
             <div key={item.product_id} style={{ color: '#e5e5e5', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', transition: 'all 0.3s ease', fontWeight: index === 0 ? 800 : 400, ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
