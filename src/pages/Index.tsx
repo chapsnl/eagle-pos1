@@ -26,7 +26,12 @@ type BarPhase = 'input-number' | 'products';
 
 const Index = () => {
   
-  const [started, setStarted] = useState(false);
+  const [started, setStarted] = useState(() => sessionStorage.getItem('pos_started') === '1');
+
+  const handleEnter = useCallback(() => {
+    sessionStorage.setItem('pos_started', '1');
+    setStarted(true);
+  }, []);
   const [activeView, setActiveView] = useState<AppView>('test');
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
@@ -229,7 +234,7 @@ const Index = () => {
     </Dialog>
   );
 
-  if (!started) return <IntroPage onEnter={() => setStarted(true)} />;
+  if (!started) return <IntroPage onEnter={handleEnter} />;
 
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
