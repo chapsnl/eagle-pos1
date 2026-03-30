@@ -137,7 +137,7 @@ const Index = () => {
       lastLookupRef.current = null;
       return;
     }
-    const wardrobe = `C${barNumber}`;
+    const wardrobe = barNumber;
     if (lastLookupRef.current === wardrobe) return;
     lastLookupRef.current = wardrobe;
 
