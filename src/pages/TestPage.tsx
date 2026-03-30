@@ -45,7 +45,12 @@ const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK
 
 type Phase = 'input' | 'products';
 
-export const TestPage = () => {
+interface TestPageProps {
+  initialGuestNumber?: string | null;
+  onGuestNumberConsumed?: () => void;
+}
+
+export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPageProps) => {
 
   // Lock to landscape on this page
   useEffect(() => {
