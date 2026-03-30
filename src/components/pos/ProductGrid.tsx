@@ -69,7 +69,7 @@ export const ProductGrid = ({ onAddProduct }: ProductGridProps) => {
               <button
                 key={ci}
                 onClick={() => onAddProduct(product)}
-                className="pos-btn flex-1 flex items-center justify-center border-[0.5px] border-black/10 active:brightness-[0.6] p-1 min-w-0 transition-all duration-75"
+                className="pos-btn flex-1 flex items-center justify-center active:brightness-[0.6] p-1 min-w-0 transition-all duration-75"
                 style={{
                   backgroundColor: product.category_color,
                   color: textColor,
