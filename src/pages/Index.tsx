@@ -21,15 +21,38 @@ export interface DbOrderItem {
 }
 
 const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
+const ENTRY_STORAGE_KEY = 'pos_started';
+
+const readStartedFlag = () => {
+  try {
+    const persisted = localStorage.getItem(ENTRY_STORAGE_KEY);
+    if (persisted === '1') return true;
+
+    const legacySessionValue = sessionStorage.getItem(ENTRY_STORAGE_KEY);
+    if (legacySessionValue === '1') {
+      localStorage.setItem(ENTRY_STORAGE_KEY, '1');
+      return true;
+    }
+  } catch {
+    // Ignore storage access issues and fall back to intro page
+  }
+
+  return false;
+};
 
 type BarPhase = 'input-number' | 'products';
 
 const Index = () => {
   
-  const [started, setStarted] = useState(() => sessionStorage.getItem('pos_started') === '1');
+  const [started, setStarted] = useState(readStartedFlag);
 
   const handleEnter = useCallback(() => {
-    sessionStorage.setItem('pos_started', '1');
+    try {
+      localStorage.setItem(ENTRY_STORAGE_KEY, '1');
+      sessionStorage.setItem(ENTRY_STORAGE_KEY, '1');
+    } catch {
+      // Ignore storage access issues and continue in-memory
+    }
     setStarted(true);
   }, []);
   const [activeView, setActiveView] = useState<AppView>('test');
