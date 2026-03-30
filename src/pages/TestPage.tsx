@@ -261,7 +261,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     return (
       <div className="space-y-2 my-2 max-h-[50vh] overflow-y-auto">
         <div className="text-xs font-bold uppercase tracking-widest" style={{ color: '#888' }}>
-          {coatNumber ? `C${coatNumber}` : ''}
+          {coatNumber || ''}
         </div>
         {allItems.map((item, idx) => (
           <div key={idx} className="flex justify-between font-bold" style={{ color: '#e5e5e5', fontSize: 17 }}>
