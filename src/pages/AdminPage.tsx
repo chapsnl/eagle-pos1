@@ -96,7 +96,7 @@ export const AdminPage = () => {
   return (
     <div className="flex-1 flex flex-col overflow-hidden p-3 gap-3">
       {/* KPI Row */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {kpis.map((kpi) => (
           <Card key={kpi.label} className="border-0" style={{ backgroundColor: '#1a1a1a' }}>
             <CardContent className="p-3 text-center">
