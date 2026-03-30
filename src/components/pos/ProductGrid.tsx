@@ -58,9 +58,9 @@ export const ProductGrid = ({ onAddProduct }: ProductGridProps) => {
   const productMap = new Map(products.map((p) => [p.shorthand, p]));
 
   const renderGrid = (layout: { code: string; hideLabel?: boolean }[][]) => (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col gap-[1px]" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
       {layout.map((row, ri) => (
-        <div key={ri} className="flex-1 flex" style={{ minHeight: 0 }}>
+        <div key={ri} className="flex-1 flex gap-[1px]" style={{ minHeight: 0 }}>
           {row.map((cell, ci) => {
             const product = productMap.get(cell.code);
             if (!product) return <div key={ci} className="flex-1" />;
@@ -69,7 +69,7 @@ export const ProductGrid = ({ onAddProduct }: ProductGridProps) => {
               <button
                 key={ci}
                 onClick={() => onAddProduct(product)}
-                className="pos-btn flex-1 flex items-center justify-center border-[0.5px] border-black/10 active:brightness-[0.6] p-1 min-w-0 transition-all duration-75"
+                className="pos-btn flex-1 flex items-center justify-center active:brightness-[0.6] p-1 min-w-0 transition-all duration-75"
                 style={{
                   backgroundColor: product.category_color,
                   color: textColor,
