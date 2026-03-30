@@ -290,6 +290,44 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     />
   );
 
+  const handlePayClick = useCallback(() => {
+    const hasEntree = liveDbLogs.some((l) => l.product_name.toLowerCase().includes('entree'));
+    if (hasEntree) {
+      setShowPayDialog(true);
+    } else {
+      setShowEntreeWarning(true);
+    }
+  }, [liveDbLogs]);
+
+  const handleEntreeAdd = useCallback(async () => {
+    setShowEntreeWarning(false);
+    const entreeProduct = (products ?? []).find((p) => p.full_name.toLowerCase().includes('entree'));
+    if (entreeProduct && sessionId) {
+      // Add ENTREE to live logs display
+      setLiveDbLogs((prev) => {
+        const existing = prev.find((l) => l.product_id === entreeProduct.id);
+        if (existing) {
+          const rest = prev.filter((l) => l.product_id !== entreeProduct.id);
+          return [{ ...existing, quantity: existing.quantity + 1 }, ...rest];
+        }
+        return [{ product_id: entreeProduct.id, product_name: entreeProduct.full_name, quantity: 1 }, ...prev];
+      });
+      // Book to DB
+      try {
+        await addDrinkLogs.mutateAsync([{ session_id: sessionId, product_id: entreeProduct.id, price_at_time: entreeProduct.price }]);
+        const newTotal = sessionTotal + entreeProduct.price;
+        await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
+        setSessionTotal(newTotal);
+      } catch {}
+    }
+    setShowPayDialog(true);
+  }, [products, sessionId, sessionTotal, addDrinkLogs, updateSession]);
+
+  const handleEntreeSkip = useCallback(() => {
+    setShowEntreeWarning(false);
+    setShowPayDialog(true);
+  }, []);
+
   const payDialog = (
     <SessionPopup
       open={showPayDialog}
@@ -301,6 +339,20 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       actions={[
         { label: 'CANCEL', onClick: () => setShowPayDialog(false), variant: 'cancel' },
         { label: 'VERWERK', onClick: handlePayVerwerk, variant: 'confirm' },
+      ]}
+    />
+  );
+
+  const entreeWarningDialog = (
+    <SessionPopup
+      open={showEntreeWarning}
+      onClose={() => setShowEntreeWarning(false)}
+      title="Let op"
+      subtitle="Geen ENTREE toegevoegd."
+      orderLines={[]}
+      actions={[
+        { label: 'OVERSLAAN', onClick: handleEntreeSkip, variant: 'cancel' },
+        { label: 'VOEG TOE', onClick: handleEntreeAdd, variant: 'confirm' },
       ]}
     />
   );
