@@ -219,6 +219,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   const [showBonDialog, setShowBonDialog] = useState(false);
   const [showPayDialog, setShowPayDialog] = useState(false);
+  const [showEntreeWarning, setShowEntreeWarning] = useState(false);
   const [retourMode, setRetourMode] = useState(false);
   const [retourFlash, setRetourFlash] = useState<string | null>(null);
 
@@ -289,6 +290,44 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     />
   );
 
+  const handlePayClick = useCallback(() => {
+    const hasEntree = liveDbLogs.some((l) => l.product_name.toLowerCase().includes('entree'));
+    if (hasEntree) {
+      setShowPayDialog(true);
+    } else {
+      setShowEntreeWarning(true);
+    }
+  }, [liveDbLogs]);
+
+  const handleEntreeAdd = useCallback(async () => {
+    setShowEntreeWarning(false);
+    const entreeProduct = (products ?? []).find((p) => p.full_name.toLowerCase().includes('entree'));
+    if (entreeProduct && sessionId) {
+      // Add ENTREE to live logs display
+      setLiveDbLogs((prev) => {
+        const existing = prev.find((l) => l.product_id === entreeProduct.id);
+        if (existing) {
+          const rest = prev.filter((l) => l.product_id !== entreeProduct.id);
+          return [{ ...existing, quantity: existing.quantity + 1 }, ...rest];
+        }
+        return [{ product_id: entreeProduct.id, product_name: entreeProduct.full_name, quantity: 1 }, ...prev];
+      });
+      // Book to DB
+      try {
+        await addDrinkLogs.mutateAsync([{ session_id: sessionId, product_id: entreeProduct.id, price_at_time: entreeProduct.price }]);
+        const newTotal = sessionTotal + entreeProduct.price;
+        await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
+        setSessionTotal(newTotal);
+      } catch {}
+    }
+    setShowPayDialog(true);
+  }, [products, sessionId, sessionTotal, addDrinkLogs, updateSession]);
+
+  const handleEntreeSkip = useCallback(() => {
+    setShowEntreeWarning(false);
+    setShowPayDialog(true);
+  }, []);
+
   const payDialog = (
     <SessionPopup
       open={showPayDialog}
@@ -300,6 +339,20 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       actions={[
         { label: 'CANCEL', onClick: () => setShowPayDialog(false), variant: 'cancel' },
         { label: 'VERWERK', onClick: handlePayVerwerk, variant: 'confirm' },
+      ]}
+    />
+  );
+
+  const entreeWarningDialog = (
+    <SessionPopup
+      open={showEntreeWarning}
+      onClose={() => setShowEntreeWarning(false)}
+      title="Let op"
+      subtitle="Geen ENTREE toegevoegd."
+      orderLines={[]}
+      actions={[
+        { label: 'OVERSLAAN', onClick: handleEntreeSkip, variant: 'cancel' },
+        { label: 'VOEG TOE', onClick: handleEntreeAdd, variant: 'confirm' },
       ]}
     />
   );
@@ -516,6 +569,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       <FeedbackOverlay type={feedback} />
       {bonDialog}
       {payDialog}
+      {entreeWarningDialog}
 
       {/* Retour mode banner */}
       {retourMode && (
@@ -553,7 +607,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
               // Row 5 (index 4), first cell -> PAY button
               if (ri === 4 && ci === 0) {
                 return (
-                  <button key={ci} onClick={() => setShowPayDialog(true)} style={{ flex: cell.span, backgroundColor: '#ef4444', color: '#fff' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
+                  <button key={ci} onClick={handlePayClick} style={{ flex: cell.span, backgroundColor: '#ef4444', color: '#fff' }} className="pos-btn flex items-center justify-center border-[0.5px] border-black/10 p-1 min-w-0 transition-all duration-75"
                     onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
                     onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                     onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
