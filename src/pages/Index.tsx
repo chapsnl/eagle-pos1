@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { IntroPage } from './IntroPage';
 import { DbProduct } from '@/hooks/useProducts';
 import { FeedbackType, AppView } from '@/types/pos';
 import { NavTabs } from '@/components/pos/NavTabs';
