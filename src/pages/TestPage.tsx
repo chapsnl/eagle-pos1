@@ -219,6 +219,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   const [showBonDialog, setShowBonDialog] = useState(false);
   const [showPayDialog, setShowPayDialog] = useState(false);
+  const [showEntreeWarning, setShowEntreeWarning] = useState(false);
   const [retourMode, setRetourMode] = useState(false);
   const [retourFlash, setRetourFlash] = useState<string | null>(null);
 
