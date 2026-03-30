@@ -71,17 +71,16 @@ const ClosedPage = () => {
               <button
                 key={session.id}
                 onClick={() => setSelectedSession(session)}
-                className="flex flex-col items-center justify-center py-3 px-1 font-extrabold uppercase text-sm"
+                className="flex items-center justify-center font-extrabold uppercase transition-all active:scale-95"
                 style={{
-                  backgroundColor: '#2a2a2a',
-                  color: '#888',
-                  border: '1px solid #444',
+                  backgroundColor: '#7f1d1d',
+                  borderRadius: '12px',
+                  padding: '20px 4px',
+                  color: '#fff',
+                  boxShadow: '0 0 12px #7f1d1d80',
                 }}
               >
-                <span style={{ color: '#888' }}>{session.wardrobe_number}</span>
-                <span className="text-xs mt-1" style={{ color: '#666' }}>
-                  €{Number(session.total_amount ?? 0).toFixed(2)}
-                </span>
+                <span style={{ fontSize: 'clamp(1.2rem, 4vw, 3rem)', lineHeight: 1 }}>{session.wardrobe_number?.replace(/\D/g, '')}</span>
               </button>
             ))}
           </div>
