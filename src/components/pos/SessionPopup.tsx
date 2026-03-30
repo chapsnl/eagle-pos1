@@ -65,7 +65,7 @@ const SessionPopup = ({
               {orderLines.map((line, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center px-3 py-3 font-bold"
+                  className="flex items-center justify-between px-3 py-3 font-bold"
                   style={{
                     backgroundColor: '#1a1a1a',
                     borderRadius: '8px',
@@ -74,10 +74,10 @@ const SessionPopup = ({
                 >
                   <span style={{ color: '#e5e5e5' }}>
                     {line.qty}× {line.name}
-                    {showPrices && (
-                      <span style={{ color: '#888' }}> – €{line.price.toFixed(2)} (€{(line.qty * line.price).toFixed(2)})</span>
-                    )}
                   </span>
+                  {showPrices && (
+                    <span style={{ color: '#888' }}>€{line.price.toFixed(2)} (€{(line.qty * line.price).toFixed(2)})</span>
+                  )}
                 </div>
               ))}
             </div>
