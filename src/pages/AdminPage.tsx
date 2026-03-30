@@ -42,7 +42,11 @@ const getOrderLines = (session: any): OrderLine[] => {
   return Array.from(map.values());
 };
 
-export const AdminPage = () => {
+interface AdminPageProps {
+  onNavigateToGuest?: (wardrobeNumber: string, sessionId: string, totalAmount: number) => void;
+}
+
+export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const { data: activeSessions } = useActiveSessions();
   const { data: closedSessions } = useClosedSessions();
   const updateSession = useUpdateSession();
@@ -208,12 +212,22 @@ export const AdminPage = () => {
         title={selectedSession?.wardrobe_number ?? ''}
         subtitle={selectedType === 'active' ? 'Actieve sessie' : `Status: ${selectedSession?.status ?? ''}`}
         orderLines={selectedSession ? getOrderLines(selectedSession) : []}
-        showTotal={false}
+        showTotal={true}
+        totalAmount={Number(selectedSession?.total_amount ?? 0)}
         actions={
           selectedType === 'active'
-            ? [{ label: 'BEWERK', onClick: () => setSelectedSession(null), variant: 'confirm' as const }]
+            ? [
+                { label: 'CANCEL', onClick: () => setSelectedSession(null), variant: 'cancel' as const },
+                { label: 'BEWERK', onClick: () => {
+                    if (selectedSession && onNavigateToGuest) {
+                      const s = selectedSession;
+                      setSelectedSession(null);
+                      onNavigateToGuest(s.wardrobe_number ?? '', s.id, Number(s.total_amount ?? 0));
+                    }
+                  }, variant: 'confirm' as const },
+              ]
             : [
-                { label: 'SLUITEN', onClick: () => setSelectedSession(null), variant: 'cancel' as const },
+                { label: 'CANCEL', onClick: () => setSelectedSession(null), variant: 'cancel' as const },
                 { label: 'HEROPEN', onClick: () => selectedSession && handleReopen(selectedSession), variant: 'confirm' as const },
               ]
         }
