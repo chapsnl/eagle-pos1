@@ -19,4 +19,4 @@ export interface OrderState {
 
 export type FeedbackType = 'success' | 'error' | null;
 
-export type AppView = 'bar' | 'test' | 'admin' | 'admin2';
+export type AppView = 'bar' | 'test' | 'open' | 'closed' | 'admin';
