@@ -28,7 +28,7 @@ const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
 type BarPhase = 'input-number' | 'products';
 
 const Index = () => {
-  const [started, setStarted] = useState(false);
+  const [started, setStarted] = useState(() => sessionStorage.getItem('pos_started') === 'true');
   const [activeView, setActiveView] = useState<AppView>('test');
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
@@ -219,7 +219,7 @@ const Index = () => {
   const handleCash = useCallback(() => setItems([]), []);
 
   if (!started) {
-    return <IntroPage onEnter={() => setStarted(true)} />;
+    return <IntroPage onEnter={() => { sessionStorage.setItem('pos_started', 'true'); setStarted(true); }} />;
   }
 
   const addDialog = (
