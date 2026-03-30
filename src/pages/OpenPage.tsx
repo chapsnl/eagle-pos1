@@ -84,7 +84,7 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
                   style={{
                     backgroundColor: '#00cc13',
                     borderRadius: '12px',
-                    padding: '4px',
+                    padding: '12px 4px',
                     color: '#fff',
                     boxShadow: '0 0 12px #00cc1380',
                   }}
