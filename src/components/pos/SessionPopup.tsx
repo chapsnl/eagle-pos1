@@ -69,7 +69,7 @@ const SessionPopup = ({
                   style={{
                     backgroundColor: '#1a1a1a',
                     borderRadius: '8px',
-                    fontSize: 'clamp(1.1rem, 2.5vw, 1.6rem)',
+                    fontSize: showPrices ? 'clamp(0.85rem, 1.8vw, 1.1rem)' : 'clamp(1.1rem, 2.5vw, 1.6rem)',
                   }}
                 >
                   <span style={{ color: '#e5e5e5' }}>
