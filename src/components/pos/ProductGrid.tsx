@@ -6,7 +6,7 @@ const wideLayout: { code: string; hideLabel?: boolean }[][] = [
   [{ code: 'JAME' }, { code: 'ABSO' }, { code: 'HEIN' }],
   [{ code: 'JACD' }, { code: 'BOMB' }, { code: 'GROL' }],
   [{ code: 'JIMB' }, { code: 'APPC' }, { code: 'COAF' }],
-  [{ code: 'BSPI' }, { code: 'WHIB' }, { code: 'HE0%' }],
+  [{ code: '8' }, { code: 'BSPI' }, { code: 'WHIB' }, { code: 'HE0%' }],
   [{ code: 'BACA' }, { code: 'JENE' }, { code: 'JUIC' }],
   [{ code: 'REDB' }, { code: 'WINE' }, { code: 'SOFT' }],
 ];
