@@ -50,7 +50,7 @@ export const AdminPage = () => {
 
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const [selectedType, setSelectedType] = useState<'active' | 'closed'>('active');
-  const [showCloseShift, setShowCloseShift] = useState(false);
+  const [closeShiftStep, setCloseShiftStep] = useState<0 | 1 | 2>(0);
   const [closeShiftLoading, setCloseShiftLoading] = useState(false);
   const [closeShiftResult, setCloseShiftResult] = useState<string | null>(null);
 
@@ -62,11 +62,6 @@ export const AdminPage = () => {
     (sum, s) => sum + Number(s.total_amount ?? 0), 0
   );
   const verwachtTotaal = nogTeOntvangen + reedsOntvangen;
-  const totaleFooi = (closedSessions ?? []).reduce((sum, s) => {
-    const paid = Number(s.actual_paid_amount ?? 0);
-    const amount = Number(s.total_amount ?? 0);
-    return sum + Math.max(0, paid - amount);
-  }, 0);
 
   const sortedActive = sortByWardrobe(activeSessions ?? []);
   const sortedClosed = sortByWardrobe(closedSessions ?? []);
