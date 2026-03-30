@@ -80,21 +80,16 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
                 <button
                   key={session.id}
                   onClick={() => setSelectedSession(session)}
-                  className="flex flex-col items-center justify-center font-extrabold uppercase transition-all active:scale-95"
+                  className="flex items-center justify-center font-extrabold uppercase transition-all active:scale-95 aspect-square"
                   style={{
-                    backgroundColor: '#1a1a1a',
-                    border: '2px solid #00cc13',
+                    backgroundColor: '#00cc13',
                     borderRadius: '12px',
-                    padding: '12px 4px',
-                    color: '#00cc13',
-                    boxShadow: '0 0 8px #00cc1330',
-                    minHeight: '70px',
+                    padding: '4px',
+                    color: '#fff',
+                    boxShadow: '0 0 12px #00cc1380',
                   }}
                 >
-                  <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>{num}</span>
-                  <span style={{ fontSize: '0.75rem', color: '#aaa', marginTop: '4px' }}>
-                    €{totalAmount.toFixed(2)}
-                  </span>
+                  <span style={{ fontSize: 'clamp(1.2rem, 4vw, 3rem)', lineHeight: 1 }}>{num}</span>
                 </button>
               );
             })}
