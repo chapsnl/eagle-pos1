@@ -34,7 +34,9 @@
     --input: 220 12% 20%;
     --ring: 42 88% 59%;
 
-    --radius: 0rem;
+    --radius: 0.75rem;
+    --radius-btn: 6px;
+    --radius-popup: 12px;
 
     /* POS Category Colors */
     --pos-beer: 42 88% 59%;
