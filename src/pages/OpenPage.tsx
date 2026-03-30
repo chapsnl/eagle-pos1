@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useActiveSessions } from '@/hooks/useSessions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
-interface Admin2PageProps {
+interface OpenPageProps {
   onNavigateToGuest?: (wardrobeNumber: string) => void;
 }
 
-const Admin2Page = ({ onNavigateToGuest }: Admin2PageProps) => {
+const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
   const { data: sessions, isLoading } = useActiveSessions();
   const [selectedSession, setSelectedSession] = useState<any>(null);
 
@@ -189,4 +189,4 @@ const Admin2Page = ({ onNavigateToGuest }: Admin2PageProps) => {
   );
 };
 
-export { Admin2Page };
+export { OpenPage };

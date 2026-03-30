@@ -7,7 +7,8 @@ import { OrderBar } from '@/components/pos/OrderBar';
 import { ProductGrid } from '@/components/pos/ProductGrid';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { AdminPage } from './AdminPage';
-import { Admin2Page } from './Admin2Page';
+import { OpenPage } from './OpenPage';
+import { ClosedPage } from './ClosedPage';
 import { TestPage } from './TestPage';
 import { Send } from 'lucide-react';
 import { useCreateSession, useAddDrinkLogs, useUpdateSession, useFindActiveSessionByWardrobe } from '@/hooks/useSessions';
@@ -277,10 +278,11 @@ const Index = () => {
 
       {activeView === 'test' && <TestPage initialGuestNumber={pendingGuestNumber} onGuestNumberConsumed={() => setPendingGuestNumber(null)} />}
       {activeView === 'admin' && <AdminPage />}
-      {activeView === 'admin2' && <Admin2Page onNavigateToGuest={(num) => {
+      {activeView === 'open' && <OpenPage onNavigateToGuest={(num) => {
         setPendingGuestNumber(num);
         setActiveView('test');
       }} />}
+      {activeView === 'closed' && <ClosedPage />}
     </div>
   );
 };
