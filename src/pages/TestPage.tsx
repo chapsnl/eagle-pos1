@@ -546,9 +546,9 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       </div>
 
       {/* Right column - 80% - Product grid */}
-      <div className="flex-1 flex flex-col overflow-hidden" style={{ width: '80%' }}>
+      <div className="flex-1 flex flex-col overflow-hidden gap-[1px]" style={{ width: '80%', backgroundColor: 'rgba(0,0,0,0.3)' }}>
         {gridLayout.map((row, ri) => (
-          <div key={ri} className="flex-1 flex" style={{ minHeight: 0 }}>
+          <div key={ri} className="flex-1 flex gap-[1px]" style={{ minHeight: 0 }}>
             {row.map((cell, ci) => {
               // Row 4 (index 3), first cell -> ENT button (same color as '10' product = second cell)
               if (ri === 3 && ci === 0) {
