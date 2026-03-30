@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useActiveSessions } from '@/hooks/useSessions';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { SessionPopup, OrderLine, SessionPopupAction } from '@/components/pos/SessionPopup';
 
 interface OpenPageProps {
   onNavigateToGuest?: (wardrobeNumber: string, sessionId: string, totalAmount: number) => void;
@@ -20,7 +20,7 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
     });
 
   // Build order lines from drink_logs
-  const getOrderLines = (session: any) => {
+  const getOrderLines = (session: any): OrderLine[] => {
     const logs: any[] = session.drink_logs ?? [];
     const map = new Map<string, { name: string; qty: number; price: number }>();
     for (const log of logs) {
@@ -41,6 +41,11 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
     setSelectedSession(null);
     onNavigateToGuest(selectedSession.wardrobe_number ?? '', selectedSession.id, Number(selectedSession.total_amount ?? 0));
   };
+
+  const popupActions: SessionPopupAction[] = [
+    { label: 'CANCEL', onClick: () => setSelectedSession(null), variant: 'cancel' },
+    { label: 'BEWERK', onClick: handleBewerk, variant: 'confirm' },
+  ];
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: '#111' }}>
@@ -74,7 +79,6 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
           >
             {sortedSessions.map((session) => {
               const num = (session.wardrobe_number ?? '').replace(/\D/g, '');
-              const totalAmount = Number(session.total_amount ?? 0);
               return (
                 <button
                   key={session.id}
@@ -96,76 +100,14 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
         </div>
       )}
 
-      {/* Session detail modal */}
-      <Dialog open={!!selectedSession} onOpenChange={(open) => { if (!open) setSelectedSession(null); }}>
-        <DialogContent
-          className="bg-card max-h-[80vh] flex flex-col"
-          style={{ borderColor: '#00cc1340', borderRadius: '12px' }}
-        >
-          <DialogHeader>
-            <DialogTitle
-              className="font-extrabold uppercase text-lg"
-              style={{ color: '#00cc13' }}
-            >
-              Gast {(selectedSession?.wardrobe_number ?? '').replace(/\D/g, '')}
-            </DialogTitle>
-            <DialogDescription className="text-sm" style={{ color: '#888' }}>
-              Bestelling overzicht
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-y-auto my-2" style={{ maxHeight: '50vh' }}>
-            {selectedSession && (() => {
-              const lines = getOrderLines(selectedSession);
-              if (lines.length === 0) {
-                return <p className="text-center py-4" style={{ color: '#666', fontSize: '1.25rem' }}>Geen bestellingen</p>;
-              }
-              return (
-                <div className="space-y-1">
-                  {lines.map((line, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center px-3 py-3 font-bold"
-                      style={{ backgroundColor: '#1a1a1a', borderRadius: '8px', fontSize: 'clamp(1.1rem, 2.5vw, 1.6rem)' }}
-                    >
-                      <span style={{ color: '#e5e5e5' }}>
-                        {line.qty}× {line.name}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-          </div>
-
-          <div className="flex gap-3 mt-2">
-            <button
-              onClick={() => setSelectedSession(null)}
-              className="flex-1 py-3 font-extrabold uppercase text-sm"
-              style={{
-                backgroundColor: '#ef4444',
-                color: '#fff',
-                borderRadius: '12px',
-                boxShadow: '0 0 12px #ef444480',
-              }}
-            >
-              CANCEL
-            </button>
-            <button
-              onClick={handleBewerk}
-              className="flex-1 py-3 font-extrabold uppercase text-sm"
-              style={{
-                backgroundColor: '#00cc13',
-                color: '#fff',
-                borderRadius: '12px',
-                boxShadow: '0 0 12px #00cc1380',
-              }}
-            >
-              BEWERK
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SessionPopup
+        open={!!selectedSession}
+        onClose={() => setSelectedSession(null)}
+        title={`Gast ${(selectedSession?.wardrobe_number ?? '').replace(/\D/g, '')}`}
+        subtitle="Bestelling overzicht"
+        orderLines={selectedSession ? getOrderLines(selectedSession) : []}
+        actions={popupActions}
+      />
     </div>
   );
 };

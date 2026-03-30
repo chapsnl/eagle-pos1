@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 
 const useClosedSessions = () => {
   return useQuery({
@@ -31,7 +31,7 @@ const ClosedPage = () => {
       return numA - numB;
     });
 
-  const getOrderLines = (session: any) => {
+  const getOrderLines = (session: any): OrderLine[] => {
     const logs: any[] = session.drink_logs ?? [];
     const map = new Map<string, { name: string; qty: number; price: number }>();
     for (const log of logs) {
@@ -87,32 +87,15 @@ const ClosedPage = () => {
         </div>
       )}
 
-      <Dialog open={!!selectedSession} onOpenChange={(open) => { if (!open) setSelectedSession(null); }}>
-        <DialogContent className="bg-card max-w-sm" style={{ borderColor: '#00cc1340' }}>
-          <DialogHeader>
-            <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>
-              {selectedSession?.wardrobe_number}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Status: {selectedSession?.status}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-1 mt-2">
-            {selectedSession && getOrderLines(selectedSession).map((line, idx) => (
-              <div key={idx} className="flex justify-between text-sm">
-                <span className="text-foreground">{line.qty}× {line.name}</span>
-                <span className="text-muted-foreground">€{(line.qty * line.price).toFixed(2)}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-between font-extrabold text-base mt-3 pt-2" style={{ borderTop: '1px solid #333' }}>
-            <span style={{ color: '#00cc13' }}>TOTAAL</span>
-            <span style={{ color: '#00cc13' }}>€{Number(selectedSession?.total_amount ?? 0).toFixed(2)}</span>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SessionPopup
+        open={!!selectedSession}
+        onClose={() => setSelectedSession(null)}
+        title={selectedSession?.wardrobe_number ?? ''}
+        subtitle={`Status: ${selectedSession?.status ?? ''}`}
+        orderLines={selectedSession ? getOrderLines(selectedSession) : []}
+        showTotal
+        totalAmount={Number(selectedSession?.total_amount ?? 0)}
+      />
     </div>
   );
 };
