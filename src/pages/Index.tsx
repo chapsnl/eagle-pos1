@@ -32,6 +32,7 @@ const Index = () => {
   const [activeView, setActiveView] = useState<AppView>('test');
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
+  const [pendingGuestNumber, setPendingGuestNumber] = useState<string | null>(null);
 
   // Bar number entry state
   const [barPhase, setBarPhase] = useState<BarPhase>('input-number');
@@ -298,13 +299,11 @@ const Index = () => {
       )}
 
       {activeView === 'arm-nummer' && <ArmNummerPage />}
-      {activeView === 'test' && <TestPage />}
+      {activeView === 'test' && <TestPage initialGuestNumber={pendingGuestNumber} onGuestNumberConsumed={() => setPendingGuestNumber(null)} />}
       {activeView === 'admin' && <AdminPage />}
       {activeView === 'admin2' && <Admin2Page onNavigateToGuest={(num) => {
-        setBarNumber(num);
-        setActiveView('bar');
-        lastLookupRef.current = null;
-        setBarPhase('input-number');
+        setPendingGuestNumber(num);
+        setActiveView('test');
       }} />}
     </div>
   );

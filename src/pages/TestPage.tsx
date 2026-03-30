@@ -45,7 +45,12 @@ const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK
 
 type Phase = 'input' | 'products';
 
-export const TestPage = () => {
+interface TestPageProps {
+  initialGuestNumber?: string | null;
+  onGuestNumberConsumed?: () => void;
+}
+
+export const TestPage = ({ initialGuestNumber, onGuestNumberConsumed }: TestPageProps) => {
 
   // Lock to landscape on this page
   useEffect(() => {
@@ -167,6 +172,16 @@ export const TestPage = () => {
     }, 300);
     return () => window.clearTimeout(t);
   }, [coatNumber, phase, resolveSessionByWardrobe]);
+
+  // Handle external navigation with a guest number (e.g. from OVERZICHT page)
+  useEffect(() => {
+    if (!initialGuestNumber) return;
+    const num = initialGuestNumber.replace(/\D/g, '');
+    if (!num) return;
+    setCoatNumber(num);
+    lastCoatLookupRef.current = null;
+    onGuestNumberConsumed?.();
+  }, [initialGuestNumber, onGuestNumberConsumed]);
 
 
   const handleNumKey = (key: string) => {
