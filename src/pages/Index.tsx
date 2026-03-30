@@ -25,6 +25,7 @@ type BarPhase = 'input-number' | 'products';
 
 const Index = () => {
   
+  const [started, setStarted] = useState(false);
   const [activeView, setActiveView] = useState<AppView>('test');
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
