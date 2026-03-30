@@ -217,16 +217,30 @@ export const AdminPage = () => {
         }
       />
 
-      {/* Close Shift Confirmation Popup */}
+      {/* Close Shift Step 1: Show total + confirm */}
       <SessionPopup
-        open={showCloseShift && !closeShiftResult}
-        onClose={() => { if (!closeShiftLoading) setShowCloseShift(false); }}
+        open={closeShiftStep === 1}
+        onClose={() => setCloseShiftStep(0)}
         title="CLOSE SHIFT"
-        subtitle="Weet u zeker dat u de shift wilt afsluiten en alle data wilt wissen?"
+        subtitle={`Totaal ontvangen: €${reedsOntvangen.toFixed(2)}`}
         orderLines={[]}
         showTotal={false}
         actions={[
-          { label: 'NEE', onClick: () => setShowCloseShift(false), variant: 'cancel' as const },
+          { label: 'NEE', onClick: () => setCloseShiftStep(0), variant: 'cancel' as const },
+          { label: 'JA', onClick: () => setCloseShiftStep(2), variant: 'confirm' as const },
+        ]}
+      />
+
+      {/* Close Shift Step 2: Double safety check */}
+      <SessionPopup
+        open={closeShiftStep === 2 && !closeShiftResult}
+        onClose={() => { if (!closeShiftLoading) setCloseShiftStep(0); }}
+        title="CLOSE SHIFT"
+        subtitle="Weet je het zeker?"
+        orderLines={[]}
+        showTotal={false}
+        actions={[
+          { label: 'NEE', onClick: () => setCloseShiftStep(0), variant: 'cancel' as const },
           {
             label: closeShiftLoading ? 'BEZIG...' : 'JA',
             onClick: handleCloseShift,
@@ -238,13 +252,13 @@ export const AdminPage = () => {
       {/* Close Shift Result Popup */}
       <SessionPopup
         open={!!closeShiftResult}
-        onClose={() => { setCloseShiftResult(null); setShowCloseShift(false); }}
+        onClose={() => { setCloseShiftResult(null); setCloseShiftStep(0); }}
         title={closeShiftResult?.startsWith('Fout') ? 'FOUT' : 'SHIFT AFGESLOTEN'}
         subtitle={closeShiftResult ?? ''}
         orderLines={[]}
         showTotal={false}
         actions={[
-          { label: 'OK', onClick: () => { setCloseShiftResult(null); setShowCloseShift(false); }, variant: 'confirm' as const },
+          { label: 'OK', onClick: () => { setCloseShiftResult(null); setCloseShiftStep(0); }, variant: 'confirm' as const },
         ]}
       />
     </div>
