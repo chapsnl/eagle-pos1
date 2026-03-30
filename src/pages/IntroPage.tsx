@@ -112,6 +112,11 @@ export const IntroPage = ({ onEnter }: IntroPageProps) => {
 
   return (
     <div className="min-h-screen bg-[hsl(220,15%,8%)] flex flex-col items-center justify-center gap-6">
+      <img
+        src="/placeholder.svg"
+        alt="Eagle POS Logo"
+        className="w-32 h-32 opacity-80"
+      />
       <h1 className="text-4xl font-bold tracking-tight text-foreground font-mono">
         Eagle POS System
       </h1>
