@@ -145,19 +145,6 @@ export const IntroPage = ({ onEnter }: IntroPageProps) => {
             ))}
           </div>
 
-          {/* Enter button */}
-          <button
-            onClick={handleSubmit}
-            disabled={pin.length !== 6}
-            className="text-lg font-bold px-12 py-4 rounded-md tracking-wide disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{
-              backgroundColor: '#00cc13',
-              color: '#ffffff',
-              boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340, inset 0 1px 0 #ffffff20',
-            }}
-          >
-            ENTER
-          </button>
         </>
       )}
     </div>
