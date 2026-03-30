@@ -37,10 +37,9 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
   };
 
   const handleBewerk = () => {
-    if (!selectedSession?.wardrobe_number || !onNavigateToGuest) return;
-    const num = selectedSession.wardrobe_number.replace(/\D/g, '');
+    if (!selectedSession || !onNavigateToGuest) return;
     setSelectedSession(null);
-    onNavigateToGuest(num);
+    onNavigateToGuest(selectedSession.wardrobe_number ?? '', selectedSession.id, Number(selectedSession.total_amount ?? 0));
   };
 
   return (
