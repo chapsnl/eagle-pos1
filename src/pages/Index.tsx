@@ -207,9 +207,6 @@ const Index = () => {
     }
   }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, showFeedback]);
 
-  if (!started) {
-    return <IntroPage onEnter={() => { sessionStorage.setItem('pos_started', 'true'); setStarted(true); }} />;
-  }
 
   const addDialog = (
     <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) handleCancelAdd(); }}>
