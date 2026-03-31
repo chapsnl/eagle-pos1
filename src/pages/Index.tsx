@@ -243,6 +243,63 @@ const Index = () => {
     }
   }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, showFeedback]);
 
+  const handleBarPayVerwerk = useCallback(async () => {
+    if (!barSessionId) return;
+    setShowBarPayDialog(false);
+    try {
+      // First book any pending items
+      if (items.length > 0) {
+        const logs = items.flatMap((item) =>
+          Array.from({ length: item.quantity }, () => ({
+            session_id: barSessionId,
+            product_id: item.product.id,
+            price_at_time: item.product.price,
+          }))
+        );
+        await addDrinkLogs.mutateAsync(logs);
+        await updateSession.mutateAsync({
+          id: barSessionId,
+          status: 'paid',
+          total_amount: barSessionTotal + total,
+        });
+      } else {
+        await updateSession.mutateAsync({ id: barSessionId, status: 'paid' });
+      }
+      clearOrder();
+      showFeedback('success');
+      setTimeout(() => {
+        setItems([]);
+        setBarNumber('');
+        setBarSessionId(null);
+        setBarSessionTotal(0);
+        setBarPhase('input-number');
+        setBarRetourMode(false);
+        lastLookupRef.current = null;
+      }, 1500);
+    } catch {
+      showFeedback('error');
+    }
+  }, [barSessionId, items, barSessionTotal, total, addDrinkLogs, updateSession, showFeedback]);
+
+  const handleBarNext = useCallback(() => {
+    setItems([]);
+    setBarNumber('');
+    setBarSessionId(null);
+    setBarSessionTotal(0);
+    setBarPhase('input-number');
+    setBarRetourMode(false);
+    lastLookupRef.current = null;
+    clearOrder();
+  }, []);
+
+  const handleBarAddProduct = useCallback((product: DbProduct) => {
+    if (barRetourMode) {
+      removeItem(product.id);
+      setBarRetourMode(false);
+      return;
+    }
+    addProduct(product);
+  }, [barRetourMode, addProduct, removeItem]);
 
   const addDialog = (
     <SessionPopup
