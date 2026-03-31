@@ -23,6 +23,7 @@ interface SessionPopupProps {
   showPrices?: boolean;
   totalAmount?: number;
   actions?: SessionPopupAction[];
+  showItemCount?: boolean;
 }
 
 const SessionPopup = ({
