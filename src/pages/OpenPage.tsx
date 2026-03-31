@@ -84,17 +84,18 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
           >
             {sortedSessions.map((session) => {
               const num = (session.wardrobe_number ?? '').replace(/\D/g, '');
+              const hasItems = (session.drink_logs ?? []).length > 0;
               return (
                 <button
                   key={session.id}
                   onClick={() => setSelectedSessionId(session.id)}
                   className="flex items-center justify-center font-extrabold uppercase transition-all active:scale-95"
                   style={{
-                    backgroundColor: '#00cc13',
+                    backgroundColor: hasItems ? '#00cc13' : '#1a5c1a',
                     borderRadius: '12px',
                     padding: '20px 4px',
-                    color: '#fff',
-                    boxShadow: '0 0 12px #00cc1380',
+                    color: hasItems ? '#fff' : '#88aa88',
+                    boxShadow: hasItems ? '0 0 12px #00cc1380' : 'none',
                   }}
                 >
                   <span style={{ fontSize: 'clamp(1.2rem, 4vw, 3rem)', lineHeight: 1 }}>{num}</span>
