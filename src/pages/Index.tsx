@@ -387,17 +387,6 @@ const Index = () => {
             </button>
           </div>
           <ProductGrid onAddProduct={handleBarAddProduct} />
-          <div className="pb-[max(0px,env(safe-area-inset-bottom))]">
-            <button
-              onClick={handleBoek}
-              disabled={items.length === 0}
-              className="pos-btn w-full min-h-[80px] py-4 text-2xl font-extrabold flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110 active:brightness-75"
-              style={{ backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340, inset 0 1px 0 #ffffff20' }}
-            >
-              <Send className="w-6 h-6" />
-              BOEK — €{total.toFixed(2)}
-            </button>
-          </div>
         </>
       )}
 
