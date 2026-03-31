@@ -95,7 +95,7 @@ const ClosedPage = () => {
             {sortedSessions.map((session) => (
               <button
                 key={session.id}
-                onClick={() => setSelectedSession(session)}
+                onClick={() => setSelectedSessionId(session.id)}
                 className="flex items-center justify-center font-extrabold uppercase transition-all active:scale-95"
                 style={{
                   backgroundColor: '#7f1d1d',
