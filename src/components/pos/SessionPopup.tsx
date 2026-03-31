@@ -53,6 +53,8 @@ const SessionPopup = ({
 
   useEffect(() => {
     checkScroll();
+    const t = setTimeout(checkScroll, 50);
+    return () => clearTimeout(t);
   }, [orderLines, open, checkScroll]);
 
   return (
