@@ -389,8 +389,9 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     <SessionPopup
       open={showClosedBlockDialog}
       onClose={handleClosedBlockDismiss}
-      title="Nummer Geblokkeerd"
-      subtitle={`${pendingWardrobe ?? ''} — Dit nummer is al afgerekend en gesloten. Vraag een manager om deze te heropenen via het Admin paneel.`}
+      title={`Nummer ${pendingWardrobe ?? ''} Geblokkeerd`}
+      subtitle="Dit nummer is al afgerekend en gesloten. Vraag een manager om deze te heropenen via het Admin paneel."
+      subtitleSize="clamp(0.85rem, 2vw, 1.15rem)"
       orderLines={[]}
       showTotal={false}
       actions={[
