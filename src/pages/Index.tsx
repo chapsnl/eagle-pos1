@@ -155,8 +155,16 @@ const Index = () => {
   }, [barNumber, barPhase, activeView, resolveSessionByWardrobe]);
 
   const handleNumKey = (key: string) => {
-    if (key === 'DEL') setBarNumber('');
-    else if (barNumber.length < 3) setBarNumber(barNumber + key);
+    if (key === 'DEL') {
+      setBarNumber('');
+      lastLookupRef.current = null;
+      return;
+    }
+    if (key === 'BACK') {
+      setBarNumber(prev => prev.slice(0, -1));
+      return;
+    }
+    if (barNumber.length < 3) setBarNumber(barNumber + key);
   };
 
   const handleConfirmAdd = useCallback(async () => {
