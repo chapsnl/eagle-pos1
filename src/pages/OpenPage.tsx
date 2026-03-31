@@ -75,12 +75,11 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
 
       {!isLoading && sortedSessions.length > 0 && (
         <div
-          className="flex-1 overflow-y-auto px-3 pb-3"
+          className="flex-1 overflow-y-auto overflow-x-hidden px-3 pb-3"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           <div
-            className="grid gap-2"
-            style={{ gridTemplateColumns: 'repeat(10, 1fr)' }}
+            className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2"
           >
             {sortedSessions.map((session) => {
               const num = (session.wardrobe_number ?? '').replace(/\D/g, '');
@@ -89,16 +88,16 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
                 <button
                   key={session.id}
                   onClick={() => setSelectedSessionId(session.id)}
-                  className="flex items-center justify-center font-extrabold uppercase transition-all active:scale-95"
+                  className="flex items-center justify-center font-extrabold uppercase transition-all active:scale-95 aspect-square"
                   style={{
                     backgroundColor: hasItems ? '#00cc13' : '#1a5c1a',
                     borderRadius: '12px',
-                    padding: '20px 4px',
+                    padding: '4px',
                     color: hasItems ? '#fff' : '#88aa88',
                     boxShadow: hasItems ? '0 0 12px #00cc1380' : 'none',
                   }}
                 >
-                  <span style={{ fontSize: 'clamp(1.2rem, 4vw, 3rem)', lineHeight: 1 }}>{num}</span>
+                  <span style={{ fontSize: 'clamp(0.9rem, 3vw, 2.5rem)', lineHeight: 1 }}>{num}</span>
                 </button>
               );
             })}
