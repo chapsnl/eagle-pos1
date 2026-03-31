@@ -84,6 +84,7 @@ const SessionPopup = ({
           )}
         </DialogHeader>
 
+        {orderLines.length > 0 && (
         <div className="relative my-2" style={{ maxHeight: '50vh' }}>
           <div
             ref={scrollRef}
@@ -91,11 +92,7 @@ const SessionPopup = ({
             style={{ maxHeight: '50vh' }}
             onScroll={checkScroll}
           >
-            {orderLines.length === 0 ? (
-              <p className="text-center py-4" style={{ color: '#666', fontSize: '1.25rem' }}>
-                Geen bestellingen
-              </p>
-            ) : (
+            {(
               <div className="space-y-1">
                 {orderLines.map((line, idx) => (
                   <div
