@@ -294,6 +294,49 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
           { label: 'OK', onClick: () => { setCloseShiftResult(null); setCloseShiftStep(0); }, variant: 'confirm' as const },
         ]}
       />
+
+      {/* Reopen Session Popup - 3 options */}
+      <Dialog open={!!reopenSession} onOpenChange={(o) => { if (!o) setReopenSession(null); }}>
+        <DialogContent
+          className="bg-card max-h-[80vh] flex flex-col"
+          style={{ borderColor: '#00cc1340', borderRadius: '12px' }}
+        >
+          <DialogHeader>
+            <DialogTitle
+              className="font-extrabold uppercase text-lg"
+              style={{ color: '#00cc13' }}
+            >
+              Sessie Heropenen
+            </DialogTitle>
+            <p className="font-bold" style={{ color: '#888', fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)' }}>
+              Hoe wil je sessie {reopenSession?.wardrobe_number?.replace(/\D/g, '') ?? ''} heropenen?
+            </p>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-2">
+            <button
+              onClick={() => reopenSession && handleReopenKeep(reopenSession)}
+              className="w-full py-3 font-extrabold uppercase text-sm"
+              style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 6 }}
+            >
+              BEHOUD BESTELLINGEN
+            </button>
+            <button
+              onClick={() => reopenSession && handleReopenEmpty(reopenSession)}
+              className="w-full py-3 font-extrabold uppercase text-sm"
+              style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 6 }}
+            >
+              BEGIN LEEG
+            </button>
+            <button
+              onClick={() => setReopenSession(null)}
+              className="w-full py-3 font-extrabold uppercase text-sm"
+              style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 6 }}
+            >
+              ANNULEER
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
