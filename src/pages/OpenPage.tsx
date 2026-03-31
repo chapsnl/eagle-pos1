@@ -75,7 +75,7 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
         >
           <div
             className="grid gap-2"
-            style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}
+            style={{ gridTemplateColumns: 'repeat(10, 1fr)' }}
           >
             {sortedSessions.map((session) => {
               const num = (session.wardrobe_number ?? '').replace(/\D/g, '');
