@@ -245,7 +245,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               ]
             : [
                 { label: 'CANCEL', onClick: () => setSelectedSession(null), variant: 'cancel' as const },
-                { label: 'HEROPEN', onClick: () => selectedSession && handleReopen(selectedSession), variant: 'confirm' as const },
+                { label: 'HEROPEN', onClick: () => { setReopenSession(selectedSession); setSelectedSession(null); }, variant: 'confirm' as const },
               ]
         }
       />
