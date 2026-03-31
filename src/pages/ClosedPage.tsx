@@ -1,9 +1,29 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 
 const useClosedSessions = () => {
+  const qc = useQueryClient();
+
+  // Realtime: invalidate on drink_logs or sessions changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('closed-sessions-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'drink_logs' },
+        () => { qc.invalidateQueries({ queryKey: ['closed-sessions'] }); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'sessions' },
+        () => { qc.invalidateQueries({ queryKey: ['closed-sessions'] }); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
+
   return useQuery({
     queryKey: ['closed-sessions'],
     queryFn: async () => {
@@ -15,13 +35,18 @@ const useClosedSessions = () => {
       if (error) throw error;
       return data ?? [];
     },
-    refetchInterval: 5000,
+    refetchInterval: 10000,
   });
 };
 
 const ClosedPage = () => {
   const { data: sessions, isLoading } = useClosedSessions();
-  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+
+  // Derive selected session from live query data
+  const selectedSession = selectedSessionId
+    ? (sessions ?? []).find((s) => s.id === selectedSessionId) ?? null
+    : null;
 
   const sortedSessions = (sessions ?? [])
     .filter((s) => s.wardrobe_number)
@@ -70,7 +95,7 @@ const ClosedPage = () => {
             {sortedSessions.map((session) => (
               <button
                 key={session.id}
-                onClick={() => setSelectedSession(session)}
+                onClick={() => setSelectedSessionId(session.id)}
                 className="flex items-center justify-center font-extrabold uppercase transition-all active:scale-95"
                 style={{
                   backgroundColor: '#7f1d1d',
@@ -89,7 +114,7 @@ const ClosedPage = () => {
 
       <SessionPopup
         open={!!selectedSession}
-        onClose={() => setSelectedSession(null)}
+        onClose={() => setSelectedSessionId(null)}
         title={selectedSession?.wardrobe_number ?? ''}
         subtitle={`Status: ${selectedSession?.status ?? ''}`}
         orderLines={selectedSession ? getOrderLines(selectedSession) : []}

@@ -8,7 +8,12 @@ interface OpenPageProps {
 
 const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
   const { data: sessions, isLoading } = useActiveSessions();
-  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+
+  // Derive selected session from live query data
+  const selectedSession = selectedSessionId
+    ? (sessions ?? []).find((s) => s.id === selectedSessionId) ?? null
+    : null;
 
   // Sort sessions numerically by wardrobe_number
   const sortedSessions = (sessions ?? [])
@@ -38,12 +43,12 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
 
   const handleBewerk = () => {
     if (!selectedSession || !onNavigateToGuest) return;
-    setSelectedSession(null);
+    setSelectedSessionId(null);
     onNavigateToGuest(selectedSession.wardrobe_number ?? '', selectedSession.id, Number(selectedSession.total_amount ?? 0));
   };
 
   const popupActions: SessionPopupAction[] = [
-    { label: 'CANCEL', onClick: () => setSelectedSession(null), variant: 'cancel' },
+    { label: 'CANCEL', onClick: () => setSelectedSessionId(null), variant: 'cancel' },
     { label: 'BEWERK', onClick: handleBewerk, variant: 'confirm' },
   ];
 
@@ -82,7 +87,7 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
               return (
                 <button
                   key={session.id}
-                  onClick={() => setSelectedSession(session)}
+                  onClick={() => setSelectedSessionId(session.id)}
                   className="flex items-center justify-center font-extrabold uppercase transition-all active:scale-95"
                   style={{
                     backgroundColor: '#00cc13',
@@ -102,7 +107,7 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
 
       <SessionPopup
         open={!!selectedSession}
-        onClose={() => setSelectedSession(null)}
+        onClose={() => setSelectedSessionId(null)}
         title={`Gast ${(selectedSession?.wardrobe_number ?? '').replace(/\D/g, '')}`}
         subtitle="Bestelling overzicht"
         orderLines={selectedSession ? getOrderLines(selectedSession) : []}
