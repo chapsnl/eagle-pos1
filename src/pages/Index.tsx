@@ -336,6 +336,7 @@ const Index = () => {
     <div className="h-[100dvh] flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
       {addDialog}
+      {barPayDialog}
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
 
       {activeView === 'bar' && barPhase === 'input-number' && (
