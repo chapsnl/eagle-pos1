@@ -343,6 +343,47 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     />
   );
 
+  const printReceipt = useCallback((guestNumber: string) => {
+    const now = new Date();
+    const date = now.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const time = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+    const html = `<!DOCTYPE html><html><head><style>
+      @page { margin: 0; }
+      body { width: 300px; margin: 0 auto; font-family: Arial, sans-serif; text-align: center; padding: 20px 0; }
+      .bar { border-top: 8px solid black; margin: 10px 0; }
+      .betaald { font-size: 50pt; font-weight: bold; display: block; width: 100%; }
+      .details { font-size: 14pt; margin-top: 12px; }
+    </style></head><body>
+      <div class="bar"></div>
+      <span class="betaald">BETAALD</span>
+      <div class="bar"></div>
+      <div class="details">
+        <p>Gast: ${guestNumber}</p>
+        <p>${date} - ${time}</p>
+      </div>
+      <script>window.onload=function(){window.print();}<\/script>
+    </body></html>`;
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.left = '-9999px';
+    iframe.style.top = '-9999px';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(html);
+      doc.close();
+    }
+    setTimeout(() => { document.body.removeChild(iframe); }, 5000);
+  }, []);
+
+  const handleDoorgaan = useCallback(() => {
+    printReceipt(coatNumber);
+    executePayVerwerk();
+  }, [printReceipt, coatNumber, executePayVerwerk]);
+
   const entreeWarningDialog = (
     <SessionPopup
       open={showEntreeWarning}
@@ -353,7 +394,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       showTotal={false}
       actions={[
         { label: 'TOEVOEGEN', onClick: () => { setShowEntreeWarning(false); }, variant: 'cancel' },
-        { label: 'DOORGAAN ZONDER ENTREE', onClick: executePayVerwerk, variant: 'confirm' },
+        { label: 'DOORGAAN', onClick: handleDoorgaan, variant: 'confirm' },
       ]}
     />
   );
