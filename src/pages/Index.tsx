@@ -315,6 +315,21 @@ const Index = () => {
     />
   );
 
+  const barPayDialog = (
+    <SessionPopup
+      open={showBarPayDialog}
+      onClose={() => setShowBarPayDialog(false)}
+      title="Bestelling"
+      subtitle={barNumber || ''}
+      orderLines={items.map((i) => ({ name: i.product.full_name, qty: i.quantity, price: 0 }))}
+      showTotal={false}
+      actions={[
+        { label: 'CANCEL', onClick: () => setShowBarPayDialog(false), variant: 'cancel' as const },
+        { label: 'VERWERK', onClick: handleBarPayVerwerk, variant: 'confirm' as const },
+      ]}
+    />
+  );
+
   if (!started) return <IntroPage onEnter={handleEnter} />;
 
   return (
