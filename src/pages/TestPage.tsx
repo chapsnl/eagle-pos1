@@ -694,7 +694,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
                   onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
                   <span className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line" style={{ fontSize: cell.span === 2 ? 'clamp(0.96rem, 3.04vw, 2.48rem)' : 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>
-                    {cell.hideLabel ? '' : product.full_name}
+                    {cell.hideLabel ? '' : (cell.label || product.full_name)}
                   </span>
                 </button>
               );
