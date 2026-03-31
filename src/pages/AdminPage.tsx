@@ -58,6 +58,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const [closeShiftStep, setCloseShiftStep] = useState<0 | 1 | 2>(0);
   const [closeShiftLoading, setCloseShiftLoading] = useState(false);
   const [closeShiftResult, setCloseShiftResult] = useState<string | null>(null);
+  const [reopenSession, setReopenSession] = useState<any>(null);
 
   // KPI calculations
   const nogTeOntvangen = (activeSessions ?? []).reduce(
