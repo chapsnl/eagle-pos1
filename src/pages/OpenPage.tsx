@@ -107,7 +107,7 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
 
       <SessionPopup
         open={!!selectedSession}
-        onClose={() => setSelectedSession(null)}
+        onClose={() => setSelectedSessionId(null)}
         title={`Gast ${(selectedSession?.wardrobe_number ?? '').replace(/\D/g, '')}`}
         subtitle="Bestelling overzicht"
         orderLines={selectedSession ? getOrderLines(selectedSession) : []}
