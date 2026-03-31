@@ -162,7 +162,20 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     const wardrobe = coatNumber;
     if (lastCoatLookupRef.current === wardrobe) return;
     lastCoatLookupRef.current = wardrobe;
-    const t = window.setTimeout(() => {
+    const t = window.setTimeout(async () => {
+      // Pre-check: is this number already closed?
+      const { data: closedSession } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('wardrobe_number', wardrobe)
+        .in('status', ['paid', 'archived'])
+        .limit(1)
+        .maybeSingle();
+      if (closedSession) {
+        setPendingWardrobe(wardrobe);
+        setShowClosedBlockDialog(true);
+        return;
+      }
       void resolveSessionByWardrobe(wardrobe, () => {
         setPendingWardrobe(wardrobe);
         setShowAddDialog(true);
