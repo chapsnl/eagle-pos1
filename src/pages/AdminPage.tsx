@@ -177,7 +177,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
         <div className="flex flex-col overflow-hidden rounded-[12px]" style={{ backgroundColor: '#1a1a1a' }}>
           <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid #333' }}>
             <h3 className="text-sm font-extrabold uppercase" style={{ color: '#00cc13' }}>
-              Afgesloten Klanten
+              Afgesloten Sessies
             </h3>
             <span className="text-sm font-extrabold" style={{ color: '#00cc13' }}>
               {sortedClosed.length}
