@@ -8,7 +8,12 @@ interface OpenPageProps {
 
 const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
   const { data: sessions, isLoading } = useActiveSessions();
-  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+
+  // Derive selected session from live query data
+  const selectedSession = selectedSessionId
+    ? (sessions ?? []).find((s) => s.id === selectedSessionId) ?? null
+    : null;
 
   // Sort sessions numerically by wardrobe_number
   const sortedSessions = (sessions ?? [])
@@ -38,12 +43,12 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
 
   const handleBewerk = () => {
     if (!selectedSession || !onNavigateToGuest) return;
-    setSelectedSession(null);
+    setSelectedSessionId(null);
     onNavigateToGuest(selectedSession.wardrobe_number ?? '', selectedSession.id, Number(selectedSession.total_amount ?? 0));
   };
 
   const popupActions: SessionPopupAction[] = [
-    { label: 'CANCEL', onClick: () => setSelectedSession(null), variant: 'cancel' },
+    { label: 'CANCEL', onClick: () => setSelectedSessionId(null), variant: 'cancel' },
     { label: 'BEWERK', onClick: handleBewerk, variant: 'confirm' },
   ];
 
