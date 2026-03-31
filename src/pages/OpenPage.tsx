@@ -79,8 +79,7 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           <div
-            className="grid gap-2"
-            style={{ gridTemplateColumns: 'repeat(10, 1fr)' }}
+            className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2"
           >
             {sortedSessions.map((session) => {
               const num = (session.wardrobe_number ?? '').replace(/\D/g, '');
