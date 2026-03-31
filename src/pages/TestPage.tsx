@@ -355,12 +355,25 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       <p style="font-size:12pt;">${date} - ${time}</p>
     </div>`;
 
+    // Debug feedback
+    alert('Verzenden naar printer...');
+
     // Kiosk Pro JS Bridge
     const kp = (window as any).KioskPro;
     if (kp?.print?.printHTML) {
       kp.print.printHTML(bonHTML);
       return;
     }
+
+    // Plan B: Direct ESC/POS over HTTP to NT320_W
+    fetch('http://192.168.178.82/cgi-bin/print.cgi', {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: `\n=============================\n        BETAALD\n=============================\n\n   Gast: ${guestNumber}\n   ${date} - ${time}\n\n=============================\n\n\n`,
+    }).catch(() => {
+      // Silent fail for no-cors
+    });
 
     // Fallback: iframe + window.print()
     const fullHTML = `<!DOCTYPE html><html><head><style>@page{margin:0;}body{margin:0;padding:20px 0;}</style></head><body>${bonHTML}<script>window.onload=function(){window.print();}<\/script></body></html>`;
