@@ -58,7 +58,7 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
         className="text-xl font-extrabold uppercase tracking-[0.15em] text-center py-3"
         style={{ color: '#00cc13' }}
       >
-        OVERZICHT — ACTIEVE SESSIES
+        OVERZICHT — ACTIEVE SESSIES ({sortedSessions.length})
       </h2>
 
       {isLoading && (
