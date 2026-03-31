@@ -82,6 +82,26 @@ export const useUpdateSession = () => {
 };
 
 export const useActiveSessions = () => {
+  const qc = useQueryClient();
+
+  // Realtime: invalidate on any drink_logs change
+  useEffect(() => {
+    const channel = supabase
+      .channel('active-sessions-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'drink_logs' },
+        () => { qc.invalidateQueries({ queryKey: ['sessions', 'active'] }); }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'sessions' },
+        () => { qc.invalidateQueries({ queryKey: ['sessions', 'active'] }); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
+
   return useQuery({
     queryKey: ['sessions', 'active'],
     queryFn: async () => {
@@ -93,7 +113,7 @@ export const useActiveSessions = () => {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 5000,
+    refetchInterval: 10000,
   });
 };
 
