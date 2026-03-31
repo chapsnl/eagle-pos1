@@ -271,9 +271,21 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     }));
   }, [liveDbLogs]);
 
-  const handlePayVerwerk = useCallback(async () => {
+  const hasEntreeInSession = useCallback(() => {
+    const checkName = (name: string) => name.toLowerCase() === 'entree';
+    const checkShort = (s: string) => s.toLowerCase() === 'entr';
+    // Check current cart items
+    if (items.some((i) => checkName(i.product.full_name) || checkShort(i.product.shorthand))) return true;
+    // Check already booked logs
+    if (liveDbLogs.some((l) => checkName(l.product_name))) return true;
+    if (existingLogs.some((l) => checkName(l.product_name))) return true;
+    return false;
+  }, [items, liveDbLogs, existingLogs]);
+
+  const executePayVerwerk = useCallback(async () => {
     if (!sessionId) return;
     setShowPayDialog(false);
+    setShowEntreeWarning(false);
     try {
       await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
       clearOrder();
@@ -288,6 +300,16 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setTimeout(() => setFeedback(null), 2000);
     }
   }, [sessionId, updateSession]);
+
+  const handlePayVerwerk = useCallback(() => {
+    if (!sessionId) return;
+    if (hasEntreeInSession()) {
+      executePayVerwerk();
+    } else {
+      setShowPayDialog(false);
+      setShowEntreeWarning(true);
+    }
+  }, [sessionId, hasEntreeInSession, executePayVerwerk]);
 
   const bonDialog = (
     <SessionPopup
