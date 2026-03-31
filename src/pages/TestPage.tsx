@@ -343,6 +343,21 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     />
   );
 
+  const entreeWarningDialog = (
+    <SessionPopup
+      open={showEntreeWarning}
+      onClose={() => setShowEntreeWarning(false)}
+      title="Let op"
+      subtitle="Geen Entree aangeslagen."
+      orderLines={[]}
+      showTotal={false}
+      actions={[
+        { label: 'TOEVOEGEN', onClick: () => { setShowEntreeWarning(false); }, variant: 'cancel' },
+        { label: 'DOORGAAN ZONDER ENTREE', onClick: executePayVerwerk, variant: 'confirm' },
+      ]}
+    />
+  );
+
   const handleConfirmAdd = useCallback(async () => {
     if (!pendingWardrobe) return;
     setShowAddDialog(false);
