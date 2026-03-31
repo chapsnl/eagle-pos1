@@ -87,7 +87,7 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
               return (
                 <button
                   key={session.id}
-                  onClick={() => setSelectedSession(session)}
+                  onClick={() => setSelectedSessionId(session.id)}
                   className="flex items-center justify-center font-extrabold uppercase transition-all active:scale-95"
                   style={{
                     backgroundColor: '#00cc13',
