@@ -96,16 +96,16 @@ const ClosedPage = () => {
               <button
                 key={session.id}
                 onClick={() => setSelectedSessionId(session.id)}
-                className="flex items-center justify-center font-extrabold uppercase transition-all active:scale-95"
+                className="flex items-center justify-center font-extrabold uppercase transition-all active:scale-95 aspect-square"
                 style={{
                   backgroundColor: '#7f1d1d',
                   borderRadius: '12px',
-                  padding: '20px 4px',
+                  padding: '4px',
                   color: '#fff',
                   boxShadow: '0 0 12px #7f1d1d80',
                 }}
               >
-                <span style={{ fontSize: 'clamp(1.2rem, 4vw, 3rem)', lineHeight: 1 }}>{session.wardrobe_number?.replace(/\D/g, '')}</span>
+                <span style={{ fontSize: 'clamp(0.9rem, 3vw, 2.5rem)', lineHeight: 1 }}>{session.wardrobe_number?.replace(/\D/g, '')}</span>
               </button>
             ))}
           </div>

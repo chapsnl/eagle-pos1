@@ -75,7 +75,7 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
 
       {!isLoading && sortedSessions.length > 0 && (
         <div
-          className="flex-1 overflow-y-auto px-3 pb-3"
+          className="flex-1 overflow-y-auto overflow-x-hidden px-3 pb-3"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           <div
