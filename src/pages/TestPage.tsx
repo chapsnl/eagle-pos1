@@ -347,35 +347,28 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     const now = new Date();
     const date = now.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const time = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
-    const html = `<!DOCTYPE html><html><head><style>
-      @page { margin: 0; }
-      body { width: 300px; margin: 0 auto; font-family: Arial, sans-serif; text-align: center; padding: 20px 0; }
-      .bar { border-top: 8px solid black; margin: 10px 0; }
-      .betaald { font-size: 50pt; font-weight: bold; display: block; width: 100%; }
-      .details { font-size: 14pt; margin-top: 12px; }
-    </style></head><body>
-      <div class="bar"></div>
-      <span class="betaald">BETAALD</span>
-      <div class="bar"></div>
-      <div class="details">
-        <p>Gast: ${guestNumber}</p>
-        <p>${date} - ${time}</p>
-      </div>
-      <script>window.onload=function(){window.print();}<\/script>
-    </body></html>`;
+    const bonHTML = `<div style="width:300px;text-align:center;font-family:sans-serif;">
+      <div style="border-top:10px solid black;margin-bottom:10px;"></div>
+      <h1 style="font-size:50pt;margin:0;font-weight:bold;">BETAALD</h1>
+      <div style="border-bottom:10px solid black;margin-top:10px;"></div>
+      <p style="font-size:16pt;font-weight:bold;">Gast: ${guestNumber}</p>
+      <p style="font-size:12pt;">${date} - ${time}</p>
+    </div>`;
+
+    // Kiosk Pro JS Bridge
+    const kp = (window as any).KioskPro;
+    if (kp?.print?.printHTML) {
+      kp.print.printHTML(bonHTML);
+      return;
+    }
+
+    // Fallback: iframe + window.print()
+    const fullHTML = `<!DOCTYPE html><html><head><style>@page{margin:0;}body{margin:0;padding:20px 0;}</style></head><body>${bonHTML}<script>window.onload=function(){window.print();}<\/script></body></html>`;
     const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.left = '-9999px';
-    iframe.style.top = '-9999px';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
+    iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:0;height:0;';
     document.body.appendChild(iframe);
     const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (doc) {
-      doc.open();
-      doc.write(html);
-      doc.close();
-    }
+    if (doc) { doc.open(); doc.write(fullHTML); doc.close(); }
     setTimeout(() => { document.body.removeChild(iframe); }, 5000);
   }, []);
 
