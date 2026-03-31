@@ -112,6 +112,8 @@ const Index = () => {
       setBarSessionTotal(0);
       setItems([]);
       lastLookupRef.current = null;
+      setBarRetourMode(false);
+      setShowBarPayDialog(false);
     }
   }, [activeView]);
 
