@@ -66,7 +66,7 @@ const ClosedPage = () => {
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto px-3 pb-4">
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-10 gap-2">
             {sortedSessions.map((session) => (
               <button
                 key={session.id}
