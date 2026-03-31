@@ -684,6 +684,12 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
                   </button>
                 );
               }
+              // Row 6 (index 5), second cell -> Empty placeholder (reserved for future use)
+              if (ri === 5 && ci === 1) {
+                return (
+                  <div key={ci} style={{ flex: cell.span, backgroundColor: '#2a2a2a' }} className="flex items-center justify-center p-1 min-w-0" />
+                );
+              }
               const product = productMap.get(cell.code);
               if (!product) return <div key={ci} style={{ flex: cell.span }} />;
               const textColor = getTextColor(product.category_color);
