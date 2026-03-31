@@ -53,7 +53,7 @@ const ClosedPage = () => {
         className="text-xl font-extrabold uppercase tracking-[0.15em] text-center py-3"
         style={{ color: '#00cc13' }}
       >
-        CLOSED
+        OVERZICHT - AFGESLOTEN SESSIES
       </h2>
 
       {isLoading ? (
