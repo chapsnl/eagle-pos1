@@ -363,29 +363,6 @@ const Index = () => {
       {activeView === 'bar' && barPhase === 'products' && (
         <>
           <OrderBar items={items} total={total} onRemoveItem={removeItem} onClear={clearItems} />
-          <div className="grid grid-cols-3 gap-[1px] px-0" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
-            <button
-              onClick={() => setShowBarPayDialog(true)}
-              className="min-h-[56px] font-extrabold uppercase text-base flex items-center justify-center"
-              style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: 0 }}
-            >
-              PAY
-            </button>
-            <button
-              onClick={() => setBarRetourMode((m) => !m)}
-              className="min-h-[56px] font-extrabold uppercase text-base flex items-center justify-center"
-              style={{ backgroundColor: barRetourMode ? '#ef4444' : '#7c3aed', color: '#fff', borderRadius: 0, transition: 'background-color 0.2s ease' }}
-            >
-              RETOUR
-            </button>
-            <button
-              onClick={handleBarNext}
-              className="min-h-[56px] font-extrabold uppercase text-base flex items-center justify-center"
-              style={{ backgroundColor: '#1a3a6a', color: '#fff', borderRadius: 0 }}
-            >
-              NEXT
-            </button>
-          </div>
           <ProductGrid onAddProduct={handleBarAddProduct} />
           <div className="pb-[max(0px,env(safe-area-inset-bottom))]">
             <button
