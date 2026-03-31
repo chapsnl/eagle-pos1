@@ -114,7 +114,7 @@ const ClosedPage = () => {
 
       <SessionPopup
         open={!!selectedSession}
-        onClose={() => setSelectedSession(null)}
+        onClose={() => setSelectedSessionId(null)}
         title={selectedSession?.wardrobe_number ?? ''}
         subtitle={`Status: ${selectedSession?.status ?? ''}`}
         orderLines={selectedSession ? getOrderLines(selectedSession) : []}
