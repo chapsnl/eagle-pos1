@@ -296,6 +296,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       subtitle={coatNumber || ''}
       orderLines={popupOrderLines}
       showTotal={false}
+      showItemCount
       actions={[
         { label: 'CANCEL', onClick: () => setShowBonDialog(false), variant: 'cancel' },
         { label: 'VERWERK', onClick: () => { setShowBonDialog(false); handleSubmit(); }, variant: 'confirm' },
@@ -311,6 +312,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       subtitle={coatNumber || ''}
       orderLines={popupOrderLines}
       showTotal={false}
+      showItemCount
       actions={[
         { label: 'CANCEL', onClick: () => setShowPayDialog(false), variant: 'cancel' },
         { label: 'VERWERK', onClick: handlePayVerwerk, variant: 'confirm' },

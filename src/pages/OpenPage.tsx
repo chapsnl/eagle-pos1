@@ -107,6 +107,7 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
         subtitle="Bestelling overzicht"
         orderLines={selectedSession ? getOrderLines(selectedSession) : []}
         actions={popupActions}
+        showItemCount
       />
     </div>
   );
