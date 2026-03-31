@@ -343,33 +343,9 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     />
   );
 
-  const printReceipt = useCallback(async (guestNumber: string) => {
-    toast.info('Bon wordt verzonden naar printer...');
-
-    try {
-      const { data, error } = await supabase.functions.invoke('print-receipt', {
-        body: { guestNumber, printerIp: '192.168.178.82' },
-      });
-
-      if (error) {
-        console.error('Print edge function error:', error);
-        toast.error('Printfout: ' + (error.message || 'Onbekend'));
-      } else if (data?.success) {
-        toast.success('Bon verzonden!');
-      } else {
-        console.error('Print failed:', data?.error);
-        toast.error('Printer niet bereikbaar: ' + (data?.error || 'Onbekend'));
-      }
-    } catch (e: any) {
-      console.error('Print exception:', e);
-      toast.error('Printfout: ' + e.message);
-    }
-  }, []);
-
   const handleDoorgaan = useCallback(() => {
-    printReceipt(coatNumber);
     executePayVerwerk();
-  }, [printReceipt, coatNumber, executePayVerwerk]);
+  }, [executePayVerwerk]);
 
   const entreeWarningDialog = (
     <SessionPopup
