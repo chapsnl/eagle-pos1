@@ -10,8 +10,16 @@ import { Capacitor } from "@capacitor/core";
 
 const queryClient = new QueryClient();
 
+/** Force local network permission prompt on iOS by pinging the printer */
+const triggerNetworkPermission = () => {
+  fetch('http://192.168.178.82', { mode: 'no-cors' }).catch(() => {
+    // Expected to fail silently – the goal is triggering the iOS permission dialog
+  });
+};
+
 /** Hide status bar & navigation bar on Android for kiosk mode */
 const initKioskMode = async () => {
+  triggerNetworkPermission();
   if (!Capacitor.isNativePlatform()) return;
   try {
     const { StatusBar } = await import("@capacitor/status-bar");
@@ -22,7 +30,6 @@ const initKioskMode = async () => {
   }
   try {
     // navigation-bar plugin only available in native builds
-    // skipped in web to avoid build errors
   } catch {
     // plugin not available
   }
