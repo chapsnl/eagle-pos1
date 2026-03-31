@@ -633,13 +633,13 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         {gridLayout.map((row, ri) => (
           <div key={ri} className="flex-1 flex gap-[1px]" style={{ minHeight: 0 }}>
             {row.map((cell, ci) => {
-              // Row 4 (index 3), first cell -> ENT button (same color as '10' product = second cell)
+              // Row 4 (index 3), first cell -> ENTR button styled with label "8"
               if (ri === 3 && ci === 0) {
-                const eightProduct = productMap.get('8');
-                const entBg = eightProduct?.category_color || '#888';
-                const entTextColor = eightProduct ? getTextColor(eightProduct.category_color) : '#fff';
+                const entrProduct = productMap.get('ENTR');
+                const entBg = entrProduct?.category_color || '#e4e2e2';
+                const entTextColor = entrProduct ? getTextColor(entrProduct.category_color) : '#000';
                 return (
-                  <button key={ci} onClick={() => { if (eightProduct) addAndBook(eightProduct); }} style={{ flex: cell.span, backgroundColor: entBg, color: entTextColor }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75"
+                  <button key={ci} onClick={() => { if (entrProduct) addAndBook(entrProduct); }} style={{ flex: cell.span, backgroundColor: entBg, color: entTextColor }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75"
                     onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
                     onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                     onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
