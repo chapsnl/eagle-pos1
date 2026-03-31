@@ -51,7 +51,7 @@ const SessionPopup = ({
             {title}
           </DialogTitle>
           {subtitle && (
-            <p className="font-bold" style={{ color: '#888', fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)' }}>
+            <p className="font-bold" style={{ color: '#888', fontSize: subtitleSize || 'clamp(1.1rem, 2.5vw, 1.5rem)' }}>
               {subtitle}
             </p>
           )}
