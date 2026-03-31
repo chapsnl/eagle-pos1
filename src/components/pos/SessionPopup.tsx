@@ -17,6 +17,7 @@ interface SessionPopupProps {
   onClose: () => void;
   title: string;
   subtitle?: string;
+  subtitleSize?: string;
   orderLines: OrderLine[];
   showTotal?: boolean;
   showPrices?: boolean;
