@@ -361,7 +361,9 @@ const Index = () => {
           <div className="px-4 pb-2">
             <div className="w-full max-w-md mx-auto grid grid-cols-3 gap-0">
               {NUM_KEYS.map((key, i) => (
-                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="py-3 text-2xl font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: key === 'DEL' ? '#fff' : '#e5e5e5', border: '1px solid #333' }}>{key}</button>
+                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="py-3 text-2xl font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333' }}>
+                  {key === 'DEL' ? <X className="mx-auto w-6 h-6" /> : key === 'BACK' ? <Delete className="mx-auto w-6 h-6" /> : key}
+                </button>
               ))}
             </div>
           </div>
