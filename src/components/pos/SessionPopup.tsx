@@ -85,14 +85,13 @@ const SessionPopup = ({
         </DialogHeader>
 
         {orderLines.length > 0 && (
-        <div className="relative my-2" style={{ maxHeight: '50vh' }}>
-          <div
-            ref={scrollRef}
-            className="overflow-y-auto h-full"
-            style={{ maxHeight: '50vh' }}
-            onScroll={checkScroll}
-          >
-            {(
+          <div className="relative my-2" style={{ maxHeight: '50vh' }}>
+            <div
+              ref={scrollRef}
+              className="overflow-y-auto h-full"
+              style={{ maxHeight: '50vh' }}
+              onScroll={checkScroll}
+            >
               <div className="space-y-1">
                 {orderLines.map((line, idx) => (
                   <div
@@ -113,23 +112,23 @@ const SessionPopup = ({
                   </div>
                 ))}
               </div>
+            </div>
+            {canScrollDown && (
+              <div
+                className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 pointer-events-none"
+                style={{
+                  bottom: '8px',
+                  backgroundColor: 'rgba(0,0,0,0.75)',
+                  borderRadius: '999px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                }}
+              >
+                <ChevronDown size={14} style={{ color: '#00cc13' }} />
+                <span className="text-xs font-bold" style={{ color: '#00cc13' }}>Meer</span>
+              </div>
             )}
           </div>
-          {canScrollDown && (
-            <div
-              className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 pointer-events-none"
-              style={{
-                bottom: '8px',
-                backgroundColor: 'rgba(0,0,0,0.75)',
-                borderRadius: '999px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-              }}
-            >
-              <ChevronDown size={14} style={{ color: '#00cc13' }} />
-              <span className="text-xs font-bold" style={{ color: '#00cc13' }}>Meer</span>
-            </div>
-          )}
-        </div>
+        )}
 
         {showTotal && (
           <div
