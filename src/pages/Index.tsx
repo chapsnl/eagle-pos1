@@ -69,6 +69,8 @@ const Index = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const lastLookupRef = useRef<string | null>(null);
+  const [barRetourMode, setBarRetourMode] = useState(false);
+  const [showBarPayDialog, setShowBarPayDialog] = useState(false);
 
   const createSession = useCreateSession();
   const addDrinkLogs = useAddDrinkLogs();
@@ -110,6 +112,8 @@ const Index = () => {
       setBarSessionTotal(0);
       setItems([]);
       lastLookupRef.current = null;
+      setBarRetourMode(false);
+      setShowBarPayDialog(false);
     }
   }, [activeView]);
 
@@ -239,6 +243,63 @@ const Index = () => {
     }
   }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, showFeedback]);
 
+  const handleBarPayVerwerk = useCallback(async () => {
+    if (!barSessionId) return;
+    setShowBarPayDialog(false);
+    try {
+      // First book any pending items
+      if (items.length > 0) {
+        const logs = items.flatMap((item) =>
+          Array.from({ length: item.quantity }, () => ({
+            session_id: barSessionId,
+            product_id: item.product.id,
+            price_at_time: item.product.price,
+          }))
+        );
+        await addDrinkLogs.mutateAsync(logs);
+        await updateSession.mutateAsync({
+          id: barSessionId,
+          status: 'paid',
+          total_amount: barSessionTotal + total,
+        });
+      } else {
+        await updateSession.mutateAsync({ id: barSessionId, status: 'paid' });
+      }
+      clearOrder();
+      showFeedback('success');
+      setTimeout(() => {
+        setItems([]);
+        setBarNumber('');
+        setBarSessionId(null);
+        setBarSessionTotal(0);
+        setBarPhase('input-number');
+        setBarRetourMode(false);
+        lastLookupRef.current = null;
+      }, 1500);
+    } catch {
+      showFeedback('error');
+    }
+  }, [barSessionId, items, barSessionTotal, total, addDrinkLogs, updateSession, showFeedback]);
+
+  const handleBarNext = useCallback(() => {
+    setItems([]);
+    setBarNumber('');
+    setBarSessionId(null);
+    setBarSessionTotal(0);
+    setBarPhase('input-number');
+    setBarRetourMode(false);
+    lastLookupRef.current = null;
+    clearOrder();
+  }, []);
+
+  const handleBarAddProduct = useCallback((product: DbProduct) => {
+    if (barRetourMode) {
+      removeItem(product.id);
+      setBarRetourMode(false);
+      return;
+    }
+    addProduct(product);
+  }, [barRetourMode, addProduct, removeItem]);
 
   const addDialog = (
     <SessionPopup
@@ -254,12 +315,28 @@ const Index = () => {
     />
   );
 
+  const barPayDialog = (
+    <SessionPopup
+      open={showBarPayDialog}
+      onClose={() => setShowBarPayDialog(false)}
+      title="Bestelling"
+      subtitle={barNumber || ''}
+      orderLines={items.map((i) => ({ name: i.product.full_name, qty: i.quantity, price: 0 }))}
+      showTotal={false}
+      actions={[
+        { label: 'CANCEL', onClick: () => setShowBarPayDialog(false), variant: 'cancel' as const },
+        { label: 'VERWERK', onClick: handleBarPayVerwerk, variant: 'confirm' as const },
+      ]}
+    />
+  );
+
   if (!started) return <IntroPage onEnter={handleEnter} />;
 
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
       {addDialog}
+      {barPayDialog}
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
 
       {activeView === 'bar' && barPhase === 'input-number' && (
@@ -286,7 +363,30 @@ const Index = () => {
       {activeView === 'bar' && barPhase === 'products' && (
         <>
           <OrderBar items={items} total={total} onRemoveItem={removeItem} onClear={clearItems} />
-          <ProductGrid onAddProduct={addProduct} />
+          <ProductGrid onAddProduct={handleBarAddProduct} />
+          <div className="flex gap-2 px-2 py-1">
+            <button
+              onClick={() => setShowBarPayDialog(true)}
+              className="flex-1 min-h-[56px] font-extrabold uppercase text-base flex items-center justify-center"
+              style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: 6 }}
+            >
+              PAY
+            </button>
+            <button
+              onClick={() => setBarRetourMode((m) => !m)}
+              className="flex-1 min-h-[56px] font-extrabold uppercase text-base flex items-center justify-center"
+              style={{ backgroundColor: barRetourMode ? '#ef4444' : '#7c3aed', color: '#fff', borderRadius: 6, transition: 'background-color 0.2s ease' }}
+            >
+              RETOUR
+            </button>
+            <button
+              onClick={handleBarNext}
+              className="flex-1 min-h-[56px] font-extrabold uppercase text-base flex items-center justify-center"
+              style={{ backgroundColor: '#1a3a6a', color: '#fff', borderRadius: 6 }}
+            >
+              NEXT
+            </button>
+          </div>
           <div className="pb-[max(0px,env(safe-area-inset-bottom))]">
             <button
               onClick={handleBoek}
