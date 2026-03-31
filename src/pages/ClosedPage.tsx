@@ -95,6 +95,7 @@ const ClosedPage = () => {
         orderLines={selectedSession ? getOrderLines(selectedSession) : []}
         showTotal={false}
         totalAmount={Number(selectedSession?.total_amount ?? 0)}
+        showItemCount
       />
     </div>
   );
