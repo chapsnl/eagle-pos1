@@ -1,4 +1,6 @@
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { ChevronDown } from 'lucide-react';
 
 export interface OrderLine {
   name: string;
@@ -40,6 +42,18 @@ const SessionPopup = ({
   showItemCount = false,
 }: SessionPopupProps) => {
   const totalItemCount = orderLines.reduce((sum, line) => sum + line.qty, 0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) { setCanScrollDown(false); return; }
+    setCanScrollDown(el.scrollHeight > el.clientHeight && el.scrollTop + el.clientHeight < el.scrollHeight - 4);
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+  }, [orderLines, open, checkScroll]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
@@ -69,7 +83,12 @@ const SessionPopup = ({
         </DialogHeader>
 
         <div className="relative my-2" style={{ maxHeight: '50vh' }}>
-          <div className="overflow-y-auto h-full" style={{ maxHeight: '50vh' }}>
+          <div
+            ref={scrollRef}
+            className="overflow-y-auto h-full"
+            style={{ maxHeight: '50vh' }}
+            onScroll={checkScroll}
+          >
             {orderLines.length === 0 ? (
               <p className="text-center py-4" style={{ color: '#666', fontSize: '1.25rem' }}>
                 Geen bestellingen
@@ -97,11 +116,19 @@ const SessionPopup = ({
               </div>
             )}
           </div>
-          {orderLines.length > 4 && (
+          {canScrollDown && (
             <div
-              className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
-              style={{ background: 'linear-gradient(to top, hsl(var(--card)), transparent)' }}
-            />
+              className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 pointer-events-none"
+              style={{
+                bottom: '8px',
+                backgroundColor: 'rgba(0,0,0,0.75)',
+                borderRadius: '999px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+              }}
+            >
+              <ChevronDown size={14} style={{ color: '#00cc13' }} />
+              <span className="text-xs font-bold" style={{ color: '#00cc13' }}>Meer</span>
+            </div>
           )}
         </div>
 
