@@ -72,10 +72,24 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const sortedActive = sortByWardrobe(activeSessions ?? []);
   const sortedClosed = sortByWardrobe(closedSessions ?? []);
 
-  const handleReopen = useCallback(async (session: any) => {
+  const handleReopenKeep = useCallback(async (session: any) => {
     try {
       await updateSession.mutateAsync({ id: session.id, status: 'active' });
       qc.invalidateQueries({ queryKey: ['closed-sessions'] });
+      setReopenSession(null);
+      setSelectedSession(null);
+    } catch { /* ignore */ }
+  }, [updateSession, qc]);
+
+  const handleReopenEmpty = useCallback(async (session: any) => {
+    try {
+      // Delete all drink_logs for this session
+      await supabase.from('drink_logs').delete().eq('session_id', session.id);
+      // Reset to active with 0 total
+      await updateSession.mutateAsync({ id: session.id, status: 'active', total_amount: 0 });
+      qc.invalidateQueries({ queryKey: ['closed-sessions'] });
+      qc.invalidateQueries({ queryKey: ['sessions'] });
+      setReopenSession(null);
       setSelectedSession(null);
     } catch { /* ignore */ }
   }, [updateSession, qc]);
