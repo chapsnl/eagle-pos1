@@ -18,16 +18,16 @@ export const OrderBar = ({ items, total, onRemoveItem, onClear }: OrderBarProps)
   }
 
   return (
-    <div className="min-h-10 bg-card border-b border-border flex items-center px-2 gap-1.5 animate-slide-down">
-      <div className="flex-1 flex items-center gap-1.5 overflow-x-auto py-1">
+    <div className="min-h-12 bg-card border-b border-border flex items-center px-3 gap-2 animate-slide-down">
+      <div className="flex-1 flex items-center gap-2 overflow-x-auto py-1.5 max-h-24 flex-wrap overflow-y-auto">
         {items.map((item) => (
           <button
             key={item.product.id}
             onClick={() => onRemoveItem(item.product.id)}
-            className="flex items-center gap-1 bg-secondary rounded px-2 py-1 text-[10px] font-bold uppercase shrink-0 hover:bg-destructive/20 transition-colors group"
+            className="flex items-center gap-1.5 bg-secondary rounded px-2.5 py-1.5 text-xs font-semibold uppercase shrink-0 hover:bg-destructive/20 transition-colors group"
           >
             <span>{item.quantity > 1 && `${item.quantity}×`}{item.product.shorthand}</span>
-            <X className="w-2.5 h-2.5 opacity-40 group-hover:opacity-100" />
+            <X className="w-3 h-3 opacity-40 group-hover:opacity-100" />
           </button>
         ))}
       </div>
