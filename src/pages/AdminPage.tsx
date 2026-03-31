@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const useClosedSessions = () =>
   useQuery({
@@ -57,6 +58,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const [closeShiftStep, setCloseShiftStep] = useState<0 | 1 | 2>(0);
   const [closeShiftLoading, setCloseShiftLoading] = useState(false);
   const [closeShiftResult, setCloseShiftResult] = useState<string | null>(null);
+  const [reopenSession, setReopenSession] = useState<any>(null);
 
   // KPI calculations
   const nogTeOntvangen = (activeSessions ?? []).reduce(
@@ -70,10 +72,24 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const sortedActive = sortByWardrobe(activeSessions ?? []);
   const sortedClosed = sortByWardrobe(closedSessions ?? []);
 
-  const handleReopen = useCallback(async (session: any) => {
+  const handleReopenKeep = useCallback(async (session: any) => {
     try {
       await updateSession.mutateAsync({ id: session.id, status: 'active' });
       qc.invalidateQueries({ queryKey: ['closed-sessions'] });
+      setReopenSession(null);
+      setSelectedSession(null);
+    } catch { /* ignore */ }
+  }, [updateSession, qc]);
+
+  const handleReopenEmpty = useCallback(async (session: any) => {
+    try {
+      // Delete all drink_logs for this session
+      await supabase.from('drink_logs').delete().eq('session_id', session.id);
+      // Reset to active with 0 total
+      await updateSession.mutateAsync({ id: session.id, status: 'active', total_amount: 0 });
+      qc.invalidateQueries({ queryKey: ['closed-sessions'] });
+      qc.invalidateQueries({ queryKey: ['sessions'] });
+      setReopenSession(null);
       setSelectedSession(null);
     } catch { /* ignore */ }
   }, [updateSession, qc]);
@@ -229,7 +245,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               ]
             : [
                 { label: 'CANCEL', onClick: () => setSelectedSession(null), variant: 'cancel' as const },
-                { label: 'HEROPEN', onClick: () => selectedSession && handleReopen(selectedSession), variant: 'confirm' as const },
+                { label: 'HEROPEN', onClick: () => { setReopenSession(selectedSession); setSelectedSession(null); }, variant: 'confirm' as const },
               ]
         }
       />
@@ -278,6 +294,49 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
           { label: 'OK', onClick: () => { setCloseShiftResult(null); setCloseShiftStep(0); }, variant: 'confirm' as const },
         ]}
       />
+
+      {/* Reopen Session Popup - 3 options */}
+      <Dialog open={!!reopenSession} onOpenChange={(o) => { if (!o) setReopenSession(null); }}>
+        <DialogContent
+          className="bg-card max-h-[80vh] flex flex-col"
+          style={{ borderColor: '#00cc1340', borderRadius: '12px' }}
+        >
+          <DialogHeader>
+            <DialogTitle
+              className="font-extrabold uppercase text-lg"
+              style={{ color: '#00cc13' }}
+            >
+              Sessie Heropenen
+            </DialogTitle>
+            <p className="font-bold" style={{ color: '#888', fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)' }}>
+              Hoe wil je sessie {reopenSession?.wardrobe_number?.replace(/\D/g, '') ?? ''} heropenen?
+            </p>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-2">
+            <button
+              onClick={() => reopenSession && handleReopenKeep(reopenSession)}
+              className="w-full py-3 font-extrabold uppercase text-sm"
+              style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 6 }}
+            >
+              BEHOUD BESTELLINGEN
+            </button>
+            <button
+              onClick={() => reopenSession && handleReopenEmpty(reopenSession)}
+              className="w-full py-3 font-extrabold uppercase text-sm"
+              style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 6 }}
+            >
+              BEGIN LEEG
+            </button>
+            <button
+              onClick={() => setReopenSession(null)}
+              className="w-full py-3 font-extrabold uppercase text-sm"
+              style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 6 }}
+            >
+              ANNULEER
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

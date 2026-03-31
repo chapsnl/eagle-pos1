@@ -78,6 +78,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const [existingLogs, setExistingLogs] = useState<{ product_id: string; product_name: string; quantity: number; unit_price: number }[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
+  const [showClosedBlockDialog, setShowClosedBlockDialog] = useState(false);
   const lastCoatLookupRef = useRef<string | null>(null);
   const { data: products } = useProducts();
   const findActiveSessionByWardrobe = useFindActiveSessionByWardrobe();
@@ -161,7 +162,20 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     const wardrobe = coatNumber;
     if (lastCoatLookupRef.current === wardrobe) return;
     lastCoatLookupRef.current = wardrobe;
-    const t = window.setTimeout(() => {
+    const t = window.setTimeout(async () => {
+      // Pre-check: is this number already closed?
+      const { data: closedSession } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('wardrobe_number', wardrobe)
+        .in('status', ['paid', 'archived'])
+        .limit(1)
+        .maybeSingle();
+      if (closedSession) {
+        setPendingWardrobe(wardrobe);
+        setShowClosedBlockDialog(true);
+        return;
+      }
       void resolveSessionByWardrobe(wardrobe, () => {
         setPendingWardrobe(wardrobe);
         setShowAddDialog(true);
@@ -363,6 +377,28 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     </Dialog>
   );
 
+  const handleClosedBlockDismiss = useCallback(() => {
+    setShowClosedBlockDialog(false);
+    setPendingWardrobe(null);
+    setCoatNumber('');
+    setActiveField('coat');
+    lastCoatLookupRef.current = null;
+  }, []);
+
+  const closedBlockDialog = (
+    <SessionPopup
+      open={showClosedBlockDialog}
+      onClose={handleClosedBlockDismiss}
+      title="Nummer Geblokkeerd"
+      subtitle={`${pendingWardrobe ?? ''} — Dit nummer is al afgerekend en gesloten. Vraag een manager om deze te heropenen via het Admin paneel.`}
+      orderLines={[]}
+      showTotal={false}
+      actions={[
+        { label: 'BEGREPEN', onClick: handleClosedBlockDismiss, variant: 'confirm' as const },
+      ]}
+    />
+  );
+
   // Instant book on product click
   const addAndBook = useCallback(async (product: DbProduct) => {
     if (!sessionId) return;
@@ -488,6 +524,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       <div className="flex-1 flex flex-col h-full overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
         <FeedbackOverlay type={feedback} />
         {addDialog}
+        {closedBlockDialog}
         <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>GAST ZOEKEN</h2>
         <div className="flex-1 flex flex-col items-center justify-center px-4">
           <div className="w-full" style={{ maxWidth: '280px' }}>
