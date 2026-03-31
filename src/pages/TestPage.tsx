@@ -377,6 +377,28 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     </Dialog>
   );
 
+  const handleClosedBlockDismiss = useCallback(() => {
+    setShowClosedBlockDialog(false);
+    setPendingWardrobe(null);
+    setCoatNumber('');
+    setActiveField('coat');
+    lastCoatLookupRef.current = null;
+  }, []);
+
+  const closedBlockDialog = (
+    <SessionPopup
+      open={showClosedBlockDialog}
+      onClose={handleClosedBlockDismiss}
+      title="Nummer Geblokkeerd"
+      subtitle={`${pendingWardrobe ?? ''} — Dit nummer is al afgerekend en gesloten. Vraag een manager om deze te heropenen via het Admin paneel.`}
+      orderLines={[]}
+      showTotal={false}
+      actions={[
+        { label: 'BEGREPEN', onClick: handleClosedBlockDismiss, variant: 'confirm' as const },
+      ]}
+    />
+  );
+
   // Instant book on product click
   const addAndBook = useCallback(async (product: DbProduct) => {
     if (!sessionId) return;
