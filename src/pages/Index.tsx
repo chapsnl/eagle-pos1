@@ -323,6 +323,7 @@ const Index = () => {
       subtitle={barNumber || ''}
       orderLines={items.map((i) => ({ name: i.product.full_name, qty: i.quantity, price: 0 }))}
       showTotal={false}
+      showItemCount
       actions={[
         { label: 'CANCEL', onClick: () => setShowBarPayDialog(false), variant: 'cancel' as const },
         { label: 'VERWERK', onClick: handleBarPayVerwerk, variant: 'confirm' as const },
