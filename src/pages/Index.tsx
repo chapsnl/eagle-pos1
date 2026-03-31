@@ -69,6 +69,8 @@ const Index = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const lastLookupRef = useRef<string | null>(null);
+  const [barRetourMode, setBarRetourMode] = useState(false);
+  const [showBarPayDialog, setShowBarPayDialog] = useState(false);
 
   const createSession = useCreateSession();
   const addDrinkLogs = useAddDrinkLogs();
