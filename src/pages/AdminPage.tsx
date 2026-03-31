@@ -31,7 +31,7 @@ const sortByWardrobe = (list: any[]) =>
     });
 
 const getOrderLines = (session: any): OrderLine[] => {
-  const logs: any[] = session.drink_logs ?? [];
+  const logs: any[] = [...(session.drink_logs ?? [])].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   const map = new Map<string, { name: string; qty: number; price: number }>();
   for (const log of logs) {
     const name = log.products?.full_name ?? log.products?.shorthand ?? 'Onbekend';

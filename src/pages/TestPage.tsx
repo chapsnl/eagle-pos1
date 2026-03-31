@@ -264,7 +264,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession]);
 
   const popupOrderLines: OrderLine[] = useMemo(() => {
-    return liveDbLogs.map((l) => ({
+    return [...liveDbLogs].reverse().map((l) => ({
       name: l.product_name,
       qty: l.quantity,
       price: 0,
