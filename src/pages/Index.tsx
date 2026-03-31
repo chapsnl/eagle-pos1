@@ -10,7 +10,7 @@ import { AdminPage } from './AdminPage';
 import { OpenPage } from './OpenPage';
 import { ClosedPage } from './ClosedPage';
 import { TestPage } from './TestPage';
-import { Send } from 'lucide-react';
+import { Send, X, Delete } from 'lucide-react';
 import { useCreateSession, useAddDrinkLogs, useUpdateSession, useFindActiveSessionByWardrobe } from '@/hooks/useSessions';
 import { SessionPopup } from '@/components/pos/SessionPopup';
 import { broadcastOrder, clearOrder, SyncOrderItem } from '@/lib/orderSync';
@@ -20,7 +20,7 @@ export interface DbOrderItem {
   quantity: number;
 }
 
-const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'DEL'];
+const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
 const ENTRY_STORAGE_KEY = 'pos_started';
 
 const readStartedFlag = () => {
@@ -155,8 +155,16 @@ const Index = () => {
   }, [barNumber, barPhase, activeView, resolveSessionByWardrobe]);
 
   const handleNumKey = (key: string) => {
-    if (key === 'DEL') setBarNumber('');
-    else if (barNumber.length < 3) setBarNumber(barNumber + key);
+    if (key === 'DEL') {
+      setBarNumber('');
+      lastLookupRef.current = null;
+      return;
+    }
+    if (key === 'BACK') {
+      setBarNumber(prev => prev.slice(0, -1));
+      return;
+    }
+    if (barNumber.length < 3) setBarNumber(barNumber + key);
   };
 
   const handleConfirmAdd = useCallback(async () => {
@@ -353,7 +361,9 @@ const Index = () => {
           <div className="px-4 pb-2">
             <div className="w-full max-w-md mx-auto grid grid-cols-3 gap-0">
               {NUM_KEYS.map((key, i) => (
-                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="py-3 text-2xl font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: key === 'DEL' ? '#fff' : '#e5e5e5', border: '1px solid #333' }}>{key}</button>
+                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="py-3 text-2xl font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333' }}>
+                  {key === 'DEL' ? <X className="mx-auto w-6 h-6" /> : key === 'BACK' ? <Delete className="mx-auto w-6 h-6" /> : key}
+                </button>
               ))}
             </div>
           </div>
