@@ -35,6 +35,7 @@ const SessionPopup = ({
   showPrices = false,
   totalAmount = 0,
   actions = [],
+  subtitleSize,
 }: SessionPopupProps) => {
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
