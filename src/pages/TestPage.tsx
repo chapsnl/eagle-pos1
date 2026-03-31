@@ -343,46 +343,27 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     />
   );
 
-  const printReceipt = useCallback((guestNumber: string) => {
-    const now = new Date();
-    const date = now.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const time = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
-    const bonHTML = `<div style="width:300px;text-align:center;font-family:sans-serif;">
-      <div style="border-top:10px solid black;margin-bottom:10px;"></div>
-      <h1 style="font-size:50pt;margin:0;font-weight:bold;">BETAALD</h1>
-      <div style="border-bottom:10px solid black;margin-top:10px;"></div>
-      <p style="font-size:16pt;font-weight:bold;">Gast: ${guestNumber}</p>
-      <p style="font-size:12pt;">${date} - ${time}</p>
-    </div>`;
+  const printReceipt = useCallback(async (guestNumber: string) => {
+    toast.info('Bon wordt verzonden naar printer...');
 
-    // Debug feedback
-    alert('Verzenden naar printer...');
+    try {
+      const { data, error } = await supabase.functions.invoke('print-receipt', {
+        body: { guestNumber, printerIp: '192.168.178.82' },
+      });
 
-    // Kiosk Pro JS Bridge
-    const kp = (window as any).KioskPro;
-    if (kp?.print?.printHTML) {
-      kp.print.printHTML(bonHTML);
-      return;
+      if (error) {
+        console.error('Print edge function error:', error);
+        toast.error('Printfout: ' + (error.message || 'Onbekend'));
+      } else if (data?.success) {
+        toast.success('Bon verzonden!');
+      } else {
+        console.error('Print failed:', data?.error);
+        toast.error('Printer niet bereikbaar: ' + (data?.error || 'Onbekend'));
+      }
+    } catch (e: any) {
+      console.error('Print exception:', e);
+      toast.error('Printfout: ' + e.message);
     }
-
-    // Plan B: Direct ESC/POS over HTTP to NT320_W
-    fetch('http://192.168.178.82/cgi-bin/print.cgi', {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: `\n=============================\n        BETAALD\n=============================\n\n   Gast: ${guestNumber}\n   ${date} - ${time}\n\n=============================\n\n\n`,
-    }).catch(() => {
-      // Silent fail for no-cors
-    });
-
-    // Fallback: iframe + window.print()
-    const fullHTML = `<!DOCTYPE html><html><head><style>@page{margin:0;}body{margin:0;padding:20px 0;}</style></head><body>${bonHTML}<script>window.onload=function(){window.print();}<\/script></body></html>`;
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:0;height:0;';
-    document.body.appendChild(iframe);
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (doc) { doc.open(); doc.write(fullHTML); doc.close(); }
-    setTimeout(() => { document.body.removeChild(iframe); }, 5000);
   }, []);
 
   const handleDoorgaan = useCallback(() => {
