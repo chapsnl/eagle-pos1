@@ -150,24 +150,27 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               <p className="text-center py-4 text-sm" style={{ color: '#666' }}>Geen actieve sessies</p>
             ) : (
               <div className="grid grid-cols-4 gap-2">
-                {sortedActive.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => { setSelectedSession(s); setSelectedType('active'); }}
-                    className="flex items-center justify-center font-extrabold transition-all active:scale-95"
-                    style={{
-                      backgroundColor: '#00cc13',
-                      borderRadius: '12px',
-                      padding: '14px 4px',
-                      color: '#fff',
-                      boxShadow: '0 0 12px #00cc1380',
-                    }}
-                  >
-                    <span style={{ fontSize: 'clamp(1rem, 3vw, 2rem)', lineHeight: 1 }}>
-                      {s.wardrobe_number?.replace(/\D/g, '')}
-                    </span>
-                  </button>
-                ))}
+                {sortedActive.map((s) => {
+                  const hasItems = (s.drink_logs ?? []).length > 0;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => { setSelectedSession(s); setSelectedType('active'); }}
+                      className="flex items-center justify-center font-extrabold transition-all active:scale-95"
+                      style={{
+                        backgroundColor: hasItems ? '#00cc13' : '#1a5c1a',
+                        borderRadius: '12px',
+                        padding: '14px 4px',
+                        color: hasItems ? '#fff' : '#88aa88',
+                        boxShadow: hasItems ? '0 0 12px #00cc1380' : 'none',
+                      }}
+                    >
+                      <span style={{ fontSize: 'clamp(1rem, 3vw, 2rem)', lineHeight: 1 }}>
+                        {s.wardrobe_number?.replace(/\D/g, '')}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
