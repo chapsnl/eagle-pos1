@@ -346,7 +346,7 @@ const Index = () => {
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
 
       {activeView === 'bar' && (
-        <div className="flex-1 flex flex-col overflow-hidden relative md:hidden lg:flex">
+        <div className="flex-1 flex flex-col overflow-hidden relative md:hidden xl:flex">
           <OrderBar items={items} total={total} onRemoveItem={removeItem} onClear={clearItems} />
           <ProductGrid onAddProduct={barPhase === 'products' ? handleBarAddProduct : () => {}} />
           <div className="pb-[max(0px,env(safe-area-inset-bottom))]">
