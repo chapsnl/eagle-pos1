@@ -294,6 +294,9 @@ const Index = () => {
     clearOrder();
   }, []);
 
+  // 20s inactivity timer: reset to input-number when idle in products phase
+  useInactivityTimer(activeView === 'bar' && barPhase === 'products', handleBarNext);
+
   const handleBarAddProduct = useCallback((product: DbProduct) => {
     if (barRetourMode) {
       removeItem(product.id);
