@@ -454,27 +454,17 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   }, []);
 
   const lockedWarningDialog = (
-    <SessionPopup
-      open={showLockedWarning}
-      onClose={handleLockedDismiss}
-      title=""
-      subtitle=""
-      orderLines={[]}
-      showTotal={false}
-      actions={[
-        { label: 'OK', onClick: handleLockedDismiss, variant: 'confirm' as const },
-      ]}
-      customContent={
-        <div className="flex flex-col items-center gap-4 py-4">
-          <div style={{ width: 80, height: 80, borderRadius: '50%', backgroundColor: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px #ef444480' }}>
-            <AlertCircle className="w-12 h-12 text-white" />
-          </div>
-          <p className="text-center font-extrabold text-lg" style={{ color: '#ef4444' }}>
-            Let op: Een andere medewerker is momenteel bezig met deze gast.
-          </p>
+    <Dialog open={showLockedWarning} onOpenChange={(open) => { if (!open) handleLockedDismiss(); }}>
+      <DialogContent className="bg-card flex flex-col items-center gap-4 py-8" style={{ borderColor: '#ef444440', borderRadius: 12, maxWidth: 360 }}>
+        <div style={{ width: 80, height: 80, borderRadius: '50%', backgroundColor: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px #ef444480' }}>
+          <AlertCircle className="w-12 h-12 text-white" />
         </div>
-      }
-    />
+        <p className="text-center font-extrabold text-lg px-4" style={{ color: '#ef4444' }}>
+          Let op: Een andere medewerker is momenteel bezig met deze gast.
+        </p>
+        <button onClick={handleLockedDismiss} className="w-full max-w-[200px] py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 6 }}>OK</button>
+      </DialogContent>
+    </Dialog>
   );
 
 
