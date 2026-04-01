@@ -271,17 +271,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     }));
   }, [liveDbLogs]);
 
-  const hasEntreeInSession = useCallback(() => {
-    const checkName = (name: string) => name.toLowerCase() === 'entree';
-    const checkShort = (s: string) => s.toLowerCase() === 'entr';
-    // Check current cart items
-    if (items.some((i) => checkName(i.product.full_name) || checkShort(i.product.shorthand))) return true;
-    // Check already booked logs
-    if (liveDbLogs.some((l) => checkName(l.product_name))) return true;
-    if (existingLogs.some((l) => checkName(l.product_name))) return true;
-    return false;
-  }, [items, liveDbLogs, existingLogs]);
-
   const executePayVerwerk = useCallback(async () => {
     if (!sessionId) return;
     setShowPayDialog(false);
@@ -303,13 +292,9 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   const handlePayVerwerk = useCallback(() => {
     if (!sessionId) return;
-    if (hasEntreeInSession()) {
-      executePayVerwerk();
-    } else {
-      setShowPayDialog(false);
-      setShowEntreeWarning(true);
-    }
-  }, [sessionId, hasEntreeInSession, executePayVerwerk]);
+    setShowPayDialog(false);
+    setShowEntreeWarning(true);
+  }, [sessionId]);
 
   const bonDialog = (
     <SessionPopup
@@ -343,21 +328,17 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     />
   );
 
-  const handleDoorgaan = useCallback(() => {
-    executePayVerwerk();
-  }, [executePayVerwerk]);
-
   const entreeWarningDialog = (
     <SessionPopup
       open={showEntreeWarning}
       onClose={() => setShowEntreeWarning(false)}
       title="Let op"
-      subtitle="Geen Entree aangeslagen."
+      subtitle="Weet je zeker dat je niets bent vergeten?"
       orderLines={[]}
       showTotal={false}
       actions={[
-        { label: 'TOEVOEGEN', onClick: () => { setShowEntreeWarning(false); }, variant: 'cancel' },
-        { label: 'DOORGAAN', onClick: handleDoorgaan, variant: 'confirm' },
+        { label: 'TERUG', onClick: () => { setShowEntreeWarning(false); }, variant: 'cancel' },
+        { label: 'VERDER', onClick: () => { executePayVerwerk(); }, variant: 'confirm' },
       ]}
     />
   );
