@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useInactivityTimer } from '@/hooks/useInactivityTimer';
 import { DbProduct } from '@/hooks/useProducts';
 import { FeedbackType, AppView } from '@/types/pos';
 import IntroPage from './IntroPage';
@@ -292,6 +293,9 @@ const Index = () => {
     lastLookupRef.current = null;
     clearOrder();
   }, []);
+
+  // 20s inactivity timer: reset to input-number when idle in products phase
+  useInactivityTimer(activeView === 'bar' && barPhase === 'products', handleBarNext);
 
   const handleBarAddProduct = useCallback((product: DbProduct) => {
     if (barRetourMode) {
