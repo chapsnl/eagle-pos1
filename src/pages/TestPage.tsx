@@ -601,7 +601,10 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   if (phase === 'input') {
     return (
-      <div className="bg-black w-full h-full flex-1 overflow-hidden flex items-center justify-center">
+      <div className="bg-black w-full h-full flex-1 overflow-hidden flex items-center justify-center relative">
+        <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
+          <img src="/placeholder.svg" alt="" className="object-contain w-[80%] h-[80%] opacity-[0.15]" />
+        </div>
         <FeedbackOverlay type={feedback} />
         {addDialog}
         {closedBlockDialog}
@@ -610,10 +613,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         {payDialog}
         {entreeWarningDialog}
 
-        <div className="w-full max-w-sm mx-auto h-full max-h-[70vh] flex flex-col justify-center px-4 relative overflow-hidden">
-          <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
-            <img src="/placeholder.svg" alt="" className="object-contain w-3/4 h-3/4 opacity-[0.15]" />
-          </div>
+        <div className="w-full max-w-sm mx-auto h-full max-h-[70vh] flex flex-col justify-center px-4 relative z-10">
           <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2 shrink-0 relative z-10" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
           <div className="flex items-center justify-center py-2 mb-6 shrink-0 relative z-10">
             <div className="w-full" style={{ maxWidth: '280px' }}>
