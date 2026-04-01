@@ -601,8 +601,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   if (phase === 'input') {
     return (
-      <div className="relative bg-black min-h-screen overflow-hidden w-full h-full flex-1 isolate" style={{ minHeight: '100%' }}>
-        <img src="/placeholder.svg" alt="background" className="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none -z-10" style={{ opacity: 0.15 }} />
+      <div className="bg-black w-full h-full flex-1 relative">
         <FeedbackOverlay type={feedback} />
         {addDialog}
         {closedBlockDialog}
@@ -611,7 +610,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         {payDialog}
         {entreeWarningDialog}
 
-        <div className="absolute inset-0 z-20 flex flex-col" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
+        <div className="absolute inset-0 flex flex-col">
           <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
           <div className="flex-1 flex flex-col items-center justify-center px-4">
             <div className="w-full" style={{ maxWidth: '280px' }}>
