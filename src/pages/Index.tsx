@@ -309,7 +309,8 @@ const Index = () => {
     }
   }, [barSessionId, items, barSessionTotal, total, addDrinkLogs, updateSession, showFeedback, unlockSession]);
 
-  const handleBarNext = useCallback(() => {
+  const handleBarNext = useCallback(async () => {
+    if (barSessionId) await unlockSession(barSessionId);
     setItems([]);
     setBarNumber('');
     setBarSessionId(null);
@@ -318,12 +319,18 @@ const Index = () => {
     setBarRetourMode(false);
     lastLookupRef.current = null;
     clearOrder();
-  }, []);
+  }, [barSessionId, unlockSession]);
 
   // 20s inactivity timer: reset to input-number when idle in products phase
   // Pause timer when any popup/dialog is open
-  const anyBarPopupOpen = showAddDialog || showBarPayDialog;
+  const anyBarPopupOpen = showAddDialog || showBarPayDialog || showBarLockedWarning;
   useInactivityTimer(activeView === 'bar' && barPhase === 'products' && !anyBarPopupOpen, handleBarNext);
+
+  const handleBarLockedDismiss = useCallback(() => {
+    setShowBarLockedWarning(false);
+    setBarNumber('');
+    lastLookupRef.current = null;
+  }, []);
 
   const handleBarAddProduct = useCallback((product: DbProduct) => {
     if (barRetourMode) {
