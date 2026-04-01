@@ -636,9 +636,10 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
           )}
         </div>
       </div>
+      )}
 
-      {/* Right column - 80% - Product grid */}
-      <div className="flex-1 flex flex-col overflow-hidden gap-[1px]" style={{ width: '80%', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+      {/* Right column - Product grid (full width in input, 80% in products) */}
+      <div className="flex-1 flex flex-col overflow-hidden gap-[1px]" style={{ width: phase === 'products' ? '80%' : '100%', backgroundColor: 'rgba(0,0,0,0.3)' }}>
         {gridLayout.map((row, ri) => (
           <div key={ri} className="flex-1 flex gap-[1px]" style={{ minHeight: 0 }}>
             {row.map((cell, ci) => {
