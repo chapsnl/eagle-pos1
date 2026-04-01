@@ -3,12 +3,13 @@ import { toast } from 'sonner';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
-import { Send, X, Delete } from 'lucide-react';
+import { Send, X, Delete, AlertCircle } from 'lucide-react';
 import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { broadcastOrder, clearOrder } from '@/lib/orderSync';
+import { getDeviceId } from '@/hooks/useDeviceId';
 
 interface TestOrderItem {
   product: DbProduct;
@@ -77,6 +78,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const [sessionTotal, setSessionTotal] = useState(0);
   const [existingLogs, setExistingLogs] = useState<{ product_id: string; product_name: string; quantity: number; unit_price: number }[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showLockedWarning, setShowLockedWarning] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const [showClosedBlockDialog, setShowClosedBlockDialog] = useState(false);
   const lastCoatLookupRef = useRef<string | null>(null);
@@ -89,6 +91,17 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
   const existingTotal = existingLogs.reduce((sum, l) => sum + l.unit_price * l.quantity, 0);
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
+  const deviceId = useRef(getDeviceId()).current;
+
+  // Lock a session for this device
+  const lockSession = useCallback(async (sid: string) => {
+    await supabase.from('sessions').update({ locked_by: deviceId, locked_at: new Date().toISOString() } as any).eq('id', sid);
+  }, [deviceId]);
+
+  // Unlock a session
+  const unlockSession = useCallback(async (sid: string) => {
+    await supabase.from('sessions').update({ locked_by: null, locked_at: null } as any).eq('id', sid);
+  }, []);
 
   // Live drink logs via Realtime subscription + initial fetch
   const [liveDbLogs, setLiveDbLogs] = useState<{ product_id: string; product_name: string; quantity: number }[]>([]);
@@ -145,6 +158,19 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         onNotFound();
         return;
       }
+      // Check if locked by another device
+      const lockedBy = (session as any).locked_by;
+      const lockedAt = (session as any).locked_at;
+      if (lockedBy && lockedBy !== deviceId) {
+        // Check if lock is stale (> 60 seconds old = auto-expired)
+        const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
+        if (lockAge < 60000) {
+          setShowLockedWarning(true);
+          return;
+        }
+      }
+      // Lock session for this device
+      await lockSession(session.id);
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
       setPhase('products');
@@ -153,7 +179,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [findActiveSessionByWardrobe]);
+  }, [findActiveSessionByWardrobe, deviceId, lockSession]);
 
   // Auto-lookup coat number at 3 digits
   useEffect(() => {
@@ -252,12 +278,13 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         id: sessionId,
         total_amount: sessionTotal + total,
       });
+      await unlockSession(sessionId);
       setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat');
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession]);
+  }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession, unlockSession]);
 
   const popupOrderLines: OrderLine[] = useMemo(() => {
     return [...liveDbLogs].reverse().map((l) => ({
@@ -272,6 +299,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     setShowPayDialog(false);
     setShowEntreeWarning(false);
     try {
+      await unlockSession(sessionId);
       await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
       clearOrder();
       setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); setLiveDbLogs([]);
@@ -280,7 +308,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [sessionId, updateSession]);
+  }, [sessionId, updateSession, unlockSession]);
 
   const handlePayVerwerk = useCallback(() => {
     if (!sessionId) return;
@@ -357,6 +385,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         wardrobe_number: pendingWardrobe,
         is_event_numbered: true,
       });
+      await lockSession(session.id);
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
       setPendingWardrobe(null);
@@ -417,7 +446,28 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     />
   );
 
-  // Instant book on product click
+  const handleLockedDismiss = useCallback(() => {
+    setShowLockedWarning(false);
+    setCoatNumber('');
+    setActiveField('coat');
+    lastCoatLookupRef.current = null;
+  }, []);
+
+  const lockedWarningDialog = (
+    <Dialog open={showLockedWarning} onOpenChange={(open) => { if (!open) handleLockedDismiss(); }}>
+      <DialogContent className="bg-card flex flex-col items-center gap-4 py-8" style={{ borderColor: '#ef444440', borderRadius: 12, maxWidth: 360 }}>
+        <div style={{ width: 80, height: 80, borderRadius: '50%', backgroundColor: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px #ef444480' }}>
+          <AlertCircle className="w-12 h-12 text-white" />
+        </div>
+        <p className="text-center font-extrabold text-lg px-4" style={{ color: '#ef4444' }}>
+          Let op: Een andere medewerker is momenteel bezig met deze gast.
+        </p>
+        <button onClick={handleLockedDismiss} className="w-full max-w-[200px] py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 6 }}>OK</button>
+      </DialogContent>
+    </Dialog>
+  );
+
+
   const addAndBook = useCallback(async (product: DbProduct) => {
     if (!sessionId) return;
 
@@ -543,7 +593,8 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         <FeedbackOverlay type={feedback} />
         {addDialog}
         {closedBlockDialog}
-        <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}><h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>GAST NUMMER</h2></h2>
+        {lockedWarningDialog}
+        <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
         <div className="flex-1 flex flex-col items-center justify-center px-4">
           <div className="w-full" style={{ maxWidth: '280px' }}>
             <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(16px, 3vh, 32px) 16px', border: '3px solid #00cc13', boxShadow: '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
@@ -648,7 +699,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
               // Row 6 (index 5), first cell -> NEXT button
               if (ri === 5 && ci === 0) {
                 return (
-                  <button key={ci} onClick={() => { setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); }} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75"
+                  <button key={ci} onClick={async () => { if (sessionId) await unlockSession(sessionId); setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); clearOrder(); }} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75"
                     onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; }}
                     onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
                     onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; }}
