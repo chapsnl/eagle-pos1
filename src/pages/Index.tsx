@@ -348,27 +348,9 @@ const Index = () => {
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
 
       {activeView === 'bar' && (
-        <div className="flex-1 flex flex-col overflow-hidden relative md:hidden xl:flex bg-black">
-          {/* Subtle watermark background */}
-          <div className="absolute inset-0 w-full h-full bg-[url('/placeholder.svg')] bg-cover bg-center opacity-15 pointer-events-none" style={{ zIndex: 0 }} />
-          <div className="relative z-10"><OrderBar items={items} total={total} onRemoveItem={removeItem} onClear={clearItems} /></div>
-          <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
-            <ProductGrid onAddProduct={barPhase === 'products' ? handleBarAddProduct : () => {}} />
-          </div>
-          <div className="relative z-10 pb-[max(0px,env(safe-area-inset-bottom))]">
-            <button
-              onClick={handleBoek}
-              disabled={items.length === 0 || barPhase !== 'products'}
-              className="pos-btn w-full min-h-[80px] py-4 text-2xl font-extrabold flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110 active:brightness-75"
-              style={{ backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340, inset 0 1px 0 #ffffff20' }}
-            >
-              <Send className="w-6 h-6" />
-              BOEK — €{total.toFixed(2)}
-            </button>
-          </div>
-
-          {/* Numpad overlay when in input-number phase */}
-          {barPhase === 'input-number' && (
+        barPhase === 'input-number' ? (
+          <div className="relative bg-black min-h-screen overflow-hidden w-full flex-1 md:hidden xl:flex flex-col isolate" style={{ minHeight: '100%' }}>
+            <img src="/placeholder.svg" alt="background" className="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none -z-10" style={{ opacity: 0.15 }} />
             <div className="absolute inset-0 z-20 flex flex-col" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
               <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
               <div className="flex-1 flex flex-col items-center justify-center px-4">
@@ -389,8 +371,24 @@ const Index = () => {
               </div>
               <div className="h-4" />
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col overflow-hidden relative md:hidden xl:flex">
+            <OrderBar items={items} total={total} onRemoveItem={removeItem} onClear={clearItems} />
+            <ProductGrid onAddProduct={barPhase === 'products' ? handleBarAddProduct : () => {}} />
+            <div className="pb-[max(0px,env(safe-area-inset-bottom))]">
+              <button
+                onClick={handleBoek}
+                disabled={items.length === 0 || barPhase !== 'products'}
+                className="pos-btn w-full min-h-[80px] py-4 text-2xl font-extrabold flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed hover:brightness-110 active:brightness-75"
+                style={{ backgroundColor: '#00cc13', color: '#ffffff', boxShadow: '0 0 20px #00cc1380, 0 0 40px #00cc1340, inset 0 1px 0 #ffffff20' }}
+              >
+                <Send className="w-6 h-6" />
+                BOEK — €{total.toFixed(2)}
+              </button>
+            </div>
+          </div>
+        )
       )}
 
       {activeView === 'test' && <TestPage initialGuestNumber={pendingGuestNumber} initialSessionData={pendingSessionData} onGuestNumberConsumed={() => { setPendingGuestNumber(null); setPendingSessionData(null); }} />}

@@ -599,11 +599,44 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     }
   }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs, coatNumber, existingTotal]);
 
-  return (
-    <div className="flex-1 flex overflow-hidden h-full relative bg-black" style={{ ...(phase === 'products' && retourMode ? { border: '4px solid #ef4444', boxShadow: 'inset 0 0 30px rgba(239,68,68,0.15)' } : {}) }}>
-      {/* Subtle watermark background */}
-      <div className="absolute inset-0 w-full h-full bg-[url('/placeholder.svg')] bg-cover bg-center opacity-15 pointer-events-none" style={{ zIndex: 0 }} />
+  if (phase === 'input') {
+    return (
+      <div className="relative bg-black min-h-screen overflow-hidden w-full h-full flex-1 isolate" style={{ minHeight: '100%' }}>
+        <img src="/placeholder.svg" alt="background" className="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none -z-10" style={{ opacity: 0.15 }} />
+        <FeedbackOverlay type={feedback} />
+        {addDialog}
+        {closedBlockDialog}
+        {lockedWarningDialog}
+        {bonDialog}
+        {payDialog}
+        {entreeWarningDialog}
 
+        <div className="absolute inset-0 z-20 flex flex-col" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
+          <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
+          <div className="flex-1 flex flex-col items-center justify-center px-4">
+            <div className="w-full" style={{ maxWidth: '280px' }}>
+              <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(16px, 3vh, 32px) 16px', border: '3px solid #00cc13', boxShadow: '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
+                {coatNumber || <span style={{ color: '#9ca3af' }}>—</span>}
+              </div>
+            </div>
+          </div>
+          <div className="px-4 pb-2">
+            <div className="w-full max-w-md mx-auto grid grid-cols-3 gap-0">
+              {NUM_KEYS.map((key, i) => (
+                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="py-3 text-2xl font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333' }}>
+                  {key === 'DEL' ? <X className="mx-auto w-6 h-6" /> : key === 'BACK' ? <Delete className="mx-auto w-6 h-6" /> : key}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="h-4" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex overflow-hidden h-full relative" style={{ ...(retourMode ? { border: '4px solid #ef4444', boxShadow: 'inset 0 0 30px rgba(239,68,68,0.15)' } : {}) }}>
       <FeedbackOverlay type={feedback} />
       {addDialog}
       {closedBlockDialog}
@@ -613,15 +646,14 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       {entreeWarningDialog}
 
       {/* Retour mode banner */}
-      {phase === 'products' && retourMode && (
+      {retourMode && (
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 40, backgroundColor: '#ef4444', color: '#fff', textAlign: 'center', padding: '6px 0', fontSize: 'clamp(14px, 2vw, 22px)', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', animation: 'pulse 1.5s ease-in-out infinite' }}>
           ⚠ RETOUR MODUS ACTIEF ⚠
         </div>
       )}
 
-      {/* Left column - 20% - Guest overview (only in products phase) */}
-      {phase === 'products' && (
-      <div className="relative z-10 flex flex-col h-full" style={{ width: '20%', backgroundColor: retourMode ? '#1a0a0a' : '#121212', borderRight: `1px solid ${retourMode ? '#ef4444' : '#333'}`, transition: 'background-color 0.3s ease' }}>
+      {/* Left column - 20% - Guest overview */}
+      <div className="flex flex-col h-full" style={{ width: '20%', backgroundColor: retourMode ? '#1a0a0a' : '#121212', borderRight: `1px solid ${retourMode ? '#ef4444' : '#333'}`, transition: 'background-color 0.3s ease' }}>
         <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
           <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(32px, 6vw, 56px)' }}>
             {coatNumber || ''}
@@ -629,7 +661,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
-        {liveDbLogs.map((item, index) => (
+          {liveDbLogs.map((item, index) => (
             <div key={item.product_id} style={{ color: '#e5e5e5', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', transition: 'all 0.3s ease', fontWeight: index === 0 ? 800 : 400, ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
               {retourFlash === item.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
               {item.quantity} x {item.product_name}
@@ -640,15 +672,12 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
           )}
         </div>
       </div>
-      )}
 
-      {/* Product grid - only visible in products phase */}
-      {phase === 'products' && (
-      <div className="relative z-10 flex-1 flex flex-col overflow-hidden gap-[1px]" style={{ width: '80%', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+      {/* Right column - Product grid */}
+      <div className="flex-1 flex flex-col overflow-hidden gap-[1px]" style={{ width: '80%', backgroundColor: 'rgba(0,0,0,0.3)' }}>
         {gridLayout.map((row, ri) => (
           <div key={ri} className="flex-1 flex gap-[1px]" style={{ minHeight: 0 }}>
             {row.map((cell, ci) => {
-              // Row 4 (index 3), first cell -> ENTR button styled with label "8"
               if (ri === 3 && ci === 0) {
                 const entrProduct = productMap.get('ENTR');
                 const entBg = entrProduct?.category_color || '#e4e2e2';
@@ -663,7 +692,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
                   </button>
                 );
               }
-              // Row 5 (index 4), first cell -> PAY button
               if (ri === 4 && ci === 0) {
                 return (
                   <button key={ci} onClick={() => setShowPayDialog(true)} style={{ flex: cell.span, backgroundColor: '#ef4444', color: '#fff' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75"
@@ -675,7 +703,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
                   </button>
                 );
               }
-              // Row 5 (index 4), second cell -> RETOUR button
               if (ri === 4 && ci === 1) {
                 return (
                   <button key={ci} onClick={() => setRetourMode((m) => !m)} style={{ flex: cell.span, backgroundColor: retourMode ? '#ef4444' : '#7c3aed', color: '#fff', transition: 'background-color 0.2s ease' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75"
@@ -687,7 +714,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
                   </button>
                 );
               }
-              // Row 6 (index 5), first cell -> NEXT button
               if (ri === 5 && ci === 0) {
                 return (
                   <button key={ci} onClick={() => resetToInput()} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75"
@@ -699,7 +725,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
                   </button>
                 );
               }
-              // Row 6 (index 5), second cell -> Empty placeholder (reserved for future use)
               if (ri === 5 && ci === 1) {
                 return (
                   <div key={ci} style={{ flex: cell.span, backgroundColor: '#2a2a2a' }} className="flex items-center justify-center p-1 min-w-0" />
@@ -723,31 +748,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
           </div>
         ))}
       </div>
-      )}
-
-      {/* Numpad overlay when in input phase */}
-      {phase === 'input' && (
-        <div className="absolute inset-0 z-20 flex flex-col" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
-          <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
-          <div className="flex-1 flex flex-col items-center justify-center px-4">
-            <div className="w-full" style={{ maxWidth: '280px' }}>
-              <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(16px, 3vh, 32px) 16px', border: '3px solid #00cc13', boxShadow: '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
-                {coatNumber || <span style={{ color: '#9ca3af' }}>—</span>}
-              </div>
-            </div>
-          </div>
-          <div className="px-4 pb-2">
-            <div className="w-full max-w-md mx-auto grid grid-cols-3 gap-0">
-              {NUM_KEYS.map((key, i) => (
-                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="py-3 text-2xl font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333' }}>
-                  {key === 'DEL' ? <X className="mx-auto w-6 h-6" /> : key === 'BACK' ? <Delete className="mx-auto w-6 h-6" /> : key}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="h-4" />
-        </div>
-      )}
     </div>
   );
 };
