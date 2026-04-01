@@ -99,6 +99,7 @@ const Index = () => {
   const clearItems = useCallback(() => setItems([]), []);
 
   const showFeedback = useCallback((type: FeedbackType) => {
+    if (type === 'success') return; // no delay for success
     setFeedback(type);
     setTimeout(() => setFeedback(null), 2000);
   }, []);
@@ -126,8 +127,7 @@ const Index = () => {
       }
       setBarSessionId(session.id);
       setBarSessionTotal(Number(session.total_amount ?? 0));
-      setFeedback('success');
-      setTimeout(() => { setFeedback(null); setBarPhase('products'); }, 1000);
+      setBarPhase('products');
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
@@ -178,8 +178,7 @@ const Index = () => {
       setBarSessionId(session.id);
       setBarSessionTotal(Number(session.total_amount ?? 0));
       setPendingWardrobe(null);
-      setFeedback('success');
-      setTimeout(() => { setFeedback(null); setBarPhase('products'); }, 1000);
+      setBarPhase('products');
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
@@ -236,16 +235,13 @@ const Index = () => {
         timestamp: Date.now(),
       });
 
-      showFeedback('success');
-      setTimeout(() => {
-        setItems([]);
-        setBarNumber('');
-        setBarSessionId(null);
-        setBarSessionTotal(0);
-        setBarPhase('input-number');
-        lastLookupRef.current = null;
-        clearOrder();
-      }, 2000);
+      setItems([]);
+      setBarNumber('');
+      setBarSessionId(null);
+      setBarSessionTotal(0);
+      setBarPhase('input-number');
+      lastLookupRef.current = null;
+      clearOrder();
     } catch {
       showFeedback('error');
     }
@@ -274,16 +270,13 @@ const Index = () => {
         await updateSession.mutateAsync({ id: barSessionId, status: 'paid' });
       }
       clearOrder();
-      showFeedback('success');
-      setTimeout(() => {
-        setItems([]);
-        setBarNumber('');
-        setBarSessionId(null);
-        setBarSessionTotal(0);
-        setBarPhase('input-number');
-        setBarRetourMode(false);
-        lastLookupRef.current = null;
-      }, 1500);
+      setItems([]);
+      setBarNumber('');
+      setBarSessionId(null);
+      setBarSessionTotal(0);
+      setBarPhase('input-number');
+      setBarRetourMode(false);
+      lastLookupRef.current = null;
     } catch {
       showFeedback('error');
     }

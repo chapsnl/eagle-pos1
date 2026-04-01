@@ -147,8 +147,8 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       }
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
-      setFeedback('success');
-      setTimeout(() => { setFeedback(null); setPhase('products'); setActiveField(null); }, 1000);
+      setPhase('products');
+      setActiveField(null);
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
@@ -252,11 +252,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         id: sessionId,
         total_amount: sessionTotal + total,
       });
-      setFeedback('success');
-      setTimeout(() => {
-        setFeedback(null);
-        setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat');
-      }, 2000);
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat');
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
@@ -278,12 +274,8 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     try {
       await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
       clearOrder();
-      setFeedback('success');
-      setTimeout(() => {
-        setFeedback(null);
-        setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); setLiveDbLogs([]);
-        lastCoatLookupRef.current = null;
-      }, 1500);
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); setLiveDbLogs([]);
+      lastCoatLookupRef.current = null;
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
@@ -368,8 +360,8 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
       setPendingWardrobe(null);
-      setFeedback('success');
-      setTimeout(() => { setFeedback(null); setPhase('products'); setActiveField(null); }, 1000);
+      setPhase('products');
+      setActiveField(null);
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
