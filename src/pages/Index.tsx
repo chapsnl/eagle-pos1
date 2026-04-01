@@ -295,7 +295,9 @@ const Index = () => {
   }, []);
 
   // 20s inactivity timer: reset to input-number when idle in products phase
-  useInactivityTimer(activeView === 'bar' && barPhase === 'products', handleBarNext);
+  // Pause timer when any popup/dialog is open
+  const anyBarPopupOpen = showAddDialog || showBarPayDialog;
+  useInactivityTimer(activeView === 'bar' && barPhase === 'products' && !anyBarPopupOpen, handleBarNext);
 
   const handleBarAddProduct = useCallback((product: DbProduct) => {
     if (barRetourMode) {
