@@ -385,6 +385,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         wardrobe_number: pendingWardrobe,
         is_event_numbered: true,
       });
+      await lockSession(session.id);
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
       setPendingWardrobe(null);
