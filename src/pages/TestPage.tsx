@@ -158,6 +158,19 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         onNotFound();
         return;
       }
+      // Check if locked by another device
+      const lockedBy = (session as any).locked_by;
+      const lockedAt = (session as any).locked_at;
+      if (lockedBy && lockedBy !== deviceId) {
+        // Check if lock is stale (> 60 seconds old = auto-expired)
+        const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
+        if (lockAge < 60000) {
+          setShowLockedWarning(true);
+          return;
+        }
+      }
+      // Lock session for this device
+      await lockSession(session.id);
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
       setPhase('products');
@@ -166,7 +179,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [findActiveSessionByWardrobe]);
+  }, [findActiveSessionByWardrobe, deviceId, lockSession]);
 
   // Auto-lookup coat number at 3 digits
   useEffect(() => {
