@@ -603,7 +603,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     return (
       <div className="bg-black w-full h-full flex-1 overflow-hidden flex items-center justify-center relative">
         <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
-          <img src="/placeholder.svg" alt="" className="object-contain w-[80%] h-[80%] opacity-[0.15]" />
+          <img src="/placeholder.svg" alt="" className="object-cover w-full h-full opacity-10" />
         </div>
         <FeedbackOverlay type={feedback} />
         {addDialog}
