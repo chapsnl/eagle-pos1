@@ -352,7 +352,7 @@ const Index = () => {
           <div className="bg-black w-full flex-1 md:hidden xl:flex flex-col overflow-hidden" style={{ minHeight: '100%' }}>
             <div className="w-full max-w-sm mx-auto h-full max-h-[70vh] flex flex-col justify-center px-4 my-auto">
               <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2 shrink-0" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
-              <div className="flex items-center justify-center py-2 shrink-0">
+              <div className="flex items-center justify-center py-2 mb-6 shrink-0">
                 <div className="w-full" style={{ maxWidth: '280px' }}>
                   <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: '3px solid #00cc13', boxShadow: '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
                     {barNumber || <span style={{ color: '#9ca3af' }}>—</span>}
