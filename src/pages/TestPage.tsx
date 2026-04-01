@@ -252,11 +252,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         id: sessionId,
         total_amount: sessionTotal + total,
       });
-      setFeedback('success');
-      setTimeout(() => {
-        setFeedback(null);
-        setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat');
-      }, 2000);
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat');
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
