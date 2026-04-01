@@ -91,6 +91,17 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
   const existingTotal = existingLogs.reduce((sum, l) => sum + l.unit_price * l.quantity, 0);
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
+  const deviceId = useRef(getDeviceId()).current;
+
+  // Lock a session for this device
+  const lockSession = useCallback(async (sid: string) => {
+    await supabase.from('sessions').update({ locked_by: deviceId, locked_at: new Date().toISOString() } as any).eq('id', sid);
+  }, [deviceId]);
+
+  // Unlock a session
+  const unlockSession = useCallback(async (sid: string) => {
+    await supabase.from('sessions').update({ locked_by: null, locked_at: null } as any).eq('id', sid);
+  }, []);
 
   // Live drink logs via Realtime subscription + initial fetch
   const [liveDbLogs, setLiveDbLogs] = useState<{ product_id: string; product_name: string; quantity: number }[]>([]);
