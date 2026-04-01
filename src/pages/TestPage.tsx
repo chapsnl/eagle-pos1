@@ -317,7 +317,16 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     setShowEntreeWarning(true);
   }, [sessionId]);
 
-  const bonDialog = (
+  // Reset to input screen (used by NEXT button and inactivity timer)
+  const resetToInput = useCallback(async () => {
+    if (sessionId) await unlockSession(sessionId);
+    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); clearOrder(); setLiveDbLogs([]);
+    lastCoatLookupRef.current = null;
+  }, [sessionId, unlockSession]);
+
+  // 20s inactivity timer: reset to input when idle in products phase
+  useInactivityTimer(phase === 'products', resetToInput);
+
     <SessionPopup
       open={showBonDialog}
       onClose={() => setShowBonDialog(false)}
