@@ -349,7 +349,7 @@ const Index = () => {
 
       {activeView === 'bar' && (
         barPhase === 'input-number' ? (
-          <div className="bg-black w-full flex-1 md:hidden xl:flex flex-col relative" style={{ minHeight: '100%' }}>
+          <div className="bg-black w-full flex-1 md:hidden xl:flex flex-col relative overflow-hidden" style={{ minHeight: '100%' }}>
             <div className="absolute inset-0 flex flex-col">
               <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
               <div className="flex-1 flex flex-col items-center justify-center px-4">
