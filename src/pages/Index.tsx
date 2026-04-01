@@ -270,15 +270,13 @@ const Index = () => {
         await updateSession.mutateAsync({ id: barSessionId, status: 'paid' });
       }
       clearOrder();
-      showFeedback('success');
-      setTimeout(() => {
-        setItems([]);
-        setBarNumber('');
-        setBarSessionId(null);
-        setBarSessionTotal(0);
-        setBarPhase('input-number');
-        setBarRetourMode(false);
-        lastLookupRef.current = null;
+      setItems([]);
+      setBarNumber('');
+      setBarSessionId(null);
+      setBarSessionTotal(0);
+      setBarPhase('input-number');
+      setBarRetourMode(false);
+      lastLookupRef.current = null;
       }, 1500);
     } catch {
       showFeedback('error');

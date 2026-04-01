@@ -360,8 +360,8 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
       setPendingWardrobe(null);
-      setFeedback('success');
-      setTimeout(() => { setFeedback(null); setPhase('products'); setActiveField(null); }, 1000);
+      setPhase('products');
+      setActiveField(null);
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
