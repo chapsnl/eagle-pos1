@@ -352,8 +352,10 @@ const Index = () => {
           {/* Subtle watermark background */}
           <div className="absolute inset-0 w-full h-full bg-[url('/placeholder.svg')] bg-cover bg-center opacity-15 pointer-events-none" style={{ zIndex: 0 }} />
           <div className="relative z-10"><OrderBar items={items} total={total} onRemoveItem={removeItem} onClear={clearItems} /></div>
-          <ProductGrid onAddProduct={barPhase === 'products' ? handleBarAddProduct : () => {}} />
-          <div className="pb-[max(0px,env(safe-area-inset-bottom))]">
+          <div className="relative z-10 flex-1 flex flex-col overflow-hidden">
+            <ProductGrid onAddProduct={barPhase === 'products' ? handleBarAddProduct : () => {}} />
+          </div>
+          <div className="relative z-10 pb-[max(0px,env(safe-area-inset-bottom))]">
             <button
               onClick={handleBoek}
               disabled={items.length === 0 || barPhase !== 'products'}
