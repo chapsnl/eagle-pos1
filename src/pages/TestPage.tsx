@@ -446,7 +446,38 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     />
   );
 
-  // Instant book on product click
+  const handleLockedDismiss = useCallback(() => {
+    setShowLockedWarning(false);
+    setCoatNumber('');
+    setActiveField('coat');
+    lastCoatLookupRef.current = null;
+  }, []);
+
+  const lockedWarningDialog = (
+    <SessionPopup
+      open={showLockedWarning}
+      onClose={handleLockedDismiss}
+      title=""
+      subtitle=""
+      orderLines={[]}
+      showTotal={false}
+      actions={[
+        { label: 'OK', onClick: handleLockedDismiss, variant: 'confirm' as const },
+      ]}
+      customContent={
+        <div className="flex flex-col items-center gap-4 py-4">
+          <div style={{ width: 80, height: 80, borderRadius: '50%', backgroundColor: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px #ef444480' }}>
+            <AlertCircle className="w-12 h-12 text-white" />
+          </div>
+          <p className="text-center font-extrabold text-lg" style={{ color: '#ef4444' }}>
+            Let op: Een andere medewerker is momenteel bezig met deze gast.
+          </p>
+        </div>
+      }
+    />
+  );
+
+
   const addAndBook = useCallback(async (product: DbProduct) => {
     if (!sessionId) return;
 
