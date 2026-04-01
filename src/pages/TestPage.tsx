@@ -718,6 +718,30 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
           </div>
         ))}
       </div>
+
+      {/* Numpad overlay when in input phase */}
+      {phase === 'input' && (
+        <div className="absolute inset-0 z-20 flex flex-col" style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}>
+          <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
+          <div className="flex-1 flex flex-col items-center justify-center px-4">
+            <div className="w-full" style={{ maxWidth: '280px' }}>
+              <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(16px, 3vh, 32px) 16px', border: '3px solid #00cc13', boxShadow: '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
+                {coatNumber || <span style={{ color: '#9ca3af' }}>—</span>}
+              </div>
+            </div>
+          </div>
+          <div className="px-4 pb-2">
+            <div className="w-full max-w-md mx-auto grid grid-cols-3 gap-0">
+              {NUM_KEYS.map((key, i) => (
+                <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="py-3 text-2xl font-extrabold uppercase disabled:invisible" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333' }}>
+                  {key === 'DEL' ? <X className="mx-auto w-6 h-6" /> : key === 'BACK' ? <Delete className="mx-auto w-6 h-6" /> : key}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="h-4" />
+        </div>
+      )}
     </div>
   );
 };
