@@ -299,6 +299,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     setShowPayDialog(false);
     setShowEntreeWarning(false);
     try {
+      await unlockSession(sessionId);
       await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
       clearOrder();
       setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); setLiveDbLogs([]);
@@ -307,7 +308,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [sessionId, updateSession]);
+  }, [sessionId, updateSession, unlockSession]);
 
   const handlePayVerwerk = useCallback(() => {
     if (!sessionId) return;
