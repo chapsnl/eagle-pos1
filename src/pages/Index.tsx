@@ -11,10 +11,13 @@ import { AdminPage } from './AdminPage';
 import { OpenPage } from './OpenPage';
 import { ClosedPage } from './ClosedPage';
 import { TestPage } from './TestPage';
-import { Send, X, Delete } from 'lucide-react';
+import { Send, X, Delete, AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useCreateSession, useAddDrinkLogs, useUpdateSession, useFindActiveSessionByWardrobe } from '@/hooks/useSessions';
 import { SessionPopup } from '@/components/pos/SessionPopup';
 import { broadcastOrder, clearOrder, SyncOrderItem } from '@/lib/orderSync';
+import { supabase } from '@/integrations/supabase/client';
+import { getDeviceId } from '@/hooks/useDeviceId';
 
 export interface DbOrderItem {
   product: DbProduct;
@@ -72,6 +75,16 @@ const Index = () => {
   const lastLookupRef = useRef<string | null>(null);
   const [barRetourMode, setBarRetourMode] = useState(false);
   const [showBarPayDialog, setShowBarPayDialog] = useState(false);
+  const [showBarLockedWarning, setShowBarLockedWarning] = useState(false);
+  const deviceId = useRef(getDeviceId()).current;
+
+  const lockSession = useCallback(async (sid: string) => {
+    await supabase.from('sessions').update({ locked_by: deviceId, locked_at: new Date().toISOString() } as any).eq('id', sid);
+  }, [deviceId]);
+
+  const unlockSession = useCallback(async (sid: string) => {
+    await supabase.from('sessions').update({ locked_by: null, locked_at: null } as any).eq('id', sid);
+  }, []);
 
   const createSession = useCreateSession();
   const addDrinkLogs = useAddDrinkLogs();
@@ -126,6 +139,17 @@ const Index = () => {
         onNotFound();
         return;
       }
+      // Check if locked by another device
+      const lockedBy = (session as any).locked_by;
+      const lockedAt = (session as any).locked_at;
+      if (lockedBy && lockedBy !== deviceId) {
+        const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
+        if (lockAge < 60000) {
+          setShowBarLockedWarning(true);
+          return;
+        }
+      }
+      await lockSession(session.id);
       setBarSessionId(session.id);
       setBarSessionTotal(Number(session.total_amount ?? 0));
       setBarPhase('products');
@@ -133,7 +157,7 @@ const Index = () => {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [findActiveSessionByWardrobe]);
+  }, [findActiveSessionByWardrobe, deviceId, lockSession]);
 
   // Auto-lookup when 3 digits entered
   useEffect(() => {
@@ -176,6 +200,7 @@ const Index = () => {
         wardrobe_number: pendingWardrobe,
         is_event_numbered: true,
       });
+      await lockSession(session.id);
       setBarSessionId(session.id);
       setBarSessionTotal(Number(session.total_amount ?? 0));
       setPendingWardrobe(null);
@@ -184,7 +209,7 @@ const Index = () => {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [pendingWardrobe, createSession]);
+  }, [pendingWardrobe, createSession, lockSession]);
 
   const handleCancelAdd = useCallback(() => {
     setShowAddDialog(false);
@@ -236,6 +261,7 @@ const Index = () => {
         timestamp: Date.now(),
       });
 
+      await unlockSession(barSessionId);
       setItems([]);
       setBarNumber('');
       setBarSessionId(null);
@@ -246,13 +272,12 @@ const Index = () => {
     } catch {
       showFeedback('error');
     }
-  }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, showFeedback]);
+  }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, showFeedback, unlockSession]);
 
   const handleBarPayVerwerk = useCallback(async () => {
     if (!barSessionId) return;
     setShowBarPayDialog(false);
     try {
-      // First book any pending items
       if (items.length > 0) {
         const logs = items.flatMap((item) =>
           Array.from({ length: item.quantity }, () => ({
@@ -270,6 +295,7 @@ const Index = () => {
       } else {
         await updateSession.mutateAsync({ id: barSessionId, status: 'paid' });
       }
+      await unlockSession(barSessionId);
       clearOrder();
       setItems([]);
       setBarNumber('');
@@ -281,9 +307,10 @@ const Index = () => {
     } catch {
       showFeedback('error');
     }
-  }, [barSessionId, items, barSessionTotal, total, addDrinkLogs, updateSession, showFeedback]);
+  }, [barSessionId, items, barSessionTotal, total, addDrinkLogs, updateSession, showFeedback, unlockSession]);
 
-  const handleBarNext = useCallback(() => {
+  const handleBarNext = useCallback(async () => {
+    if (barSessionId) await unlockSession(barSessionId);
     setItems([]);
     setBarNumber('');
     setBarSessionId(null);
@@ -292,12 +319,18 @@ const Index = () => {
     setBarRetourMode(false);
     lastLookupRef.current = null;
     clearOrder();
-  }, []);
+  }, [barSessionId, unlockSession]);
 
   // 20s inactivity timer: reset to input-number when idle in products phase
   // Pause timer when any popup/dialog is open
-  const anyBarPopupOpen = showAddDialog || showBarPayDialog;
+  const anyBarPopupOpen = showAddDialog || showBarPayDialog || showBarLockedWarning;
   useInactivityTimer(activeView === 'bar' && barPhase === 'products' && !anyBarPopupOpen, handleBarNext);
+
+  const handleBarLockedDismiss = useCallback(() => {
+    setShowBarLockedWarning(false);
+    setBarNumber('');
+    lastLookupRef.current = null;
+  }, []);
 
   const handleBarAddProduct = useCallback((product: DbProduct) => {
     if (barRetourMode) {
@@ -338,6 +371,20 @@ const Index = () => {
     />
   );
 
+  const barLockedDialog = (
+    <Dialog open={showBarLockedWarning} onOpenChange={(open) => { if (!open) handleBarLockedDismiss(); }}>
+      <DialogContent className="bg-card flex flex-col items-center gap-4 py-8" style={{ borderColor: '#ef444440', borderRadius: 12, maxWidth: 360 }}>
+        <div style={{ width: 80, height: 80, borderRadius: '50%', backgroundColor: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px #ef444480' }}>
+          <AlertCircle className="w-12 h-12 text-white" />
+        </div>
+        <p className="text-center font-extrabold text-lg px-4" style={{ color: '#ef4444' }}>
+          Let op: Een andere medewerker is momenteel bezig met deze gast.
+        </p>
+        <button onClick={handleBarLockedDismiss} className="w-full max-w-[200px] py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 6 }}>OK</button>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (!started) return <IntroPage onEnter={handleEnter} />;
 
   return (
@@ -345,6 +392,7 @@ const Index = () => {
       <FeedbackOverlay type={feedback} />
       {addDialog}
       {barPayDialog}
+      {barLockedDialog}
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
 
       {activeView === 'bar' && (
@@ -352,7 +400,7 @@ const Index = () => {
           <div className="bg-black w-full flex-1 md:hidden xl:flex flex-col overflow-hidden" style={{ minHeight: '100%' }}>
             <div className="w-full max-w-sm mx-auto h-full max-h-[70vh] flex flex-col justify-center px-4 my-auto">
               <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2 shrink-0" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
-              <div className="flex items-center justify-center py-2 shrink-0">
+              <div className="flex items-center justify-center py-2 mb-6 shrink-0">
                 <div className="w-full" style={{ maxWidth: '280px' }}>
                   <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: '3px solid #00cc13', boxShadow: '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
                     {barNumber || <span style={{ color: '#9ca3af' }}>—</span>}
