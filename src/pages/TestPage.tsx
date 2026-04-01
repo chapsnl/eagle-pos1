@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useInactivityTimer } from '@/hooks/useInactivityTimer';
 import { toast } from 'sonner';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
 import { FeedbackType } from '@/types/pos';
