@@ -75,6 +75,16 @@ const Index = () => {
   const lastLookupRef = useRef<string | null>(null);
   const [barRetourMode, setBarRetourMode] = useState(false);
   const [showBarPayDialog, setShowBarPayDialog] = useState(false);
+  const [showBarLockedWarning, setShowBarLockedWarning] = useState(false);
+  const deviceId = useRef(getDeviceId()).current;
+
+  const lockSession = useCallback(async (sid: string) => {
+    await supabase.from('sessions').update({ locked_by: deviceId, locked_at: new Date().toISOString() } as any).eq('id', sid);
+  }, [deviceId]);
+
+  const unlockSession = useCallback(async (sid: string) => {
+    await supabase.from('sessions').update({ locked_by: null, locked_at: null } as any).eq('id', sid);
+  }, []);
 
   const createSession = useCreateSession();
   const addDrinkLogs = useAddDrinkLogs();
