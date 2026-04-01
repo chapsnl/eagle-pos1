@@ -350,7 +350,7 @@ const Index = () => {
       {activeView === 'bar' && (
         <div className="flex-1 flex flex-col overflow-hidden relative md:hidden xl:flex bg-black">
           {/* Subtle watermark background */}
-          <img src="/placeholder.svg" alt="" className="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none -z-10" />
+          <div className="absolute inset-0 w-full h-full bg-[url('/placeholder.svg')] bg-cover bg-center opacity-15 pointer-events-none" style={{ zIndex: 0 }} />
           <OrderBar items={items} total={total} onRemoveItem={removeItem} onClear={clearItems} />
           <ProductGrid onAddProduct={barPhase === 'products' ? handleBarAddProduct : () => {}} />
           <div className="pb-[max(0px,env(safe-area-inset-bottom))]">

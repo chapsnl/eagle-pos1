@@ -602,7 +602,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   return (
     <div className="flex-1 flex overflow-hidden h-full relative bg-black" style={{ ...(phase === 'products' && retourMode ? { border: '4px solid #ef4444', boxShadow: 'inset 0 0 30px rgba(239,68,68,0.15)' } : {}) }}>
       {/* Subtle watermark background */}
-      <img src="/placeholder.svg" alt="" className="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none -z-10" />
+      <div className="absolute inset-0 w-full h-full bg-[url('/placeholder.svg')] bg-cover bg-center opacity-15 pointer-events-none" style={{ zIndex: 0 }} />
 
       <FeedbackOverlay type={feedback} />
       {addDialog}
