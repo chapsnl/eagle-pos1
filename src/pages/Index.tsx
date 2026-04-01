@@ -99,6 +99,7 @@ const Index = () => {
   const clearItems = useCallback(() => setItems([]), []);
 
   const showFeedback = useCallback((type: FeedbackType) => {
+    if (type === 'success') return; // no delay for success
     setFeedback(type);
     setTimeout(() => setFeedback(null), 2000);
   }, []);
