@@ -278,7 +278,6 @@ const Index = () => {
     if (!barSessionId) return;
     setShowBarPayDialog(false);
     try {
-      // First book any pending items
       if (items.length > 0) {
         const logs = items.flatMap((item) =>
           Array.from({ length: item.quantity }, () => ({
@@ -296,6 +295,7 @@ const Index = () => {
       } else {
         await updateSession.mutateAsync({ id: barSessionId, status: 'paid' });
       }
+      await unlockSession(barSessionId);
       clearOrder();
       setItems([]);
       setBarNumber('');
@@ -307,7 +307,7 @@ const Index = () => {
     } catch {
       showFeedback('error');
     }
-  }, [barSessionId, items, barSessionTotal, total, addDrinkLogs, updateSession, showFeedback]);
+  }, [barSessionId, items, barSessionTotal, total, addDrinkLogs, updateSession, showFeedback, unlockSession]);
 
   const handleBarNext = useCallback(() => {
     setItems([]);
