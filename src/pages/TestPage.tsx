@@ -601,7 +601,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   if (phase === 'input') {
     return (
-      <div className="bg-black w-full h-full flex-1 relative">
+      <div className="bg-black w-full h-full flex-1 relative overflow-hidden">
         <FeedbackOverlay type={feedback} />
         {addDialog}
         {closedBlockDialog}
@@ -652,7 +652,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       )}
 
       {/* Left column - 20% - Guest overview */}
-      <div className="flex flex-col h-full" style={{ width: '20%', backgroundColor: retourMode ? '#1a0a0a' : '#121212', borderRight: `1px solid ${retourMode ? '#ef4444' : '#333'}`, transition: 'background-color 0.3s ease' }}>
+      <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden" style={{ width: '20%', backgroundColor: retourMode ? '#1a0a0a' : '#121212', borderRight: `1px solid ${retourMode ? '#ef4444' : '#333'}`, transition: 'background-color 0.3s ease' }}>
         <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
           <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(32px, 6vw, 56px)' }}>
             {coatNumber || ''}
