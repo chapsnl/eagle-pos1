@@ -274,12 +274,8 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     try {
       await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
       clearOrder();
-      setFeedback('success');
-      setTimeout(() => {
-        setFeedback(null);
-        setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); setLiveDbLogs([]);
-        lastCoatLookupRef.current = null;
-      }, 1500);
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); setLiveDbLogs([]);
+      lastCoatLookupRef.current = null;
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
