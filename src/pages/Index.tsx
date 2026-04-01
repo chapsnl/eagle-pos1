@@ -277,7 +277,6 @@ const Index = () => {
       setBarPhase('input-number');
       setBarRetourMode(false);
       lastLookupRef.current = null;
-      }, 1500);
     } catch {
       showFeedback('error');
     }
