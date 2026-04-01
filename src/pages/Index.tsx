@@ -261,6 +261,7 @@ const Index = () => {
         timestamp: Date.now(),
       });
 
+      await unlockSession(barSessionId);
       setItems([]);
       setBarNumber('');
       setBarSessionId(null);
@@ -271,7 +272,7 @@ const Index = () => {
     } catch {
       showFeedback('error');
     }
-  }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, showFeedback]);
+  }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, showFeedback, unlockSession]);
 
   const handleBarPayVerwerk = useCallback(async () => {
     if (!barSessionId) return;
