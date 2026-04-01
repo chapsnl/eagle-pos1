@@ -348,7 +348,9 @@ const Index = () => {
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
 
       {activeView === 'bar' && (
-        <div className="flex-1 flex flex-col overflow-hidden relative md:hidden xl:flex">
+        <div className="flex-1 flex flex-col overflow-hidden relative md:hidden xl:flex bg-black">
+          {/* Subtle watermark background */}
+          <img src="/placeholder.svg" alt="" className="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none -z-10" />
           <OrderBar items={items} total={total} onRemoveItem={removeItem} onClear={clearItems} />
           <ProductGrid onAddProduct={barPhase === 'products' ? handleBarAddProduct : () => {}} />
           <div className="pb-[max(0px,env(safe-area-inset-bottom))]">

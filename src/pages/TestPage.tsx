@@ -599,9 +599,11 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     }
   }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs, coatNumber, existingTotal]);
 
-  // Always render product grid with numpad overlay when in input phase
   return (
-    <div className="flex-1 flex overflow-hidden h-full relative" style={{ backgroundColor: '#1a1a1a', ...(phase === 'products' && retourMode ? { border: '4px solid #ef4444', boxShadow: 'inset 0 0 30px rgba(239,68,68,0.15)' } : {}) }}>
+    <div className="flex-1 flex overflow-hidden h-full relative bg-black" style={{ ...(phase === 'products' && retourMode ? { border: '4px solid #ef4444', boxShadow: 'inset 0 0 30px rgba(239,68,68,0.15)' } : {}) }}>
+      {/* Subtle watermark background */}
+      <img src="/placeholder.svg" alt="" className="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none -z-10" />
+
       <FeedbackOverlay type={feedback} />
       {addDialog}
       {closedBlockDialog}
@@ -640,8 +642,9 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       </div>
       )}
 
-      {/* Right column - Product grid (full width in input, 80% in products) */}
-      <div className="flex-1 flex flex-col overflow-hidden gap-[1px]" style={{ width: phase === 'products' ? '80%' : '100%', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+      {/* Product grid - only visible in products phase */}
+      {phase === 'products' && (
+      <div className="flex-1 flex flex-col overflow-hidden gap-[1px]" style={{ width: '80%', backgroundColor: 'rgba(0,0,0,0.3)' }}>
         {gridLayout.map((row, ri) => (
           <div key={ri} className="flex-1 flex gap-[1px]" style={{ minHeight: 0 }}>
             {row.map((cell, ci) => {
@@ -720,6 +723,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
           </div>
         ))}
       </div>
+      )}
 
       {/* Numpad overlay when in input phase */}
       {phase === 'input' && (
