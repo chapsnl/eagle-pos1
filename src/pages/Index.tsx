@@ -371,6 +371,20 @@ const Index = () => {
     />
   );
 
+  const barLockedDialog = (
+    <Dialog open={showBarLockedWarning} onOpenChange={(open) => { if (!open) handleBarLockedDismiss(); }}>
+      <DialogContent className="bg-card flex flex-col items-center gap-4 py-8" style={{ borderColor: '#ef444440', borderRadius: 12, maxWidth: 360 }}>
+        <div style={{ width: 80, height: 80, borderRadius: '50%', backgroundColor: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px #ef444480' }}>
+          <AlertCircle className="w-12 h-12 text-white" />
+        </div>
+        <p className="text-center font-extrabold text-lg px-4" style={{ color: '#ef4444' }}>
+          Let op: Een andere medewerker is momenteel bezig met deze gast.
+        </p>
+        <button onClick={handleBarLockedDismiss} className="w-full max-w-[200px] py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 6 }}>OK</button>
+      </DialogContent>
+    </Dialog>
+  );
+
   if (!started) return <IntroPage onEnter={handleEnter} />;
 
   return (
@@ -378,6 +392,7 @@ const Index = () => {
       <FeedbackOverlay type={feedback} />
       {addDialog}
       {barPayDialog}
+      {barLockedDialog}
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
 
       {activeView === 'bar' && (
