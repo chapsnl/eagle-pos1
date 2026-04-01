@@ -200,6 +200,7 @@ const Index = () => {
         wardrobe_number: pendingWardrobe,
         is_event_numbered: true,
       });
+      await lockSession(session.id);
       setBarSessionId(session.id);
       setBarSessionTotal(Number(session.total_amount ?? 0));
       setPendingWardrobe(null);
@@ -208,7 +209,7 @@ const Index = () => {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [pendingWardrobe, createSession]);
+  }, [pendingWardrobe, createSession, lockSession]);
 
   const handleCancelAdd = useCallback(() => {
     setShowAddDialog(false);
