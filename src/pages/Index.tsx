@@ -16,6 +16,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useCreateSession, useAddDrinkLogs, useUpdateSession, useFindActiveSessionByWardrobe } from '@/hooks/useSessions';
 import { SessionPopup } from '@/components/pos/SessionPopup';
 import { broadcastOrder, clearOrder, SyncOrderItem } from '@/lib/orderSync';
+import { supabase } from '@/integrations/supabase/client';
+import { getDeviceId } from '@/hooks/useDeviceId';
 
 export interface DbOrderItem {
   product: DbProduct;
