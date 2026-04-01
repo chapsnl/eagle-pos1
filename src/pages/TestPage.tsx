@@ -622,7 +622,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2 flex-1 min-h-0 pb-2">
+          <div className="grid grid-cols-3 gap-2 flex-1 min-h-0 pb-2 relative z-10">
             {NUM_KEYS.map((key, i) => (
               <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="h-full min-h-[50px] w-full text-2xl font-extrabold uppercase disabled:invisible flex items-center justify-center" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333' }}>
                 {key === 'DEL' ? <X className="w-6 h-6" /> : key === 'BACK' ? <Delete className="w-6 h-6" /> : key}
