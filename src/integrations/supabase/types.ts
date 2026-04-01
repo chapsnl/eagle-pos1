@@ -86,6 +86,8 @@ export type Database = {
           created_at: string
           id: string
           is_event_numbered: boolean
+          locked_at: string | null
+          locked_by: string | null
           nfc_uid: string | null
           status: Database["public"]["Enums"]["session_status"]
           total_amount: number
@@ -96,6 +98,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_event_numbered?: boolean
+          locked_at?: string | null
+          locked_by?: string | null
           nfc_uid?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           total_amount?: number
@@ -106,6 +110,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_event_numbered?: boolean
+          locked_at?: string | null
+          locked_by?: string | null
           nfc_uid?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           total_amount?: number
