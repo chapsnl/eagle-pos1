@@ -127,8 +127,7 @@ const Index = () => {
       }
       setBarSessionId(session.id);
       setBarSessionTotal(Number(session.total_amount ?? 0));
-      setFeedback('success');
-      setTimeout(() => { setFeedback(null); setBarPhase('products'); }, 1000);
+      setBarPhase('products');
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
