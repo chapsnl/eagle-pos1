@@ -327,6 +327,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   // 20s inactivity timer: reset to input when idle in products phase
   useInactivityTimer(phase === 'products', resetToInput);
 
+  const bonDialog = (
     <SessionPopup
       open={showBonDialog}
       onClose={() => setShowBonDialog(false)}
