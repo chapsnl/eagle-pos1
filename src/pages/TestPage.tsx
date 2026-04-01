@@ -601,7 +601,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   if (phase === 'input') {
     return (
-      <div className="bg-black w-full h-full flex-1 relative">
+      <div className="bg-black w-full h-full flex-1 relative overflow-hidden">
         <FeedbackOverlay type={feedback} />
         {addDialog}
         {closedBlockDialog}
