@@ -235,16 +235,13 @@ const Index = () => {
         timestamp: Date.now(),
       });
 
-      showFeedback('success');
-      setTimeout(() => {
-        setItems([]);
-        setBarNumber('');
-        setBarSessionId(null);
-        setBarSessionTotal(0);
-        setBarPhase('input-number');
-        lastLookupRef.current = null;
-        clearOrder();
-      }, 2000);
+      setItems([]);
+      setBarNumber('');
+      setBarSessionId(null);
+      setBarSessionTotal(0);
+      setBarPhase('input-number');
+      lastLookupRef.current = null;
+      clearOrder();
     } catch {
       showFeedback('error');
     }
