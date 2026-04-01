@@ -139,6 +139,17 @@ const Index = () => {
         onNotFound();
         return;
       }
+      // Check if locked by another device
+      const lockedBy = (session as any).locked_by;
+      const lockedAt = (session as any).locked_at;
+      if (lockedBy && lockedBy !== deviceId) {
+        const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
+        if (lockAge < 60000) {
+          setShowBarLockedWarning(true);
+          return;
+        }
+      }
+      await lockSession(session.id);
       setBarSessionId(session.id);
       setBarSessionTotal(Number(session.total_amount ?? 0));
       setBarPhase('products');
@@ -146,7 +157,7 @@ const Index = () => {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [findActiveSessionByWardrobe]);
+  }, [findActiveSessionByWardrobe, deviceId, lockSession]);
 
   // Auto-lookup when 3 digits entered
   useEffect(() => {
