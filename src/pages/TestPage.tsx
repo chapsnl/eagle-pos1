@@ -3,12 +3,13 @@ import { toast } from 'sonner';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
-import { Send, X, Delete } from 'lucide-react';
+import { Send, X, Delete, AlertCircle } from 'lucide-react';
 import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { broadcastOrder, clearOrder } from '@/lib/orderSync';
+import { getDeviceId } from '@/hooks/useDeviceId';
 
 interface TestOrderItem {
   product: DbProduct;
