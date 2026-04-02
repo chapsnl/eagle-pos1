@@ -19,7 +19,7 @@ interface TestOrderItem {
 
 const gridLayout: { code: string; span: number; hideLabel?: boolean; label?: string }[][] = [
   [
-    { code: '1', span: 1 }, { code: 'DIV9', span: 1 }, { code: 'SHO', span: 1 }, { code: 'BAIL', span: 1 },
+    { code: '1', span: 1 }, { code: '6', span: 1 }, { code: 'SHO', span: 1 }, { code: 'BAIL', span: 1 },
     { code: 'JAME', span: 2 }, { code: 'ABSO', span: 2 }, { code: 'HEIN', span: 2 },
   ],
   [
