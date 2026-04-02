@@ -233,7 +233,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
         orderLines={selectedSession ? getOrderLines(selectedSession) : []}
         showTotal={true}
         showPrices={true}
-        totalAmount={Number(selectedSession?.total_amount ?? 0)}
+        totalAmount={selectedSession ? getOrderLines(selectedSession).reduce((sum, l) => sum + l.qty * l.price, 0) : 0}
         actions={
           selectedType === 'active'
             ? [

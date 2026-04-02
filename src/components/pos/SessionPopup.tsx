@@ -107,7 +107,7 @@ const SessionPopup = ({
                       {line.qty}× {line.name}
                     </span>
                     {showPrices && (
-                      <span style={{ color: '#888' }}>€{line.price.toFixed(2)} (€{(line.qty * line.price).toFixed(2)})</span>
+                      <span style={{ color: '#888' }}>€{(line.qty * line.price).toFixed(2)}</span>
                     )}
                   </div>
                 ))}
