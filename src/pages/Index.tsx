@@ -397,7 +397,7 @@ const Index = () => {
 
       {activeView === 'bar' && (
         barPhase === 'input-number' ? (
-          <div className="bg-black w-full h-full flex-1 md:hidden xl:flex overflow-hidden items-center justify-center relative">
+          <div className="bg-black w-full h-full flex-1 flex md:hidden xl:flex overflow-hidden items-center justify-center relative">
             <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
               <img src="/placeholder.svg" alt="" className="object-cover w-full h-full opacity-10" />
             </div>
