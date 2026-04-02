@@ -13,7 +13,7 @@ const wideLayout: { code: string; hideLabel?: boolean }[][] = [
 
 // Narrow columns (span-1 items) - 4 columns per row
 const narrowLayout: { code: string; hideLabel?: boolean }[][] = [
-  [{ code: '1' }, { code: 'DIV9' }, { code: 'SHO' }, { code: 'BAIL' }],
+  [{ code: '1' }, { code: '6' }, { code: 'SHO' }, { code: 'BAIL' }],
   [{ code: '20' }, { code: '18' }, { code: 'TTOP' }, { code: 'MALI' }],
   [{ code: '7' }, { code: '12.5' }, { code: 'AMAR' }, { code: 'TEQU' }],
   [{ code: '8' }, { code: '10' }, { code: 'TSHI' }, { code: 'SAMB' }],
