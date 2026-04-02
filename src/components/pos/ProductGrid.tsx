@@ -55,16 +55,7 @@ export const ProductGrid = ({ onAddProduct }: ProductGridProps) => {
     return <div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>;
   }
 
-  const gridProducts = (() => {
-    const existingSix = products.find((p) => p.shorthand === '6' || p.full_name === '6');
-    const hasLegacyDiv9 = products.some((p) => p.shorthand === 'DIV9');
-
-    if (!existingSix || hasLegacyDiv9) return products;
-
-    return [...products, { ...existingSix, shorthand: 'DIV9' }];
-  })();
-
-  const productMap = new Map(gridProducts.map((p) => [p.shorthand, p]));
+  const productMap = new Map(products.map((p) => [p.shorthand, p]));
 
   const renderGrid = (layout: { code: string; hideLabel?: boolean }[][]) => (
     <div className="h-full flex flex-col gap-[1px]" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
