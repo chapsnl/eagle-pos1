@@ -83,6 +83,7 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        {isLocked && <PinLockScreen onUnlock={handleUnlock} />}
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
