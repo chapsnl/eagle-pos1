@@ -38,6 +38,14 @@ const initKioskMode = async () => {
 };
 
 const App = () => {
+  const [isLocked, setIsLocked] = useState(true);
+
+  const handleLock = useCallback(() => setIsLocked(true), []);
+  const handleUnlock = useCallback(() => setIsLocked(false), []);
+
+  // 5-hour global inactivity timer – only ticks when unlocked
+  useGlobalInactivityTimer(!isLocked, handleLock);
+
   useEffect(() => {
     let cancelled = false;
 
