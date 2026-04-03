@@ -60,12 +60,15 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const [closeShiftResult, setCloseShiftResult] = useState<string | null>(null);
   const [reopenSession, setReopenSession] = useState<any>(null);
 
-  // KPI calculations
+  // KPI calculations - based on actual drink_logs (qty × price)
+  const calcSessionTotal = (session: any) =>
+    (session.drink_logs ?? []).reduce((sum: number, log: any) => sum + Number(log.price_at_time ?? 0), 0);
+
   const nogTeOntvangen = (activeSessions ?? []).reduce(
-    (sum, s) => sum + Number(s.total_amount ?? 0), 0
+    (sum, s) => sum + calcSessionTotal(s), 0
   );
   const reedsOntvangen = (closedSessions ?? []).reduce(
-    (sum, s) => sum + Number(s.total_amount ?? 0), 0
+    (sum, s) => sum + calcSessionTotal(s), 0
   );
   const verwachtTotaal = nogTeOntvangen + reedsOntvangen;
 
