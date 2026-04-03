@@ -3,7 +3,6 @@ import { X, Delete } from 'lucide-react';
 
 const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
 const CORRECT_PIN = '101290';
-const ENTRY_STORAGE_KEY = 'pos_started';
 
 interface PinLockScreenProps {
   onUnlock: () => void;
@@ -33,12 +32,6 @@ const PinLockScreen = ({ onUnlock }: PinLockScreenProps) => {
   useEffect(() => {
     if (pin.length !== 6) return;
     if (pin === CORRECT_PIN) {
-      // Clear the started flag so user lands on IntroPage after unlock
-      try {
-        localStorage.removeItem(ENTRY_STORAGE_KEY);
-        sessionStorage.removeItem(ENTRY_STORAGE_KEY);
-      } catch {}
-      setPin('');
       onUnlock();
     } else {
       setError(true);
@@ -47,62 +40,64 @@ const PinLockScreen = ({ onUnlock }: PinLockScreenProps) => {
   }, [pin, onUnlock]);
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black flex items-center justify-center relative">
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center min-h-screen w-full bg-black">
       {/* Watermark */}
-      <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <img
           src="/placeholder.svg"
           alt=""
-          className="object-cover w-full h-full opacity-10"
+          className="w-full h-full object-cover opacity-10"
         />
       </div>
 
-      <div className="w-full max-w-sm mx-auto h-full max-h-[70vh] flex flex-col justify-center px-4 relative z-10">
+      <div className="relative z-10 flex flex-col items-center w-full max-w-xs px-4">
         <h2
-          className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2 shrink-0 relative z-10"
+          className="text-xl font-extrabold uppercase tracking-[0.15em] mb-6 text-center"
           style={{ color: '#00cc13' }}
         >
           PIN CODE
         </h2>
 
         {/* Dots display */}
-        <div className="flex items-center justify-center py-2 mb-6 shrink-0 relative z-10">
-          <div className="w-full flex items-center justify-center gap-4" style={{ maxWidth: '280px' }}>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-5 h-5 rounded-full border-2 transition-all duration-150"
-                style={{
-                  borderColor: error ? '#ef4444' : '#00cc13',
-                  backgroundColor: i < pin.length
-                    ? (error ? '#ef4444' : '#00cc13')
-                    : 'transparent',
-                }}
-              />
-            ))}
-          </div>
+        <div className="flex items-center justify-center gap-3 mb-6 h-14">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="w-4 h-4 rounded-full border-2 transition-all duration-150"
+              style={{
+                borderColor: error ? '#ef4444' : '#00cc13',
+                backgroundColor: i < pin.length
+                  ? (error ? '#ef4444' : '#00cc13')
+                  : 'transparent',
+              }}
+            />
+          ))}
         </div>
 
         {error && (
-          <p className="text-sm mb-3 text-center shrink-0" style={{ color: '#ef4444' }}>
+          <p className="text-sm mb-3 text-center" style={{ color: '#ef4444' }}>
             Onjuiste PIN
           </p>
         )}
 
-        {/* Numpad grid - exact copy from POS/NR */}
-        <div className="grid grid-cols-3 gap-2 flex-1 min-h-0 pb-2 relative z-10">
-          {NUM_KEYS.map((key, i) => (
+        {/* Numpad grid - identical to POS/NR */}
+        <div
+          className="grid grid-cols-3 gap-2 w-full"
+          style={{ maxHeight: '70vh' }}
+        >
+          {NUM_KEYS.map(key => (
             <button
-              key={i}
+              key={key}
               onClick={() => handleKey(key)}
-              className="h-full min-h-[50px] w-full text-2xl font-extrabold uppercase flex items-center justify-center"
+              className="relative z-10 flex items-center justify-center rounded-[6px] font-extrabold text-white select-none active:scale-95 transition-transform"
               style={{
-                backgroundColor: key === 'DEL' ? '#ef4444' : key === 'BACK' ? '#374151' : '#2a2a2a',
-                color: '#fff',
-                border: '1px solid #333',
+                minHeight: 50,
+                fontSize: '1.25rem',
+                backgroundColor:
+                  key === 'DEL' ? '#ef4444' : key === 'BACK' ? '#374151' : '#1f2937',
               }}
             >
-              {key === 'DEL' ? <X className="w-6 h-6" /> : key === 'BACK' ? <Delete className="w-6 h-6" /> : key}
+              {key === 'DEL' ? <X size={22} /> : key === 'BACK' ? <Delete size={22} /> : key}
             </button>
           ))}
         </div>
