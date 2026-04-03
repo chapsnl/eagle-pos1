@@ -1,10 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
+import { X, Delete } from 'lucide-react';
 import { useActiveSessions, useUpdateSession } from '@/hooks/useSessions';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+const ADMIN_PIN = '2520';
+const ADMIN_NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
 
 const useClosedSessions = () =>
   useQuery({
@@ -48,6 +52,27 @@ interface AdminPageProps {
 }
 
 export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminPin, setAdminPin] = useState('');
+  const [pinError, setPinError] = useState(false);
+
+  const handleAdminKey = useCallback((key: string) => {
+    setPinError(false);
+    if (key === 'DEL') { setAdminPin(''); return; }
+    if (key === 'BACK') { setAdminPin(prev => prev.slice(0, -1)); return; }
+    setAdminPin(prev => prev.length >= 4 ? prev : prev + key);
+  }, []);
+
+  useEffect(() => {
+    if (adminPin.length !== 4) return;
+    if (adminPin === ADMIN_PIN) {
+      setIsAuthenticated(true);
+    } else {
+      setPinError(true);
+      setAdminPin('');
+    }
+  }, [adminPin]);
+
   const { data: activeSessions } = useActiveSessions();
   const { data: closedSessions } = useClosedSessions();
   const updateSession = useUpdateSession();
@@ -117,6 +142,50 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
     { label: 'Reeds ontvangen', value: reedsOntvangen },
     { label: 'Verwacht Totaal', value: verwachtTotaal },
   ];
+
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-black w-full h-full flex-1 flex overflow-hidden items-center justify-center relative">
+        <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
+          <img src="/placeholder.svg" alt="" className="object-cover w-full h-full opacity-10" />
+        </div>
+        <div className="w-full max-w-sm mx-auto h-full max-h-[70vh] flex flex-col justify-center px-4 relative z-10">
+          <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2 shrink-0" style={{ color: '#00cc13' }}>ADMIN PIN</h2>
+          <div className="flex items-center justify-center gap-3 mb-6 h-14">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-4 h-4 rounded-full border-2 transition-all duration-150"
+                style={{
+                  borderColor: pinError ? '#ef4444' : '#00cc13',
+                  backgroundColor: i < adminPin.length ? (pinError ? '#ef4444' : '#00cc13') : 'transparent',
+                }}
+              />
+            ))}
+          </div>
+          {pinError && (
+            <p className="text-sm mb-3 text-center" style={{ color: '#ef4444' }}>Onjuiste PIN</p>
+          )}
+          <div className="grid grid-cols-3 gap-2 flex-1 min-h-0 pb-2 relative z-10">
+            {ADMIN_NUM_KEYS.map((key) => (
+              <button
+                key={key}
+                onClick={() => handleAdminKey(key)}
+                className="h-full min-h-[50px] w-full text-2xl font-extrabold uppercase flex items-center justify-center"
+                style={{
+                  backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
+                  color: '#fff',
+                  border: '1px solid #333',
+                }}
+              >
+                {key === 'DEL' ? <X className="w-6 h-6" /> : key === 'BACK' ? <Delete className="w-6 h-6" /> : key}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden p-3 gap-3">
