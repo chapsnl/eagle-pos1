@@ -129,14 +129,12 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
       if (confirmPin === newPin) {
         updateStaffPin.mutate(confirmPin, {
           onSuccess: () => {
-            setPinChangeSuccess(true);
-            setTimeout(() => {
-              setPinDialogOpen(false);
-              setPinStep('enter');
-              setNewPin('');
-              setConfirmPin('');
-              setPinChangeSuccess(false);
-            }, 1500);
+            setPinDialogOpen(false);
+            setPinStep('enter');
+            setNewPin('');
+            setConfirmPin('');
+            setPinChangeError('');
+            setPinChangeSuccess(false);
           },
           onError: () => {
             setPinChangeError('Opslaan mislukt');
