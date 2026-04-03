@@ -80,21 +80,17 @@ const PinLockScreen = ({ onUnlock }: PinLockScreenProps) => {
           </p>
         )}
 
-        {/* Numpad grid - identical to POS/NR */}
-        <div
-          className="grid grid-cols-3 gap-2 w-full"
-          style={{ maxHeight: '70vh' }}
-        >
+        {/* Numpad grid - exact copy of POS/NR */}
+        <div className="grid grid-cols-3 gap-2 flex-1 min-h-0 pb-2 relative z-10 w-full">
           {NUM_KEYS.map(key => (
             <button
               key={key}
               onClick={() => handleKey(key)}
-              className="relative z-10 flex items-center justify-center rounded-[6px] font-extrabold text-white select-none active:scale-95 transition-transform"
+              className="h-full min-h-[50px] w-full text-2xl font-extrabold uppercase flex items-center justify-center"
               style={{
-                minHeight: 50,
-                fontSize: '1.25rem',
-                backgroundColor:
-                  key === 'DEL' ? '#ef4444' : key === 'BACK' ? '#374151' : '#1f2937',
+                backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
+                color: '#fff',
+                border: '1px solid #333',
               }}
             >
               {key === 'DEL' ? <X size={22} /> : key === 'BACK' ? <Delete size={22} /> : key}
