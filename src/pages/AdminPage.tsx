@@ -494,13 +494,11 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center"
               style={{ color: '#00cc13' }}
             >
-              {pinChangeSuccess ? 'PIN OPGESLAGEN' : pinStep === 'enter' ? 'NIEUWE PIN CODE' : 'BEVESTIG PIN'}
+              {pinStep === 'enter' ? 'NIEUWE PIN CODE' : 'BEVESTIG PIN'}
             </DialogTitle>
           </DialogHeader>
 
-          {pinChangeSuccess ? (
-            <p className="text-center text-lg font-bold" style={{ color: '#00cc13' }}>✓</p>
-          ) : (
+          {(
             <div className="flex flex-col items-center gap-4">
               {/* Dot indicators */}
               <div className="flex items-center justify-center gap-3">
