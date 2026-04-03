@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { NumPad } from '@/components/pos/NumPad';
+import { X, Delete } from 'lucide-react';
+
+const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
+
+const CORRECT_PIN = import.meta.env.VITE_STAFF_PIN ?? '';
 
 interface PinLockScreenProps {
   onUnlock: () => void;
@@ -9,85 +12,78 @@ interface PinLockScreenProps {
 const PinLockScreen = ({ onUnlock }: PinLockScreenProps) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
-  const [checking, setChecking] = useState(false);
 
   const handleKey = useCallback((key: string) => {
-    if (checking) return;
     setError(false);
-    if (key === 'DEL') {
-      setPin('');
-      return;
-    }
-    if (key === 'BACK') {
-      setPin(prev => prev.slice(0, -1));
-      return;
-    }
-    setPin(prev => {
-      if (prev.length >= 6) return prev;
-      return prev + key;
-    });
-  }, [checking]);
+    if (key === 'DEL') { setPin(''); return; }
+    if (key === 'BACK') { setPin(prev => prev.slice(0, -1)); return; }
+    setPin(prev => prev.length >= 6 ? prev : prev + key);
+  }, []);
 
-  // Auto-submit when 6 digits entered
   useEffect(() => {
     if (pin.length !== 6) return;
-    setChecking(true);
-    supabase.functions.invoke('verify-pin', {
-      body: { pin, type: 'staff' },
-    }).then(({ data, error: fnError }) => {
-      if (!fnError && data?.valid) {
-        onUnlock();
-      } else {
-        setError(true);
-        setPin('');
-      }
-      setChecking(false);
-    });
+    if (pin === CORRECT_PIN) {
+      onUnlock();
+    } else {
+      setError(true);
+      setPin('');
+    }
   }, [pin, onUnlock]);
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center min-h-screen w-full bg-black">
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center w-full bg-black">
       {/* Watermark */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <img
-          src="/placeholder.svg"
-          alt=""
-          className="w-full h-full object-cover opacity-10"
-        />
+        <img src="/placeholder.svg" alt="" className="w-full h-full object-cover opacity-10" />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center w-full max-w-xs px-4">
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center w-full max-w-sm mx-auto px-6 gap-6">
         <h2
-          className="text-xl font-extrabold uppercase tracking-[0.15em] mb-6 text-center"
+          className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center"
           style={{ color: '#00cc13' }}
         >
           PIN CODE
         </h2>
 
-        {/* Dots display */}
-        <div className="flex items-center justify-center gap-3 mb-6 h-14">
+        {/* Dot indicators */}
+        <div className="flex items-center justify-center gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
               className="w-4 h-4 rounded-full border-2 transition-all duration-150"
               style={{
                 borderColor: error ? '#ef4444' : '#00cc13',
-                backgroundColor: i < pin.length
-                  ? (error ? '#ef4444' : '#00cc13')
-                  : 'transparent',
+                backgroundColor: i < pin.length ? (error ? '#ef4444' : '#00cc13') : 'transparent',
               }}
             />
           ))}
         </div>
 
         {error && (
-          <p className="text-sm mb-3 text-center" style={{ color: '#ef4444' }}>
+          <p className="text-sm text-center" style={{ color: '#ef4444' }}>
             Onjuiste PIN
           </p>
         )}
 
-        {/* Numpad grid */}
-        <NumPad onKey={handleKey} disabled={checking} />
+        {/* Numpad — same style as all other pages */}
+        <div className="grid grid-cols-3 gap-3 w-full">
+          {KEYS.map((key) => (
+            <button
+              key={key}
+              onClick={() => handleKey(key)}
+              className="h-16 w-full text-2xl font-extrabold uppercase flex items-center justify-center rounded-lg active:opacity-70"
+              style={{
+                backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
+                color: '#fff',
+                border: '1px solid #444',
+                boxShadow: key === 'DEL' ? '0 0 10px #ef444450' : '0 0 6px #00000060',
+              }}
+            >
+              {key === 'DEL' ? <X className="w-6 h-6" /> : key === 'BACK' ? <Delete className="w-6 h-6" /> : key}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
