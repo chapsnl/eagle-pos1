@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { X, Delete } from 'lucide-react';
+import { useStaffPin } from '@/hooks/useStaffPin';
 
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
 
@@ -11,31 +11,24 @@ interface PinLockScreenProps {
 const PinLockScreen = ({ onUnlock }: PinLockScreenProps) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
-  const [checking, setChecking] = useState(false);
+  const { data: correctPin } = useStaffPin();
 
   const handleKey = useCallback((key: string) => {
-    if (checking) return;
     setError(false);
     if (key === 'DEL') { setPin(''); return; }
     if (key === 'BACK') { setPin(prev => prev.slice(0, -1)); return; }
     setPin(prev => prev.length >= 6 ? prev : prev + key);
-  }, [checking]);
+  }, []);
 
   useEffect(() => {
-    if (pin.length !== 6) return;
-    setChecking(true);
-    supabase.functions.invoke('verify-pin', {
-      body: { pin, type: 'staff' },
-    }).then(({ data, error: fnError }) => {
-      if (!fnError && data?.valid) {
-        onUnlock();
-      } else {
-        setError(true);
-        setPin('');
-      }
-      setChecking(false);
-    });
-  }, [pin, onUnlock]);
+    if (pin.length !== 6 || !correctPin) return;
+    if (pin === correctPin) {
+      onUnlock();
+    } else {
+      setError(true);
+      setPin('');
+    }
+  }, [pin, correctPin, onUnlock]);
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center w-full bg-black">
@@ -79,8 +72,7 @@ const PinLockScreen = ({ onUnlock }: PinLockScreenProps) => {
             <button
               key={key}
               onClick={() => handleKey(key)}
-              disabled={checking}
-              className="h-16 w-full text-2xl font-extrabold uppercase flex items-center justify-center rounded-lg active:opacity-70 disabled:opacity-50"
+              className="h-16 w-full text-2xl font-extrabold uppercase flex items-center justify-center rounded-lg active:opacity-70"
               style={{
                 backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
                 color: '#fff',
