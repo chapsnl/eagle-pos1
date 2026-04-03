@@ -5,8 +5,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Capacitor } from "@capacitor/core";
+import PinLockScreen from "@/components/PinLockScreen";
+import { useGlobalInactivityTimer } from "@/hooks/useGlobalInactivityTimer";
 
 const queryClient = new QueryClient();
 
