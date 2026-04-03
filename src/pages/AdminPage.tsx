@@ -6,7 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-
+import { useUpdateStaffPin } from '@/hooks/useStaffPin';
+import { X, Delete } from 'lucide-react';
 
 
 const useClosedSessions = () =>
