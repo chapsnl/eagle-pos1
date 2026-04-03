@@ -498,8 +498,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
             </DialogTitle>
           </DialogHeader>
 
-          {(
-            <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-4">
               {/* Dot indicators */}
               <div className="flex items-center justify-center gap-3">
                 {Array.from({ length: 6 }).map((_, i) => {
@@ -527,7 +526,8 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                   <button
                     key={key}
                     onClick={() => handlePinChangeKey(key)}
-                    className="h-16 w-full text-2xl font-extrabold uppercase flex items-center justify-center rounded-lg active:opacity-70"
+                    disabled={pinSaving}
+                    className="h-16 w-full text-2xl font-extrabold uppercase flex items-center justify-center rounded-lg active:opacity-70 disabled:opacity-50"
                     style={{
                       backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
                       color: '#fff',
@@ -549,7 +549,6 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                 ANNULEER
               </button>
             </div>
-          )}
         </DialogContent>
       </Dialog>
     </div>
