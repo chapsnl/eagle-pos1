@@ -25,7 +25,7 @@ export interface DbOrderItem {
   quantity: number;
 }
 
-const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
+
 const ENTRY_STORAGE_KEY = 'pos_started';
 
 const readStartedFlag = () => {
