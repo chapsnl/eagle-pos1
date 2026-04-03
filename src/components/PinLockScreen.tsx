@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, Delete } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
-const CORRECT_PIN = import.meta.env.VITE_STAFF_PIN ?? '';
 
 interface PinLockScreenProps {
   onUnlock: () => void;
@@ -11,8 +11,10 @@ interface PinLockScreenProps {
 const PinLockScreen = ({ onUnlock }: PinLockScreenProps) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   const handleKey = useCallback((key: string) => {
+    if (checking) return;
     setError(false);
     if (key === 'DEL') {
       setPin('');
@@ -26,17 +28,23 @@ const PinLockScreen = ({ onUnlock }: PinLockScreenProps) => {
       if (prev.length >= 6) return prev;
       return prev + key;
     });
-  }, []);
+  }, [checking]);
 
   // Auto-submit when 6 digits entered
   useEffect(() => {
     if (pin.length !== 6) return;
-    if (pin === CORRECT_PIN) {
-      onUnlock();
-    } else {
-      setError(true);
-      setPin('');
-    }
+    setChecking(true);
+    supabase.functions.invoke('verify-pin', {
+      body: { pin, type: 'staff' },
+    }).then(({ data, error: fnError }) => {
+      if (!fnError && data?.valid) {
+        onUnlock();
+      } else {
+        setError(true);
+        setPin('');
+      }
+      setChecking(false);
+    });
   }, [pin, onUnlock]);
 
   return (
@@ -80,13 +88,14 @@ const PinLockScreen = ({ onUnlock }: PinLockScreenProps) => {
           </p>
         )}
 
-        {/* Numpad grid - exact copy of POS/NR */}
+        {/* Numpad grid */}
         <div className="grid grid-cols-3 gap-2 flex-1 min-h-0 pb-2 relative z-10 w-full">
           {NUM_KEYS.map(key => (
             <button
               key={key}
               onClick={() => handleKey(key)}
-              className="h-full min-h-[50px] w-full text-2xl font-extrabold uppercase flex items-center justify-center"
+              disabled={checking}
+              className="h-full min-h-[50px] w-full text-2xl font-extrabold uppercase flex items-center justify-center disabled:opacity-50"
               style={{
                 backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
                 color: '#fff',

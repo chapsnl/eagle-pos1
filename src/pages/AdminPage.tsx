@@ -7,7 +7,6 @@ import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-const ADMIN_PIN = import.meta.env.VITE_ADMIN_PIN ?? '';
 const ADMIN_NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
 
 const useClosedSessions = () =>
