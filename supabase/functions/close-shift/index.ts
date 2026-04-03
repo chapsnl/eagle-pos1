@@ -87,53 +87,72 @@ Deno.serve(async (req) => {
     const dateStr = now.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const timeStr = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
 
-    // Build HTML email with A4 report styling
-    const tableRows = rows.map(r => `<tr>
-<td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;text-align:left;">${r.name}</td>
-<td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;text-align:center;">${r.qty}</td>
-<td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;text-align:right;white-space:nowrap;">&euro;${r.unitPrice.toFixed(2)}</td>
-<td style="padding:8px 12px;border-bottom:1px solid #ddd;color:#000;font-size:14px;font-weight:bold;text-align:right;">&euro;${r.total.toFixed(2)}</td>
-</tr>`).join('');
+    // Build HTML email with clean, consistent styling
+    const tableRows = rows.map((r, i) => `
+      <tr style="background:${i % 2 === 0 ? '#ffffff' : '#f9f9f9'};">
+        <td style="padding:10px 14px;border-bottom:1px solid #eee;color:#1a1a1a;font-size:14px;text-align:left;">${r.name}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #eee;color:#1a1a1a;font-size:14px;text-align:center;">${r.qty}x</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #eee;color:#1a1a1a;font-size:14px;text-align:right;white-space:nowrap;">&euro; ${r.unitPrice.toFixed(2)}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid #eee;color:#1a1a1a;font-size:14px;font-weight:600;text-align:right;white-space:nowrap;">&euro; ${r.total.toFixed(2)}</td>
+      </tr>`).join('');
 
     const htmlReport = `<!DOCTYPE html>
 <html>
-<body style="margin:0;padding:40px;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#000;">
-<div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #ddd;">
-<div style="background:#f5f5f5;padding:30px;text-align:center;border-bottom:2px solid #4b4b4b;">
-<h1 style="margin:0;color:#4b4b4b;font-size:28px;letter-spacing:4px;text-transform:uppercase;">Eagle POS</h1>
-<p style="margin:8px 0 0;color:#000;font-size:13px;">Shift Report &mdash; ${dateStr} ${timeStr}</p>
-</div>
-<div style="padding:24px;">
-<table style="width:100%;border-collapse:collapse;">
-<thead>
-<tr style="border-bottom:2px solid #4b4b4b;">
-<th style="padding:10px 12px;text-align:left;color:#4b4b4b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Product</th>
-<th style="padding:10px 12px;text-align:center;color:#4b4b4b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Aantal</th>
-<th style="padding:10px 12px;text-align:right;color:#4b4b4b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Prijs</th>
-<th style="padding:10px 12px;text-align:right;color:#4b4b4b;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Subtotaal</th>
-</tr>
-</thead>
-<tbody>
-${tableRows}
-</tbody>
-</table>
-<div style="margin-top:20px;padding:16px;background:#f5f5f5;border-radius:8px;border:1px solid #ddd;">
-<table style="width:100%;">
-<tr>
-<td style="color:#000;font-size:14px;text-align:left;">Totaal items:</td>
-<td style="color:#000;font-size:14px;text-align:right;font-weight:bold;">${totalItems}</td>
-</tr>
-<tr>
-<td style="color:#000;font-size:20px;font-weight:bold;padding-top:8px;text-align:left;">TOTAAL</td>
-<td style="color:#000;font-size:20px;font-weight:bold;text-align:right;padding-top:8px;">&euro;${grandTotal.toFixed(2)}</td>
-</tr>
-</table>
-</div>
-</div>
-<div style="padding:16px;text-align:center;background:#f5f5f5;border-top:1px solid #ddd;">
-<p style="margin:0;color:#4b4b4b;font-size:11px;">Eagle POS System &mdash; Automated Shift Report</p>
-</div>
-</div>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:32px 16px;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#1a1a1a;">
+
+  <div style="max-width:560px;margin:0 auto;">
+
+    <!-- Header -->
+    <div style="background:#1a1a1a;padding:28px 24px;border-radius:12px 12px 0 0;text-align:center;">
+      <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Shift Rapport</h1>
+      <p style="margin:6px 0 0;color:#a1a1aa;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Eagle POS</p>
+      <p style="margin:4px 0 0;color:#a1a1aa;font-size:12px;">${dateStr} &nbsp;&bull;&nbsp; ${timeStr}</p>
+    </div>
+
+    <!-- Table -->
+    <div style="background:#ffffff;padding:0;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:2px solid #e4e4e7;">
+            <th style="padding:12px 14px;text-align:left;color:#71717a;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Product</th>
+            <th style="padding:12px 14px;text-align:center;color:#71717a;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Aantal</th>
+            <th style="padding:12px 14px;text-align:right;color:#71717a;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Stukprijs</th>
+            <th style="padding:12px 14px;text-align:right;color:#71717a;font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Subtotaal</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Totals -->
+    <div style="background:#fafafa;padding:20px 24px;border-top:2px solid #e4e4e7;">
+      <table style="width:100%;">
+        <tr>
+          <td style="color:#71717a;font-size:13px;text-align:left;padding:4px 0;">Totaal aantal items</td>
+          <td style="color:#1a1a1a;font-size:13px;text-align:right;font-weight:600;padding:4px 0;" colspan="3">${totalItems}x</td>
+        </tr>
+        <tr>
+          <td style="color:#1a1a1a;font-size:22px;font-weight:700;padding:12px 0 0;text-align:left;">Totaal</td>
+          <td style="text-align:right;padding:12px 0 0;" colspan="3">
+            <span style="color:#1a1a1a;font-size:22px;font-weight:700;">&euro; ${grandTotal.toFixed(2)}</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:16px 24px;text-align:center;background:#1a1a1a;border-radius:0 0 12px 12px;">
+      <p style="margin:0;color:#71717a;font-size:11px;">Eagle POS &mdash; Automatisch gegenereerd shift rapport</p>
+    </div>
+
+  </div>
+
 </body>
 </html>`;
 
@@ -141,7 +160,7 @@ ${tableRows}
     const smtpHost = Deno.env.get('SMTP_HOST')!;
     const smtpUser = Deno.env.get('SMTP_USER')!;
     const smtpPass = Deno.env.get('SMTP_PASS')!;
-    const recipient = 'michael.roks@icloud.com';
+    const recipient = 'office@eagleamsterdam.com';
 
     const conn = await Deno.connectTls({ hostname: smtpHost, port: 465 });
     try {
