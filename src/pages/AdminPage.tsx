@@ -93,6 +93,75 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const [closeShiftResult, setCloseShiftResult] = useState<string | null>(null);
   const [reopenSession, setReopenSession] = useState<any>(null);
 
+  // PIN change state
+  const [pinDialogOpen, setPinDialogOpen] = useState(false);
+  const [pinStep, setPinStep] = useState<'enter' | 'confirm'>('enter');
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [pinChangeError, setPinChangeError] = useState('');
+  const [pinChangeSuccess, setPinChangeSuccess] = useState(false);
+  const updateStaffPin = useUpdateStaffPin();
+
+  const PIN_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
+
+  const handlePinChangeKey = useCallback((key: string) => {
+    setPinChangeError('');
+    setPinChangeSuccess(false);
+    if (pinStep === 'enter') {
+      if (key === 'DEL') { setNewPin(''); return; }
+      if (key === 'BACK') { setNewPin(prev => prev.slice(0, -1)); return; }
+      setNewPin(prev => prev.length >= 6 ? prev : prev + key);
+    } else {
+      if (key === 'DEL') { setConfirmPin(''); return; }
+      if (key === 'BACK') { setConfirmPin(prev => prev.slice(0, -1)); return; }
+      setConfirmPin(prev => prev.length >= 6 ? prev : prev + key);
+    }
+  }, [pinStep]);
+
+  useEffect(() => {
+    if (newPin.length === 6 && pinStep === 'enter') {
+      setPinStep('confirm');
+    }
+  }, [newPin, pinStep]);
+
+  useEffect(() => {
+    if (confirmPin.length === 6 && pinStep === 'confirm') {
+      if (confirmPin === newPin) {
+        updateStaffPin.mutate(confirmPin, {
+          onSuccess: () => {
+            setPinChangeSuccess(true);
+            setTimeout(() => {
+              setPinDialogOpen(false);
+              setPinStep('enter');
+              setNewPin('');
+              setConfirmPin('');
+              setPinChangeSuccess(false);
+            }, 1500);
+          },
+          onError: () => {
+            setPinChangeError('Opslaan mislukt');
+            setConfirmPin('');
+          },
+        });
+      } else {
+        setPinChangeError('PINs komen niet overeen');
+        setPinStep('enter');
+        setNewPin('');
+        setConfirmPin('');
+      }
+    }
+  }, [confirmPin, pinStep, newPin, updateStaffPin]);
+
+  const handlePinDialogClose = () => {
+    setPinDialogOpen(false);
+    setPinStep('enter');
+    setNewPin('');
+    setConfirmPin('');
+    setPinChangeError('');
+    setPinChangeSuccess(false);
+  };
+
+
   // KPI calculations - based on actual drink_logs (qty × price)
   const calcSessionTotal = (session: any) =>
     (session.drink_logs ?? []).reduce((sum: number, log: any) => sum + Number(log.price_at_time ?? 0), 0);
