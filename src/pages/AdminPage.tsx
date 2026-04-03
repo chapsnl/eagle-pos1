@@ -157,7 +157,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
     setNewPin('');
     setConfirmPin('');
     setPinChangeError('');
-    setPinChangeSuccess(false);
+    setPinSaving(false);
   };
 
 
