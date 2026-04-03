@@ -99,14 +99,14 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [pinChangeError, setPinChangeError] = useState('');
-  const [pinChangeSuccess, setPinChangeSuccess] = useState(false);
+  const [pinSaving, setPinSaving] = useState(false);
   const updateStaffPin = useUpdateStaffPin();
 
   const PIN_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
 
   const handlePinChangeKey = useCallback((key: string) => {
+    if (pinSaving) return;
     setPinChangeError('');
-    setPinChangeSuccess(false);
     if (pinStep === 'enter') {
       if (key === 'DEL') { setNewPin(''); return; }
       if (key === 'BACK') { setNewPin(prev => prev.slice(0, -1)); return; }
@@ -116,7 +116,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
       if (key === 'BACK') { setConfirmPin(prev => prev.slice(0, -1)); return; }
       setConfirmPin(prev => prev.length >= 6 ? prev : prev + key);
     }
-  }, [pinStep]);
+  }, [pinStep, pinSaving]);
 
   useEffect(() => {
     if (newPin.length === 6 && pinStep === 'enter') {
@@ -125,30 +125,31 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   }, [newPin, pinStep]);
 
   useEffect(() => {
-    if (confirmPin.length === 6 && pinStep === 'confirm') {
-      if (confirmPin === newPin) {
-        updateStaffPin.mutate(confirmPin, {
-          onSuccess: () => {
-            setPinDialogOpen(false);
-            setPinStep('enter');
-            setNewPin('');
-            setConfirmPin('');
-            setPinChangeError('');
-            setPinChangeSuccess(false);
-          },
-          onError: () => {
-            setPinChangeError('Opslaan mislukt');
-            setConfirmPin('');
-          },
-        });
-      } else {
-        setPinChangeError('PINs komen niet overeen');
-        setPinStep('enter');
-        setNewPin('');
-        setConfirmPin('');
-      }
+    if (confirmPin.length !== 6 || pinStep !== 'confirm' || pinSaving) return;
+    if (confirmPin === newPin) {
+      setPinSaving(true);
+      updateStaffPin.mutate(confirmPin, {
+        onSuccess: () => {
+          setPinDialogOpen(false);
+          setPinStep('enter');
+          setNewPin('');
+          setConfirmPin('');
+          setPinChangeError('');
+          setPinSaving(false);
+        },
+        onError: () => {
+          setPinChangeError('Opslaan mislukt');
+          setConfirmPin('');
+          setPinSaving(false);
+        },
+      });
+    } else {
+      setPinChangeError('PINs komen niet overeen');
+      setPinStep('enter');
+      setNewPin('');
+      setConfirmPin('');
     }
-  }, [confirmPin, pinStep, newPin, updateStaffPin]);
+  }, [confirmPin, pinStep, newPin, pinSaving]);
 
   const handlePinDialogClose = () => {
     setPinDialogOpen(false);
@@ -156,7 +157,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
     setNewPin('');
     setConfirmPin('');
     setPinChangeError('');
-    setPinChangeSuccess(false);
+    setPinSaving(false);
   };
 
 
@@ -493,14 +494,11 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center"
               style={{ color: '#00cc13' }}
             >
-              {pinChangeSuccess ? 'PIN OPGESLAGEN' : pinStep === 'enter' ? 'NIEUWE PIN CODE' : 'BEVESTIG PIN'}
+              {pinStep === 'enter' ? 'NIEUWE PIN CODE' : 'BEVESTIG PIN'}
             </DialogTitle>
           </DialogHeader>
 
-          {pinChangeSuccess ? (
-            <p className="text-center text-lg font-bold" style={{ color: '#00cc13' }}>✓</p>
-          ) : (
-            <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-4">
               {/* Dot indicators */}
               <div className="flex items-center justify-center gap-3">
                 {Array.from({ length: 6 }).map((_, i) => {
@@ -528,7 +526,8 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                   <button
                     key={key}
                     onClick={() => handlePinChangeKey(key)}
-                    className="h-16 w-full text-2xl font-extrabold uppercase flex items-center justify-center rounded-lg active:opacity-70"
+                    disabled={pinSaving}
+                    className="h-16 w-full text-2xl font-extrabold uppercase flex items-center justify-center rounded-lg active:opacity-70 disabled:opacity-50"
                     style={{
                       backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
                       color: '#fff',
@@ -550,7 +549,6 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                 ANNULEER
               </button>
             </div>
-          )}
         </DialogContent>
       </Dialog>
     </div>
