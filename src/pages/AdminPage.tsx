@@ -52,6 +52,27 @@ interface AdminPageProps {
 }
 
 export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminPin, setAdminPin] = useState('');
+  const [pinError, setPinError] = useState(false);
+
+  const handleAdminKey = useCallback((key: string) => {
+    setPinError(false);
+    if (key === 'DEL') { setAdminPin(''); return; }
+    if (key === 'BACK') { setAdminPin(prev => prev.slice(0, -1)); return; }
+    setAdminPin(prev => prev.length >= 4 ? prev : prev + key);
+  }, []);
+
+  useEffect(() => {
+    if (adminPin.length !== 4) return;
+    if (adminPin === ADMIN_PIN) {
+      setIsAuthenticated(true);
+    } else {
+      setPinError(true);
+      setAdminPin('');
+    }
+  }, [adminPin]);
+
   const { data: activeSessions } = useActiveSessions();
   const { data: closedSessions } = useClosedSessions();
   const updateSession = useUpdateSession();
