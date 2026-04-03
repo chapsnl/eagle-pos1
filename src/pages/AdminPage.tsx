@@ -1,10 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
+import { X, Delete } from 'lucide-react';
 import { useActiveSessions, useUpdateSession } from '@/hooks/useSessions';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+const ADMIN_PIN = '2520';
+const ADMIN_NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
 
 const useClosedSessions = () =>
   useQuery({
