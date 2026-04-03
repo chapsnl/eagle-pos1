@@ -349,6 +349,15 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
         </div>
       </div>
 
+      {/* PIN Wijzigen Button */}
+      <button
+        onClick={() => setPinDialogOpen(true)}
+        className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px] transition-all active:scale-[0.98]"
+        style={{ backgroundColor: '#2a2a2a', color: '#00cc13', border: '1px solid #00cc13', boxShadow: '0 0 12px #00cc1340' }}
+      >
+        PIN WIJZIGEN
+      </button>
+
       {/* Close Shift Button */}
       <button
         onClick={() => setCloseShiftStep(1)}
