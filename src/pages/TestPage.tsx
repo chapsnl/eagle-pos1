@@ -4,7 +4,8 @@ import { toast } from 'sonner';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
-import { Send, X, Delete, AlertCircle } from 'lucide-react';
+import { Send, AlertCircle } from 'lucide-react';
+import { NumPad } from '@/components/pos/NumPad';
 import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -44,7 +45,7 @@ const gridLayout: { code: string; span: number; hideLabel?: boolean; label?: str
   ],
 ];
 
-const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
+
 
 type Phase = 'input' | 'products';
 
@@ -622,13 +623,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2 flex-1 min-h-0 pb-2 relative z-10">
-            {NUM_KEYS.map((key, i) => (
-              <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="h-full min-h-[50px] w-full text-2xl font-extrabold uppercase disabled:invisible flex items-center justify-center" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333' }}>
-                {key === 'DEL' ? <X className="w-6 h-6" /> : key === 'BACK' ? <Delete className="w-6 h-6" /> : key}
-              </button>
-            ))}
-          </div>
+          <NumPad onKey={handleNumKey} />
         </div>
       </div>
     );

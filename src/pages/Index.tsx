@@ -11,7 +11,8 @@ import { AdminPage } from './AdminPage';
 import { OpenPage } from './OpenPage';
 import { ClosedPage } from './ClosedPage';
 import { TestPage } from './TestPage';
-import { Send, X, Delete, AlertCircle } from 'lucide-react';
+import { Send, AlertCircle } from 'lucide-react';
+import { NumPad } from '@/components/pos/NumPad';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useCreateSession, useAddDrinkLogs, useUpdateSession, useFindActiveSessionByWardrobe } from '@/hooks/useSessions';
 import { SessionPopup } from '@/components/pos/SessionPopup';
@@ -24,7 +25,7 @@ export interface DbOrderItem {
   quantity: number;
 }
 
-const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
+
 const ENTRY_STORAGE_KEY = 'pos_started';
 
 const readStartedFlag = () => {
@@ -410,13 +411,7 @@ const Index = () => {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 flex-1 min-h-0 pb-2 relative z-10">
-                {NUM_KEYS.map((key, i) => (
-                  <button key={i} onClick={() => key && handleNumKey(key)} disabled={!key} className="h-full min-h-[50px] w-full text-2xl font-extrabold uppercase disabled:invisible flex items-center justify-center" style={{ backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a', color: '#fff', border: '1px solid #333' }}>
-                    {key === 'DEL' ? <X className="w-6 h-6" /> : key === 'BACK' ? <Delete className="w-6 h-6" /> : key}
-                  </button>
-                ))}
-              </div>
+              <NumPad onKey={handleNumKey} />
             </div>
           </div>
         ) : (

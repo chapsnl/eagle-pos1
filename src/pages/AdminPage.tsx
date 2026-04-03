@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Delete } from 'lucide-react';
 import { useActiveSessions, useUpdateSession } from '@/hooks/useSessions';
+import { NumPad } from '@/components/pos/NumPad';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-const ADMIN_NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
+
 
 const useClosedSessions = () =>
   useQuery({
@@ -173,22 +173,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
           {pinError && (
             <p className="text-sm mb-3 text-center" style={{ color: '#ef4444' }}>Onjuiste PIN</p>
           )}
-          <div className="grid grid-cols-3 gap-2 flex-1 min-h-0 pb-2 relative z-10">
-            {ADMIN_NUM_KEYS.map((key) => (
-              <button
-                key={key}
-                onClick={() => handleAdminKey(key)}
-                className="h-full min-h-[50px] w-full text-2xl font-extrabold uppercase flex items-center justify-center"
-                style={{
-                  backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
-                  color: '#fff',
-                  border: '1px solid #333',
-                }}
-              >
-                {key === 'DEL' ? <X className="w-6 h-6" /> : key === 'BACK' ? <Delete className="w-6 h-6" /> : key}
-              </button>
-            ))}
-          </div>
+          <NumPad onKey={handleAdminKey} disabled={pinChecking} />
         </div>
       </div>
     );
