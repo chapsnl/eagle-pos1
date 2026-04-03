@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, Delete } from 'lucide-react';
 
 const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
-const CORRECT_PIN = '101290';
+const CORRECT_PIN = import.meta.env.VITE_STAFF_PIN ?? '';
 
 interface PinLockScreenProps {
   onUnlock: () => void;
