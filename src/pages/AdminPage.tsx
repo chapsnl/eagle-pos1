@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Delete } from 'lucide-react';
 import { useActiveSessions, useUpdateSession } from '@/hooks/useSessions';
+import { NumPad } from '@/components/pos/NumPad';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
