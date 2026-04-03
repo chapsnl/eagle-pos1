@@ -99,14 +99,14 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [pinChangeError, setPinChangeError] = useState('');
-  const [pinChangeSuccess, setPinChangeSuccess] = useState(false);
+  const [pinSaving, setPinSaving] = useState(false);
   const updateStaffPin = useUpdateStaffPin();
 
   const PIN_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
 
   const handlePinChangeKey = useCallback((key: string) => {
+    if (pinSaving) return;
     setPinChangeError('');
-    setPinChangeSuccess(false);
     if (pinStep === 'enter') {
       if (key === 'DEL') { setNewPin(''); return; }
       if (key === 'BACK') { setNewPin(prev => prev.slice(0, -1)); return; }
@@ -116,7 +116,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
       if (key === 'BACK') { setConfirmPin(prev => prev.slice(0, -1)); return; }
       setConfirmPin(prev => prev.length >= 6 ? prev : prev + key);
     }
-  }, [pinStep]);
+  }, [pinStep, pinSaving]);
 
   useEffect(() => {
     if (newPin.length === 6 && pinStep === 'enter') {
@@ -125,30 +125,31 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   }, [newPin, pinStep]);
 
   useEffect(() => {
-    if (confirmPin.length === 6 && pinStep === 'confirm') {
-      if (confirmPin === newPin) {
-        updateStaffPin.mutate(confirmPin, {
-          onSuccess: () => {
-            setPinDialogOpen(false);
-            setPinStep('enter');
-            setNewPin('');
-            setConfirmPin('');
-            setPinChangeError('');
-            setPinChangeSuccess(false);
-          },
-          onError: () => {
-            setPinChangeError('Opslaan mislukt');
-            setConfirmPin('');
-          },
-        });
-      } else {
-        setPinChangeError('PINs komen niet overeen');
-        setPinStep('enter');
-        setNewPin('');
-        setConfirmPin('');
-      }
+    if (confirmPin.length !== 6 || pinStep !== 'confirm' || pinSaving) return;
+    if (confirmPin === newPin) {
+      setPinSaving(true);
+      updateStaffPin.mutate(confirmPin, {
+        onSuccess: () => {
+          setPinDialogOpen(false);
+          setPinStep('enter');
+          setNewPin('');
+          setConfirmPin('');
+          setPinChangeError('');
+          setPinSaving(false);
+        },
+        onError: () => {
+          setPinChangeError('Opslaan mislukt');
+          setConfirmPin('');
+          setPinSaving(false);
+        },
+      });
+    } else {
+      setPinChangeError('PINs komen niet overeen');
+      setPinStep('enter');
+      setNewPin('');
+      setConfirmPin('');
     }
-  }, [confirmPin, pinStep, newPin, updateStaffPin]);
+  }, [confirmPin, pinStep, newPin, pinSaving]);
 
   const handlePinDialogClose = () => {
     setPinDialogOpen(false);
