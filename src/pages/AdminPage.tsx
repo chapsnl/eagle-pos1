@@ -54,22 +54,30 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminPin, setAdminPin] = useState('');
   const [pinError, setPinError] = useState(false);
+  const [pinChecking, setPinChecking] = useState(false);
 
   const handleAdminKey = useCallback((key: string) => {
+    if (pinChecking) return;
     setPinError(false);
     if (key === 'DEL') { setAdminPin(''); return; }
     if (key === 'BACK') { setAdminPin(prev => prev.slice(0, -1)); return; }
     setAdminPin(prev => prev.length >= 4 ? prev : prev + key);
-  }, []);
+  }, [pinChecking]);
 
   useEffect(() => {
     if (adminPin.length !== 4) return;
-    if (adminPin === ADMIN_PIN) {
-      setIsAuthenticated(true);
-    } else {
-      setPinError(true);
-      setAdminPin('');
-    }
+    setPinChecking(true);
+    supabase.functions.invoke('verify-pin', {
+      body: { pin: adminPin, type: 'admin' },
+    }).then(({ data, error: fnError }) => {
+      if (!fnError && data?.valid) {
+        setIsAuthenticated(true);
+      } else {
+        setPinError(true);
+        setAdminPin('');
+      }
+      setPinChecking(false);
+    });
   }, [adminPin]);
 
   const { data: activeSessions } = useActiveSessions();
