@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Delete } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-
-const NUM_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
+import { NumPad } from '@/components/pos/NumPad';
 
 interface PinLockScreenProps {
   onUnlock: () => void;
