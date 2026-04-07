@@ -509,7 +509,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         .single();
       if (error) throw error;
       // timestamp-based split handles visibility automatically
-      }
       const newTotal = sessionTotal + product.price;
       await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
       setSessionTotal(newTotal);
