@@ -508,9 +508,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         .select('id')
         .single();
       if (error) throw error;
-      // Track this ID as added in current session
-      if (inserted) {
-        setSessionAddedIds((prev) => [inserted.id, ...prev]);
+      // timestamp-based split handles visibility automatically
       }
       const newTotal = sessionTotal + product.price;
       await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
