@@ -328,7 +328,21 @@ const Index = () => {
     </Dialog>
   );
 
-  if (!started) return <IntroPage onEnter={handleEnter} />;
+  const handleNavigateToOpen = useCallback(async () => {
+    // Clean up current session state before navigating back to open
+    if (barSessionId) await unlockSession(barSessionId);
+    setItems([]);
+    setBarNumber('');
+    setBarSessionId(null);
+    setBarSessionTotal(0);
+    setBarPhase('input-number');
+    setBarRetourMode(false);
+    lastLookupRef.current = null;
+    clearOrder();
+    setPendingGuestNumber(null);
+    setPendingSessionData(null);
+    setActiveView('open');
+  }, [barSessionId, unlockSession]);
 
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
