@@ -6,7 +6,7 @@ import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { Send, AlertCircle } from 'lucide-react';
 import { NumPad } from '@/components/pos/NumPad';
-import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
+import { useFindActiveSessionByWardrobe, useUpdateSession, useCreateSession } from '@/hooks/useSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
@@ -16,6 +16,13 @@ import { getDeviceId } from '@/hooks/useDeviceId';
 interface TestOrderItem {
   product: DbProduct;
   quantity: number;
+}
+
+interface ExistingOrderItem {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
 }
 
 const gridLayout: { code: string; span: number; hideLabel?: boolean; label?: string }[][] = [
@@ -75,12 +82,11 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const [phase, setPhase] = useState<Phase>('input');
   const [activeField, setActiveField] = useState<'coat' | null>('coat');
   const [coatNumber, setCoatNumber] = useState('');
-  const [items, setItems] = useState<TestOrderItem[]>([]);
+  const [newItems, setNewItems] = useState<TestOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionTotal, setSessionTotal] = useState(0);
-  const [existingLogs, setExistingLogs] = useState<{ product_id: string; product_name: string; quantity: number; unit_price: number }[]>([]);
-  const [sessionStartTime, setSessionStartTime] = useState<number>(Date.now());
+  const [existingItems, setExistingItems] = useState<ExistingOrderItem[]>([]);
   const [showLockedWarning, setShowLockedWarning] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const [showClosedBlockDialog, setShowClosedBlockDialog] = useState(false);
@@ -88,11 +94,8 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const { data: products } = useProducts();
   const findActiveSessionByWardrobe = useFindActiveSessionByWardrobe();
   const updateSession = useUpdateSession();
-  const addDrinkLogs = useAddDrinkLogs();
   const createSession = useCreateSession();
 
-  const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
-  const existingTotal = existingLogs.reduce((sum, l) => sum + l.unit_price * l.quantity, 0);
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
   const deviceId = useRef(getDeviceId()).current;
 
@@ -106,60 +109,47 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     await supabase.from('sessions').update({ locked_by: null, locked_at: null } as any).eq('id', sid);
   }, []);
 
-  // Live drink logs via Realtime subscription + initial fetch
-  // Store individual log records with their IDs for sessionAddedIds filtering
-  const [liveDbRawLogs, setLiveDbRawLogs] = useState<{ id: string; product_id: string; product_name: string; price: number; timestamp: string }[]>([]);
-
-  const fetchLogsFromDb = useCallback(async (sid: string) => {
+  const fetchExistingItems = useCallback(async (sid: string) => {
     const { data } = await supabase
       .from('drink_logs')
-      .select('id, price_at_time, product_id, timestamp, products(full_name)')
+      .select('price_at_time, product_id, products(full_name)')
       .eq('session_id', sid);
-    if (!data) return;
-    const raw = data.map((log) => ({
-      id: log.id,
-      product_id: log.product_id,
-      product_name: (log.products as any)?.full_name ?? 'Unknown',
-      price: log.price_at_time,
-      timestamp: log.timestamp,
-    }));
-    setLiveDbRawLogs(raw);
+
+    if (!data) {
+      setExistingItems([]);
+      return;
+    }
+
+    const map = new Map<string, ExistingOrderItem>();
+    for (const log of data) {
+      const name = (log.products as any)?.full_name ?? 'Unknown';
+      const existing = map.get(log.product_id);
+
+      if (existing) {
+        existing.quantity++;
+      } else {
+        map.set(log.product_id, {
+          product_id: log.product_id,
+          product_name: name,
+          quantity: 1,
+          unit_price: Number(log.price_at_time ?? 0),
+        });
+      }
+    }
+
+    setExistingItems(Array.from(map.values()));
   }, []);
 
-  // Derived: group raw logs into display lines, split by sessionStartTime
-  const newDbLogs = useMemo(() => {
-    const filtered = liveDbRawLogs.filter((l) => new Date(l.timestamp).getTime() >= sessionStartTime);
-    const map = new Map<string, { product_id: string; product_name: string; quantity: number }>();
-    for (const l of filtered) {
-      const e = map.get(l.product_id);
-      if (e) e.quantity++; else map.set(l.product_id, { product_id: l.product_id, product_name: l.product_name, quantity: 1 });
-    }
-    return Array.from(map.values());
-  }, [liveDbRawLogs, sessionStartTime]);
-
-  const existingDbLogs = useMemo(() => {
-    const filtered = liveDbRawLogs.filter((l) => new Date(l.timestamp).getTime() < sessionStartTime);
-    const map = new Map<string, { product_id: string; product_name: string; quantity: number }>();
-    for (const l of filtered) {
-      const e = map.get(l.product_id);
-      if (e) e.quantity++; else map.set(l.product_id, { product_id: l.product_id, product_name: l.product_name, quantity: 1 });
-    }
-    return Array.from(map.values());
-  }, [liveDbRawLogs, sessionStartTime]);
-
   useEffect(() => {
-    if (!sessionId) { setExistingLogs([]); setLiveDbRawLogs([]); return; }
-    fetchLogsFromDb(sessionId);
-    const channel = supabase
-      .channel(`drink_logs_${sessionId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'drink_logs', filter: `session_id=eq.${sessionId}` },
-        () => { fetchLogsFromDb(sessionId); }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [sessionId, fetchLogsFromDb]);
+    if (!sessionId) {
+      setExistingItems([]);
+      setNewItems([]);
+      return;
+    }
+
+    setNewItems([]);
+    void fetchExistingItems(sessionId);
+  }, [sessionId, fetchExistingItems]);
 
   const autoCreateAndOpen = useCallback(async (wardrobeNum: string) => {
     try {
@@ -183,7 +173,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       await lockSession(session.id);
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
-      setSessionStartTime(Date.now()); setPhase('products');
+      setPhase('products');
       setActiveField(null);
     } catch {
       setFeedback('error');
@@ -210,7 +200,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       await lockSession(session.id);
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
-      setSessionStartTime(Date.now()); setPhase('products');
+      setPhase('products');
       setActiveField(null);
     } catch {
       setFeedback('error');
@@ -283,13 +273,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     }
   };
 
-  const addProduct = useCallback((product: DbProduct) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id);
-      if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { product, quantity: 1 }];
-    });
-  }, []);
 
   const [showBonDialog, setShowBonDialog] = useState(false);
   const [showPayDialog, setShowPayDialog] = useState(false);
@@ -301,7 +284,12 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     if (!sessionId) return;
     try {
       await unlockSession(sessionId);
-      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]); ;
+      setCoatNumber('');
+      setNewItems([]);
+      setExistingItems([]);
+      setSessionId(null);
+      setSessionTotal(0);
+      setRetourMode(false);
       lastCoatLookupRef.current = null;
       if (onNavigateToOpen) {
         onNavigateToOpen();
@@ -314,33 +302,36 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     }
   }, [sessionId, unlockSession, onNavigateToOpen]);
 
-  const allDbLogs = useMemo(() => {
-    const map = new Map<string, { product_id: string; product_name: string; quantity: number }>();
-    for (const l of liveDbRawLogs) {
-      const e = map.get(l.product_id);
-      if (e) e.quantity++; else map.set(l.product_id, { product_id: l.product_id, product_name: l.product_name, quantity: 1 });
-    }
-    return Array.from(map.values());
-  }, [liveDbRawLogs]);
-
   const popupOrderLines: OrderLine[] = useMemo(() => {
-    return [...allDbLogs].reverse().map((l) => ({
-      name: l.product_name,
-      qty: l.quantity,
+    const existingLines = existingItems.map((item) => ({
+      name: item.product_name,
+      qty: item.quantity,
       price: 0,
     }));
-  }, [allDbLogs]);
+
+    const newLines = newItems.map((item) => ({
+      name: item.product.full_name,
+      qty: item.quantity,
+      price: 0,
+    }));
+
+    return [...newLines, ...existingLines];
+  }, [existingItems, newItems]);
 
   const executePayVerwerk = useCallback(async () => {
     if (!sessionId) return;
     setShowPayDialog(false);
     setShowEntreeWarning(false);
     try {
-      // All items already saved to DB in real-time, just mark as paid
       await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
       await unlockSession(sessionId);
       clearOrder();
-      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]); ;
+      setCoatNumber('');
+      setNewItems([]);
+      setExistingItems([]);
+      setSessionId(null);
+      setSessionTotal(0);
+      setRetourMode(false);
       lastCoatLookupRef.current = null;
       if (onNavigateToOpen) {
         onNavigateToOpen();
@@ -361,9 +352,14 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   // Reset to input screen (used by NEXT button and inactivity timer)
   const resetToInput = useCallback(async () => {
-    // All items already saved to DB in real-time, just unlock and navigate
     if (sessionId) await unlockSession(sessionId);
-    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbRawLogs([]); ;
+    setCoatNumber('');
+    setNewItems([]);
+    setExistingItems([]);
+    setSessionId(null);
+    setSessionTotal(0);
+    setRetourMode(false);
+    clearOrder();
     lastCoatLookupRef.current = null;
     if (onNavigateToOpen) {
       onNavigateToOpen();
@@ -472,10 +468,33 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const addAndBook = useCallback(async (product: DbProduct) => {
     if (!sessionId) return;
 
-    // RETOUR MODE: remove one of this product from the bill
     if (retourMode) {
+      const hasNewItem = newItems.some((item) => item.product.id === product.id);
+      const hasExistingItem = existingItems.some((item) => item.product_id === product.id);
+
+      if (!hasNewItem && !hasExistingItem) {
+        setRetourMode(false);
+        return;
+      }
+
       setRetourFlash(product.id);
       setTimeout(() => setRetourFlash(null), 600);
+
+      if (hasNewItem) {
+        setNewItems((prev) => {
+          const item = prev.find((i) => i.product.id === product.id);
+          if (!item) return prev;
+          if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
+          return prev.filter((i) => i.product.id !== product.id);
+        });
+      } else {
+        setExistingItems((prev) => {
+          const item = prev.find((i) => i.product_id === product.id);
+          if (!item) return prev;
+          if (item.quantity > 1) return prev.map((i) => i.product_id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
+          return prev.filter((i) => i.product_id !== product.id);
+        });
+      }
 
       try {
         const { data: logToDelete } = await supabase
@@ -486,37 +505,59 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
           .limit(1)
           .maybeSingle();
 
-        if (logToDelete) {
-          await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
-          // timestamp-based split handles visibility automatically
-          const newTotal = Math.max(0, sessionTotal - product.price);
-          await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
-          setSessionTotal(newTotal);
-        }
+        if (!logToDelete) throw new Error('Log not found');
+
+        await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
+        const nextTotal = Math.max(0, sessionTotal - product.price);
+        await updateSession.mutateAsync({ id: sessionId, total_amount: nextTotal });
+        setSessionTotal(nextTotal);
       } catch {
-        // failed to delete
+        if (hasNewItem) {
+          setNewItems((prev) => {
+            const existing = prev.find((i) => i.product.id === product.id);
+            if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+            return [{ product, quantity: 1 }, ...prev];
+          });
+        } else {
+          setExistingItems((prev) => {
+            const existing = prev.find((i) => i.product_id === product.id);
+            if (existing) return prev.map((i) => i.product_id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+            return [{ product_id: product.id, product_name: product.full_name, quantity: 1, unit_price: product.price }, ...prev];
+          });
+        }
       }
+
       setRetourMode(false);
       return;
     }
 
-    // NORMAL MODE: save directly to DB
+    setNewItems((prev) => {
+      const existing = prev.find((item) => item.product.id === product.id);
+      if (existing) return prev.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      return [{ product, quantity: 1 }, ...prev];
+    });
+
     try {
-      const { data: inserted, error } = await supabase
+      const { error } = await supabase
         .from('drink_logs')
-        .insert({ session_id: sessionId, product_id: product.id, price_at_time: product.price })
-        .select('id')
-        .single();
+        .insert({ session_id: sessionId, product_id: product.id, price_at_time: product.price });
+
       if (error) throw error;
-      // timestamp-based split handles visibility automatically
-      const newTotal = sessionTotal + product.price;
-      await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
-      setSessionTotal(newTotal);
+
+      const nextTotal = sessionTotal + product.price;
+      await updateSession.mutateAsync({ id: sessionId, total_amount: nextTotal });
+      setSessionTotal(nextTotal);
     } catch {
+      setNewItems((prev) => {
+        const existing = prev.find((item) => item.product.id === product.id);
+        if (!existing) return prev;
+        if (existing.quantity > 1) return prev.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity - 1 } : item);
+        return prev.filter((item) => item.product.id !== product.id);
+      });
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [sessionId, sessionTotal, updateSession, retourMode, setFeedback]);
+  }, [sessionId, sessionTotal, updateSession, retourMode, newItems, existingItems]);
 
   if (phase === 'input') {
     return (
@@ -572,26 +613,26 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
           {/* Nieuwe Bestelling section */}
-          {newDbLogs.length > 0 && (
+          {newItems.length > 0 && (
             <>
               <div className="text-center py-1" style={{ borderBottom: '1px solid #333' }}>
                 <span className="font-extrabold uppercase" style={{ color: '#00cc13', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>Nieuwe Bestelling</span>
               </div>
-              {newDbLogs.map((item) => (
-                <div key={`new-${item.product_id}`} style={{ color: '#00cc13', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
-                  {item.quantity} x {item.product_name}
+              {newItems.map((item) => (
+                <div key={`new-${item.product.id}`} style={{ color: '#00cc13', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
+                  {item.quantity} x {item.product.full_name}
                 </div>
               ))}
             </>
           )}
 
           {/* Reeds Besteld section */}
-          {existingDbLogs.length > 0 && (
+          {existingItems.length > 0 && (
             <>
-              <div className="text-center py-1" style={{ borderBottom: '1px solid #333', marginTop: newDbLogs.length > 0 ? '8px' : '0' }}>
+              <div className="text-center py-1" style={{ borderBottom: '1px solid #333', marginTop: newItems.length > 0 ? '8px' : '0' }}>
                 <span className="font-extrabold uppercase" style={{ color: '#888', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>Reeds Besteld</span>
               </div>
-              {existingDbLogs.map((item) => (
+              {existingItems.map((item) => (
                 <div key={`existing-${item.product_id}`} style={{ color: '#e5e5e5', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 400, ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
                   {retourFlash === item.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
                   {item.quantity} x {item.product_name}
@@ -600,19 +641,10 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
             </>
           )}
 
-          {newDbLogs.length === 0 && existingDbLogs.length === 0 && (
+          {newItems.length === 0 && existingItems.length === 0 && (
             <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1.2vw, 14px)' }}>Geen producten</div>
           )}
         </div>
-
-        {/* Grand total */}
-        {(newDbLogs.length > 0 || existingDbLogs.length > 0) && (
-          <div className="border-t px-2 py-2" style={{ borderColor: '#333' }}>
-            <div style={{ color: '#fff', fontSize: 'clamp(12px, 1.8vw, 20px)', fontWeight: 800, textAlign: 'right' }}>
-              Totaal: €{sessionTotal.toFixed(2)}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Right column - Product grid */}
