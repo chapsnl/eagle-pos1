@@ -98,6 +98,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
 
   // Bulk generate state
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkActiveField, setBulkActiveField] = useState<'start' | 'end'>('start');
 
   // Delete single number state
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -371,7 +372,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
           PIN WIJZIGEN
         </button>
         <button
-          onClick={() => { setBulkOpen(true); setBulkStart(''); setBulkEnd(''); setBulkError(''); }}
+          onClick={() => { setBulkOpen(true); setBulkStart(''); setBulkEnd(''); setBulkError(''); setBulkActiveField('start'); }}
           className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px] transition-all active:scale-[0.98]"
           style={{ backgroundColor: '#ef4444', color: '#fff' }}
         >
@@ -524,32 +525,55 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               GENEREER NUMMERS
             </DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <div className="flex gap-3">
-              <div className="flex-1 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => setBulkActiveField('start')}
+                className="flex-1 flex flex-col gap-1 items-center"
+              >
                 <label className="text-xs font-bold uppercase" style={{ color: '#888' }}>Start Nummer</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={bulkStart}
-                  onChange={(e) => setBulkStart(e.target.value)}
-                  className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#00cc13]"
-                />
-              </div>
-              <div className="flex-1 flex flex-col gap-1">
+                <div
+                  className="w-full h-14 rounded-lg flex items-center justify-center text-3xl font-extrabold"
+                  style={{
+                    backgroundColor: '#2a2a2a',
+                    color: '#fff',
+                    border: bulkActiveField === 'start' ? '2px solid #00cc13' : '1px solid #444',
+                    boxShadow: bulkActiveField === 'start' ? '0 0 12px #00cc1340' : 'none',
+                  }}
+                >
+                  {bulkStart || <span style={{ color: '#555' }}>—</span>}
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkActiveField('end')}
+                className="flex-1 flex flex-col gap-1 items-center"
+              >
                 <label className="text-xs font-bold uppercase" style={{ color: '#888' }}>Eind Nummer</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={bulkEnd}
-                  onChange={(e) => setBulkEnd(e.target.value)}
-                  className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#00cc13]"
-                />
-              </div>
+                <div
+                  className="w-full h-14 rounded-lg flex items-center justify-center text-3xl font-extrabold"
+                  style={{
+                    backgroundColor: '#2a2a2a',
+                    color: '#fff',
+                    border: bulkActiveField === 'end' ? '2px solid #00cc13' : '1px solid #444',
+                    boxShadow: bulkActiveField === 'end' ? '0 0 12px #00cc1340' : 'none',
+                  }}
+                >
+                  {bulkEnd || <span style={{ color: '#555' }}>—</span>}
+                </div>
+              </button>
             </div>
             {bulkError && (
               <p className="text-sm text-center font-bold" style={{ color: '#ef4444' }}>{bulkError}</p>
             )}
+            <NumPad onKey={(key) => {
+              setBulkError('');
+              const setter = bulkActiveField === 'start' ? setBulkStart : setBulkEnd;
+              if (key === 'DEL') { setter(''); return; }
+              if (key === 'BACK') { setter(prev => prev.slice(0, -1)); return; }
+              setter(prev => prev.length >= 4 ? prev : prev + key);
+            }} />
             <button
               disabled={bulkLoading}
               onClick={async () => {
@@ -606,20 +630,30 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               VERWIJDER NUMMER
             </DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1 items-center">
               <label className="text-xs font-bold uppercase" style={{ color: '#00cc13' }}>Te verwijderen gastnummer</label>
-              <input
-                type="number"
-                min={1}
-                value={deleteNumber}
-                onChange={(e) => setDeleteNumber(e.target.value)}
-                className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#00cc13]"
-              />
+              <div
+                className="w-full h-16 rounded-lg flex items-center justify-center text-4xl font-extrabold"
+                style={{
+                  backgroundColor: '#2a2a2a',
+                  color: '#fff',
+                  border: '2px solid #00cc13',
+                  boxShadow: '0 0 12px #00cc1340',
+                }}
+              >
+                {deleteNumber || <span style={{ color: '#555' }}>—</span>}
+              </div>
             </div>
             {deleteError && (
               <p className="text-sm text-center font-bold" style={{ color: '#ef4444' }}>{deleteError}</p>
             )}
+            <NumPad onKey={(key) => {
+              setDeleteError('');
+              if (key === 'DEL') { setDeleteNumber(''); return; }
+              if (key === 'BACK') { setDeleteNumber(prev => prev.slice(0, -1)); return; }
+              setDeleteNumber(prev => prev.length >= 4 ? prev : prev + key);
+            }} />
             <button
               disabled={deleteLoading}
               onClick={async () => {
@@ -628,7 +662,6 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                 setDeleteLoading(true);
                 setDeleteError('');
                 try {
-                  // Find active session with this wardrobe number
                   const { data: session, error: findErr } = await supabase
                     .from('sessions')
                     .select('id')
@@ -637,15 +670,12 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                     .maybeSingle();
                   if (findErr) throw findErr;
                   if (!session) { setDeleteError(`Geen actieve sessie met nummer ${num}`); setDeleteLoading(false); return; }
-                  // Delete drink_logs for this session first
                   await supabase.from('drink_logs').delete().eq('session_id', session.id);
-                  // Delete the session
                   const { error: delErr } = await supabase.from('sessions').delete().eq('id', session.id);
                   if (delErr) throw delErr;
                   qc.invalidateQueries({ queryKey: ['sessions'] });
                   qc.invalidateQueries({ queryKey: ['active-sessions'] });
                   setDeleteOpen(false);
-                  // Success toast
                   const { toast } = await import('sonner');
                   toast.success(`Nummer ${num} succesvol verwijderd`);
                 } catch (err: any) {
