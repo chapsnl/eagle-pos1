@@ -667,7 +667,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               setDeleteError('');
               if (key === 'DEL') { setDeleteNumber(''); return; }
               if (key === 'BACK') { setDeleteNumber(prev => prev.slice(0, -1)); return; }
-              setDeleteNumber(prev => prev.length >= 4 ? prev : prev + key);
+              setDeleteNumber(prev => prev.length >= 3 ? prev : prev + key);
             }} />
             <button
               disabled={deleteLoading}
