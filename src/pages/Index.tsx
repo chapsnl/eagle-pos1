@@ -188,10 +188,7 @@ const Index = () => {
     lastLookupRef.current = wardrobe;
 
     const t = window.setTimeout(() => {
-      void resolveSessionByWardrobe(wardrobe, () => {
-        setPendingWardrobe(wardrobe);
-        setShowAddDialog(true);
-      });
+      void resolveSessionByWardrobe(wardrobe);
     }, 300);
     return () => window.clearTimeout(t);
   }, [barNumber, barPhase, activeView, resolveSessionByWardrobe]);
