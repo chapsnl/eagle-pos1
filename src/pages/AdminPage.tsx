@@ -98,6 +98,12 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
 
   // Bulk generate state
   const [bulkOpen, setBulkOpen] = useState(false);
+
+  // Delete single number state
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteNumber, setDeleteNumber] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [bulkStart, setBulkStart] = useState('');
   const [bulkEnd, setBulkEnd] = useState('');
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -367,9 +373,16 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
         <button
           onClick={() => { setBulkOpen(true); setBulkStart(''); setBulkEnd(''); setBulkError(''); }}
           className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px] transition-all active:scale-[0.98]"
-          style={{ backgroundColor: '#2563eb', color: '#fff' }}
+          style={{ backgroundColor: '#ef4444', color: '#fff' }}
         >
           GENEREER NUMMERS
+        </button>
+        <button
+          onClick={() => { setDeleteOpen(true); setDeleteNumber(''); setDeleteError(''); }}
+          className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px] transition-all active:scale-[0.98]"
+          style={{ backgroundColor: '#ef4444', color: '#fff' }}
+        >
+          VERWIJDER NUMMER
         </button>
         <button
           onClick={() => setCloseShiftStep(1)}
@@ -501,12 +514,12 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
       <Dialog open={bulkOpen} onOpenChange={(o) => { if (!o) setBulkOpen(false); }}>
         <DialogContent
           className="bg-black max-w-sm"
-          style={{ borderColor: '#2563eb40', borderRadius: '12px' }}
+          style={{ borderColor: '#ef444440', borderRadius: '12px' }}
         >
           <DialogHeader>
             <DialogTitle
               className="text-xl font-extrabold uppercase tracking-wider text-center"
-              style={{ color: '#2563eb' }}
+              style={{ color: '#00cc13' }}
             >
               GENEREER NUMMERS
             </DialogTitle>
@@ -520,7 +533,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                   min={1}
                   value={bulkStart}
                   onChange={(e) => setBulkStart(e.target.value)}
-                  className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#2563eb]"
+                  className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#00cc13]"
                 />
               </div>
               <div className="flex-1 flex flex-col gap-1">
@@ -530,7 +543,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                   min={1}
                   value={bulkEnd}
                   onChange={(e) => setBulkEnd(e.target.value)}
-                  className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#2563eb]"
+                  className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#00cc13]"
                 />
               </div>
             </div>
@@ -564,7 +577,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                 }
               }}
               className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px] disabled:opacity-50"
-              style={{ backgroundColor: '#2563eb', color: '#fff', boxShadow: '0 0 12px #2563eb80' }}
+              style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
             >
               {bulkLoading ? 'BEZIG...' : 'AANMAKEN'}
             </button>
@@ -572,6 +585,84 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               onClick={() => setBulkOpen(false)}
               className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px]"
               style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
+            >
+              ANNULEER
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Single Number Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={(o) => { if (!o) setDeleteOpen(false); }}>
+        <DialogContent
+          className="bg-black max-w-sm"
+          style={{ borderColor: '#ef444440', borderRadius: '12px' }}
+        >
+          <DialogHeader>
+            <DialogTitle
+              className="text-xl font-extrabold uppercase tracking-wider text-center"
+              style={{ color: '#00cc13' }}
+            >
+              VERWIJDER NUMMER
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold uppercase" style={{ color: '#00cc13' }}>Te verwijderen gastnummer</label>
+              <input
+                type="number"
+                min={1}
+                value={deleteNumber}
+                onChange={(e) => setDeleteNumber(e.target.value)}
+                className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#00cc13]"
+              />
+            </div>
+            {deleteError && (
+              <p className="text-sm text-center font-bold" style={{ color: '#ef4444' }}>{deleteError}</p>
+            )}
+            <button
+              disabled={deleteLoading}
+              onClick={async () => {
+                const num = deleteNumber.trim();
+                if (!num) { setDeleteError('Vul een nummer in'); return; }
+                setDeleteLoading(true);
+                setDeleteError('');
+                try {
+                  // Find active session with this wardrobe number
+                  const { data: session, error: findErr } = await supabase
+                    .from('sessions')
+                    .select('id')
+                    .eq('wardrobe_number', num)
+                    .eq('status', 'active')
+                    .maybeSingle();
+                  if (findErr) throw findErr;
+                  if (!session) { setDeleteError(`Geen actieve sessie met nummer ${num}`); setDeleteLoading(false); return; }
+                  // Delete drink_logs for this session first
+                  await supabase.from('drink_logs').delete().eq('session_id', session.id);
+                  // Delete the session
+                  const { error: delErr } = await supabase.from('sessions').delete().eq('id', session.id);
+                  if (delErr) throw delErr;
+                  qc.invalidateQueries({ queryKey: ['sessions'] });
+                  qc.invalidateQueries({ queryKey: ['active-sessions'] });
+                  setDeleteOpen(false);
+                  // Success toast
+                  const { toast } = await import('sonner');
+                  toast.success(`Nummer ${num} succesvol verwijderd`);
+                } catch (err: any) {
+                  setDeleteError(err.message ?? 'Er ging iets mis');
+                } finally {
+                  setDeleteLoading(false);
+                }
+              }}
+              className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px] disabled:opacity-50"
+              style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
+            >
+              {deleteLoading ? 'BEZIG...' : 'VERWIJDEREN'}
+            </button>
+            <button
+              onClick={() => setDeleteOpen(false)}
+              className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px]"
+              style={{ backgroundColor: '#2a2a2a', color: '#00cc13', border: '1px solid #00cc1340' }}
             >
               ANNULEER
             </button>
