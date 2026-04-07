@@ -71,8 +71,6 @@ const Index = () => {
   const [barNumber, setBarNumber] = useState('');
   const [barSessionId, setBarSessionId] = useState<string | null>(null);
   const [barSessionTotal, setBarSessionTotal] = useState(0);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const lastLookupRef = useRef<string | null>(null);
   const [barRetourMode, setBarRetourMode] = useState(false);
   const [showBarPayDialog, setShowBarPayDialog] = useState(false);
@@ -133,11 +131,27 @@ const Index = () => {
     }
   }, [activeView]);
 
-  const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string, onNotFound: () => void) => {
+  const autoCreateAndOpen = useCallback(async (wardrobeNum: string) => {
+    try {
+      const session = await createSession.mutateAsync({
+        wardrobe_number: wardrobeNum,
+        is_event_numbered: true,
+      });
+      await lockSession(session.id);
+      setBarSessionId(session.id);
+      setBarSessionTotal(Number(session.total_amount ?? 0));
+      setBarPhase('products');
+    } catch {
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+    }
+  }, [createSession, lockSession]);
+
+  const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string) => {
     try {
       const session = await findActiveSessionByWardrobe.mutateAsync(wardrobeNum);
       if (!session) {
-        onNotFound();
+        await autoCreateAndOpen(wardrobeNum);
         return;
       }
       // Check if locked by another device
@@ -158,7 +172,7 @@ const Index = () => {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [findActiveSessionByWardrobe, deviceId, lockSession]);
+  }, [findActiveSessionByWardrobe, deviceId, lockSession, autoCreateAndOpen]);
 
   // Auto-lookup when 3 digits entered
   useEffect(() => {
@@ -172,10 +186,7 @@ const Index = () => {
     lastLookupRef.current = wardrobe;
 
     const t = window.setTimeout(() => {
-      void resolveSessionByWardrobe(wardrobe, () => {
-        setPendingWardrobe(wardrobe);
-        setShowAddDialog(true);
-      });
+      void resolveSessionByWardrobe(wardrobe);
     }, 300);
     return () => window.clearTimeout(t);
   }, [barNumber, barPhase, activeView, resolveSessionByWardrobe]);
@@ -192,32 +203,6 @@ const Index = () => {
     }
     if (barNumber.length < 3) setBarNumber(barNumber + key);
   };
-
-  const handleConfirmAdd = useCallback(async () => {
-    if (!pendingWardrobe) return;
-    setShowAddDialog(false);
-    try {
-      const session = await createSession.mutateAsync({
-        wardrobe_number: pendingWardrobe,
-        is_event_numbered: true,
-      });
-      await lockSession(session.id);
-      setBarSessionId(session.id);
-      setBarSessionTotal(Number(session.total_amount ?? 0));
-      setPendingWardrobe(null);
-      setBarPhase('products');
-    } catch {
-      setFeedback('error');
-      setTimeout(() => setFeedback(null), 2000);
-    }
-  }, [pendingWardrobe, createSession, lockSession]);
-
-  const handleCancelAdd = useCallback(() => {
-    setShowAddDialog(false);
-    setPendingWardrobe(null);
-    setBarNumber('');
-    lastLookupRef.current = null;
-  }, []);
 
   // Broadcast current order to localStorage whenever items/session change
   useEffect(() => {
@@ -322,9 +307,8 @@ const Index = () => {
     clearOrder();
   }, [barSessionId, unlockSession]);
 
-  // 20s inactivity timer: reset to input-number when idle in products phase
-  // Pause timer when any popup/dialog is open
-  const anyBarPopupOpen = showAddDialog || showBarPayDialog || showBarLockedWarning;
+  // 20s inactivity timer
+  const anyBarPopupOpen = showBarPayDialog || showBarLockedWarning;
   useInactivityTimer(activeView === 'bar' && barPhase === 'products' && !anyBarPopupOpen, handleBarNext);
 
   const handleBarLockedDismiss = useCallback(() => {
@@ -341,20 +325,6 @@ const Index = () => {
     }
     addProduct(product);
   }, [barRetourMode, addProduct, removeItem]);
-
-  const addDialog = (
-    <SessionPopup
-      open={showAddDialog}
-      onClose={handleCancelAdd}
-      title="Nummer niet gevonden"
-      subtitle={`${pendingWardrobe} — Wil je dit nummer toevoegen?`}
-      orderLines={[]}
-      actions={[
-        { label: 'NEE', onClick: handleCancelAdd, variant: 'cancel' },
-        { label: 'JA', onClick: handleConfirmAdd, variant: 'confirm' },
-      ]}
-    />
-  );
 
   const barPayDialog = (
     <SessionPopup
@@ -391,7 +361,6 @@ const Index = () => {
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
-      {addDialog}
       {barPayDialog}
       {barLockedDialog}
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />

@@ -8,7 +8,7 @@ import { Send, AlertCircle } from 'lucide-react';
 import { NumPad } from '@/components/pos/NumPad';
 import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { broadcastOrder, clearOrder } from '@/lib/orderSync';
 import { getDeviceId } from '@/hooks/useDeviceId';
@@ -79,7 +79,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionTotal, setSessionTotal] = useState(0);
   const [existingLogs, setExistingLogs] = useState<{ product_id: string; product_name: string; quantity: number; unit_price: number }[]>([]);
-  const [showAddDialog, setShowAddDialog] = useState(false);
   const [showLockedWarning, setShowLockedWarning] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const [showClosedBlockDialog, setShowClosedBlockDialog] = useState(false);
@@ -153,25 +152,25 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     return () => { supabase.removeChannel(channel); };
   }, [sessionId, fetchLogsFromDb]);
 
-  const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string, onNotFound: () => void) => {
+  const autoCreateAndOpen = useCallback(async (wardrobeNum: string) => {
     try {
-      const session = await findActiveSessionByWardrobe.mutateAsync(wardrobeNum);
-      if (!session) {
-        onNotFound();
+      const { data: existing } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('wardrobe_number', wardrobeNum)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+      if (existing) {
+        toast.error(`Gast ${wardrobeNum} bestaat al als actieve klant!`);
+        setCoatNumber('');
+        lastCoatLookupRef.current = null;
         return;
       }
-      // Check if locked by another device
-      const lockedBy = (session as any).locked_by;
-      const lockedAt = (session as any).locked_at;
-      if (lockedBy && lockedBy !== deviceId) {
-        // Check if lock is stale (> 60 seconds old = auto-expired)
-        const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
-        if (lockAge < 60000) {
-          setShowLockedWarning(true);
-          return;
-        }
-      }
-      // Lock session for this device
+      const session = await createSession.mutateAsync({
+        wardrobe_number: wardrobeNum,
+        is_event_numbered: true,
+      });
       await lockSession(session.id);
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
@@ -181,7 +180,34 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [findActiveSessionByWardrobe, deviceId, lockSession]);
+  }, [createSession, lockSession]);
+
+  const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string) => {
+    try {
+      const session = await findActiveSessionByWardrobe.mutateAsync(wardrobeNum);
+      if (!session) {
+        await autoCreateAndOpen(wardrobeNum);
+        return;
+      }
+      const lockedBy = (session as any).locked_by;
+      const lockedAt = (session as any).locked_at;
+      if (lockedBy && lockedBy !== deviceId) {
+        const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
+        if (lockAge < 60000) {
+          setShowLockedWarning(true);
+          return;
+        }
+      }
+      await lockSession(session.id);
+      setSessionId(session.id);
+      setSessionTotal(Number(session.total_amount ?? 0));
+      setPhase('products');
+      setActiveField(null);
+    } catch {
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+    }
+  }, [findActiveSessionByWardrobe, deviceId, lockSession, autoCreateAndOpen]);
 
   // Auto-lookup coat number at 3 digits
   useEffect(() => {
@@ -204,10 +230,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         setShowClosedBlockDialog(true);
         return;
       }
-      void resolveSessionByWardrobe(wardrobe, () => {
-        setPendingWardrobe(wardrobe);
-        setShowAddDialog(true);
-      });
+      void resolveSessionByWardrobe(wardrobe);
     }, 300);
     return () => window.clearTimeout(t);
   }, [coatNumber, phase, resolveSessionByWardrobe]);
@@ -327,7 +350,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   // 20s inactivity timer: reset to input when idle in products phase
   // Pause timer when any popup/dialog is open
-  const anyPopupOpen = showAddDialog || showLockedWarning || showClosedBlockDialog || showBonDialog || showPayDialog || showEntreeWarning;
+  const anyPopupOpen = showLockedWarning || showClosedBlockDialog || showBonDialog || showPayDialog || showEntreeWarning;
   useInactivityTimer(phase === 'products' && !anyPopupOpen, resetToInput);
 
   const bonDialog = (
@@ -375,66 +398,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         { label: 'VERDER', onClick: () => { executePayVerwerk(); }, variant: 'confirm' },
       ]}
     />
-  );
-
-  const handleConfirmAdd = useCallback(async () => {
-    if (!pendingWardrobe) return;
-    setShowAddDialog(false);
-    try {
-      const { data: existing } = await supabase
-        .from('sessions')
-        .select('id')
-        .eq('wardrobe_number', pendingWardrobe)
-        .eq('status', 'active')
-        .limit(1)
-        .maybeSingle();
-      if (existing) {
-        toast.error(`Gast ${pendingWardrobe} bestaat al als actieve klant!`);
-        setPendingWardrobe(null);
-        setCoatNumber('');
-        lastCoatLookupRef.current = null;
-        return;
-      }
-      const session = await createSession.mutateAsync({
-        wardrobe_number: pendingWardrobe,
-        is_event_numbered: true,
-      });
-      await lockSession(session.id);
-      setSessionId(session.id);
-      setSessionTotal(Number(session.total_amount ?? 0));
-      setPendingWardrobe(null);
-      setPhase('products');
-      setActiveField(null);
-    } catch {
-      setFeedback('error');
-      setTimeout(() => setFeedback(null), 2000);
-    }
-  }, [pendingWardrobe, createSession]);
-
-  const handleCancelAdd = useCallback(() => {
-    setShowAddDialog(false);
-    setPendingWardrobe(null);
-    setCoatNumber('');
-    setActiveField('coat');
-    lastCoatLookupRef.current = null;
-  }, []);
-
-  const addDialog = (
-    <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) handleCancelAdd(); }}>
-      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340', borderRadius: 12 }}>
-        <DialogHeader>
-          <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Nummer niet gevonden</DialogTitle>
-          <DialogDescription className="text-sm pt-2">
-            <span className="font-extrabold text-base" style={{ color: '#00cc13' }}>{pendingWardrobe}</span>{' '}
-            Wil je dit nummer toevoegen?
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="flex gap-3 sm:gap-3">
-          <button onClick={handleCancelAdd} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 6 }}>NEE</button>
-          <button onClick={handleConfirmAdd} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 6 }}>JA</button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 
   const handleClosedBlockDismiss = useCallback(() => {
@@ -607,7 +570,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
           <img src="/placeholder.svg" alt="" className="object-cover w-full h-full opacity-10" />
         </div>
         <FeedbackOverlay type={feedback} />
-        {addDialog}
         {closedBlockDialog}
         {lockedWarningDialog}
         {bonDialog}
@@ -632,7 +594,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   return (
     <div className="flex-1 flex overflow-hidden h-full relative" style={{ ...(retourMode ? { border: '4px solid #ef4444', boxShadow: 'inset 0 0 30px rgba(239,68,68,0.15)' } : {}) }}>
       <FeedbackOverlay type={feedback} />
-      {addDialog}
       {closedBlockDialog}
       {lockedWarningDialog}
       {bonDialog}
