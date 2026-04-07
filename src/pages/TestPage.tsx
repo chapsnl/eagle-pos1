@@ -504,70 +504,57 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
     // RETOUR MODE: remove one of this product from the bill
     if (retourMode) {
-      const inItems = items.find((i) => i.product.id === product.id);
-      const inExisting = existingLogs.find((l) => l.product_id === product.id);
-      if (!inItems && !inExisting) return;
-
       setRetourFlash(product.id);
       setTimeout(() => setRetourFlash(null), 600);
 
-      if (inItems) {
-        // Remove from local new items (not yet in DB)
-        setItems((prev) => {
-          const item = prev.find((i) => i.product.id === product.id);
-          if (!item) return prev;
-          if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
-          return prev.filter((i) => i.product.id !== product.id);
-        });
-      } else {
-        // Remove from existing DB items
-        setExistingLogs((prev) => {
-          const item = prev.find((l) => l.product_id === product.id);
-          if (!item) return prev;
-          if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
-          return prev.filter((l) => l.product_id !== product.id);
-        });
-        setLiveDbLogs((prev) => {
-          const item = prev.find((l) => l.product_id === product.id);
-          if (!item) return prev;
-          if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
-          return prev.filter((l) => l.product_id !== product.id);
-        });
+      try {
+        const { data: logToDelete } = await supabase
+          .from('drink_logs')
+          .select('id')
+          .eq('session_id', sessionId)
+          .eq('product_id', product.id)
+          .limit(1)
+          .maybeSingle();
 
-        try {
-          const { data: logToDelete } = await supabase
-            .from('drink_logs')
-            .select('id')
-            .eq('session_id', sessionId)
-            .eq('product_id', product.id)
-            .limit(1)
-            .maybeSingle();
-
-          if (logToDelete) {
-            await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
-            const newTotal = Math.max(0, sessionTotal - product.price);
-            await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
-            setSessionTotal(newTotal);
-          }
-        } catch {
-          setExistingLogs((prev) => {
-            const existing = prev.find((l) => l.product_id === product.id);
-            if (existing) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l);
-            return [{ product_id: product.id, product_name: product.full_name, quantity: 1, unit_price: product.price }, ...prev];
+        if (logToDelete) {
+          await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
+          // Remove from sessionAddedIds if it was added this session
+          setSessionAddedIds((prev) => {
+            const idx = prev.indexOf(logToDelete.id);
+            if (idx >= 0) { const next = [...prev]; next.splice(idx, 1); return next; }
+            return prev;
           });
+          const newTotal = Math.max(0, sessionTotal - product.price);
+          await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
+          setSessionTotal(newTotal);
         }
+      } catch {
+        // failed to delete
       }
       setRetourMode(false);
       return;
     }
 
-    // NORMAL MODE: add product to local newItems only (saved on NEXT)
-    setItems((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id);
-      if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [{ product, quantity: 1 }, ...prev];
-    });
-  }, [sessionId, sessionTotal, updateSession, retourMode, items, existingLogs]);
+    // NORMAL MODE: save directly to DB
+    try {
+      const { data: inserted, error } = await supabase
+        .from('drink_logs')
+        .insert({ session_id: sessionId, product_id: product.id, price_at_time: product.price })
+        .select('id')
+        .single();
+      if (error) throw error;
+      // Track this ID as added in current session
+      if (inserted) {
+        setSessionAddedIds((prev) => [inserted.id, ...prev]);
+      }
+      const newTotal = sessionTotal + product.price;
+      await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
+      setSessionTotal(newTotal);
+    } catch {
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+    }
+  }, [sessionId, sessionTotal, updateSession, retourMode, setFeedback]);
 
   if (phase === 'input') {
     return (
