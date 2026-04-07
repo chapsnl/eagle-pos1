@@ -582,9 +582,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
                   {item.quantity} x {item.product_name}
                 </div>
               ))}
-              <div style={{ color: '#00cc13', fontSize: 'clamp(10px, 1.4vw, 16px)', padding: '4px 0', fontWeight: 800, textAlign: 'right', borderTop: '1px solid #333' }}>
-                Subtotaal: €{newTotal.toFixed(2)}
-              </div>
             </>
           )}
 
