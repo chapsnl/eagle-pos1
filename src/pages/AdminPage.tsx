@@ -514,12 +514,12 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
       <Dialog open={bulkOpen} onOpenChange={(o) => { if (!o) setBulkOpen(false); }}>
         <DialogContent
           className="bg-black max-w-sm"
-          style={{ borderColor: '#2563eb40', borderRadius: '12px' }}
+          style={{ borderColor: '#ef444440', borderRadius: '12px' }}
         >
           <DialogHeader>
             <DialogTitle
               className="text-xl font-extrabold uppercase tracking-wider text-center"
-              style={{ color: '#2563eb' }}
+              style={{ color: '#00cc13' }}
             >
               GENEREER NUMMERS
             </DialogTitle>
