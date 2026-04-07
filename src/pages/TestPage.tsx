@@ -350,7 +350,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   // 20s inactivity timer: reset to input when idle in products phase
   // Pause timer when any popup/dialog is open
-  const anyPopupOpen = showAddDialog || showLockedWarning || showClosedBlockDialog || showBonDialog || showPayDialog || showEntreeWarning;
+  const anyPopupOpen = showLockedWarning || showClosedBlockDialog || showBonDialog || showPayDialog || showEntreeWarning;
   useInactivityTimer(phase === 'products' && !anyPopupOpen, resetToInput);
 
   const bonDialog = (
