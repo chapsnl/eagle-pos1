@@ -329,20 +329,6 @@ const Index = () => {
     addProduct(product);
   }, [barRetourMode, addProduct, removeItem]);
 
-  const addDialog = (
-    <SessionPopup
-      open={showAddDialog}
-      onClose={handleCancelAdd}
-      title="Nummer niet gevonden"
-      subtitle={`${pendingWardrobe} — Wil je dit nummer toevoegen?`}
-      orderLines={[]}
-      actions={[
-        { label: 'NEE', onClick: handleCancelAdd, variant: 'cancel' },
-        { label: 'JA', onClick: handleConfirmAdd, variant: 'confirm' },
-      ]}
-    />
-  );
-
   const barPayDialog = (
     <SessionPopup
       open={showBarPayDialog}
