@@ -584,18 +584,18 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
           {/* Nieuwe Bestelling section */}
-          {items.length > 0 && (
+          {newDbLogs.length > 0 && (
             <>
               <div className="text-center py-1" style={{ borderBottom: '1px solid #333' }}>
                 <span className="font-extrabold uppercase" style={{ color: '#00cc13', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>Nieuwe Bestelling</span>
               </div>
-              {items.map((item) => (
-                <div key={`new-${item.product.id}`} style={{ color: '#00cc13', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
-                  {item.quantity} x {item.product.full_name}
+              {newDbLogs.map((item) => (
+                <div key={`new-${item.product_id}`} style={{ color: '#00cc13', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
+                  {item.quantity} x {item.product_name}
                 </div>
               ))}
               <div style={{ color: '#00cc13', fontSize: 'clamp(10px, 1.4vw, 16px)', padding: '4px 0', fontWeight: 800, textAlign: 'right', borderTop: '1px solid #333' }}>
-                Subtotaal: €{total.toFixed(2)}
+                Subtotaal: €{newTotal.toFixed(2)}
               </div>
             </>
           )}
@@ -603,7 +603,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
           {/* Reeds Besteld section */}
           {existingDbLogs.length > 0 && (
             <>
-              <div className="text-center py-1" style={{ borderBottom: '1px solid #333', marginTop: items.length > 0 ? '8px' : '0' }}>
+              <div className="text-center py-1" style={{ borderBottom: '1px solid #333', marginTop: newDbLogs.length > 0 ? '8px' : '0' }}>
                 <span className="font-extrabold uppercase" style={{ color: '#888', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>Reeds Besteld</span>
               </div>
               {existingDbLogs.map((item) => (
@@ -615,16 +615,16 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
             </>
           )}
 
-          {items.length === 0 && existingDbLogs.length === 0 && (
+          {newDbLogs.length === 0 && existingDbLogs.length === 0 && (
             <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1.2vw, 14px)' }}>Geen producten</div>
           )}
         </div>
 
         {/* Grand total */}
-        {(items.length > 0 || existingDbLogs.length > 0) && (
+        {(newDbLogs.length > 0 || existingDbLogs.length > 0) && (
           <div className="border-t px-2 py-2" style={{ borderColor: '#333' }}>
             <div style={{ color: '#fff', fontSize: 'clamp(12px, 1.8vw, 20px)', fontWeight: 800, textAlign: 'right' }}>
-              Totaal: €{(sessionTotal + total).toFixed(2)}
+              Totaal: €{sessionTotal.toFixed(2)}
             </div>
           </div>
         )}
