@@ -206,33 +206,10 @@ const Index = () => {
     if (barNumber.length < 3) setBarNumber(barNumber + key);
   };
 
-  const handleConfirmAdd = useCallback(async () => {
-    if (!pendingWardrobe) return;
-    setShowAddDialog(false);
-    try {
-      const session = await createSession.mutateAsync({
-        wardrobe_number: pendingWardrobe,
-        is_event_numbered: true,
-      });
-      await lockSession(session.id);
-      setBarSessionId(session.id);
-      setBarSessionTotal(Number(session.total_amount ?? 0));
-      setPendingWardrobe(null);
-      setBarPhase('products');
-    } catch {
-      setFeedback('error');
-      setTimeout(() => setFeedback(null), 2000);
-    }
-  }, [pendingWardrobe, createSession, lockSession]);
-
-  const handleCancelAdd = useCallback(() => {
-    setShowAddDialog(false);
-    setPendingWardrobe(null);
-    setBarNumber('');
-    lastLookupRef.current = null;
-  }, []);
-
-  // Broadcast current order to localStorage whenever items/session change
+  // 20s inactivity timer: reset to input-number when idle in products phase
+  // Pause timer when any popup/dialog is open
+  const anyBarPopupOpen = showBarPayDialog || showBarLockedWarning;
+  useInactivityTimer(activeView === 'bar' && barPhase === 'products' && !anyBarPopupOpen, handleBarNext);
   useEffect(() => {
     if (activeView !== 'bar' || barPhase !== 'products' || !barSessionId) return;
     const syncItems: SyncOrderItem[] = items.map((i) => ({
