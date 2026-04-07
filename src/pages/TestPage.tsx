@@ -126,30 +126,26 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     setLiveDbRawLogs(raw);
   }, []);
 
-  // Derived: group raw logs into display lines, split by sessionAddedIds
-  const sessionAddedSet = useMemo(() => new Set(sessionAddedIds), [sessionAddedIds]);
-
+  // Derived: group raw logs into display lines, split by sessionStartTime
   const newDbLogs = useMemo(() => {
-    const filtered = liveDbRawLogs.filter((l) => sessionAddedSet.has(l.id));
+    const filtered = liveDbRawLogs.filter((l) => new Date(l.timestamp).getTime() >= sessionStartTime);
     const map = new Map<string, { product_id: string; product_name: string; quantity: number }>();
     for (const l of filtered) {
       const e = map.get(l.product_id);
       if (e) e.quantity++; else map.set(l.product_id, { product_id: l.product_id, product_name: l.product_name, quantity: 1 });
     }
     return Array.from(map.values());
-  }, [liveDbRawLogs, sessionAddedSet]);
+  }, [liveDbRawLogs, sessionStartTime]);
 
   const existingDbLogs = useMemo(() => {
-    const filtered = liveDbRawLogs.filter((l) => !sessionAddedSet.has(l.id));
+    const filtered = liveDbRawLogs.filter((l) => new Date(l.timestamp).getTime() < sessionStartTime);
     const map = new Map<string, { product_id: string; product_name: string; quantity: number }>();
     for (const l of filtered) {
       const e = map.get(l.product_id);
       if (e) e.quantity++; else map.set(l.product_id, { product_id: l.product_id, product_name: l.product_name, quantity: 1 });
     }
     return Array.from(map.values());
-  }, [liveDbRawLogs, sessionAddedSet]);
-
-  const newTotal = useMemo(() => liveDbRawLogs.filter((l) => sessionAddedSet.has(l.id)).reduce((s, l) => s + l.price, 0), [liveDbRawLogs, sessionAddedSet]);
+  }, [liveDbRawLogs, sessionStartTime]);
 
   useEffect(() => {
     if (!sessionId) { setExistingLogs([]); setLiveDbRawLogs([]); return; }
