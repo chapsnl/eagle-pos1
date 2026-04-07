@@ -317,7 +317,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         total_amount: sessionTotal + total,
       });
       await unlockSession(sessionId);
-      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbLogs([]);
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]);
       lastCoatLookupRef.current = null;
       if (onNavigateToOpen) {
         onNavigateToOpen();
@@ -363,7 +363,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       }
       await unlockSession(sessionId);
       clearOrder();
-      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbLogs([]);
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]);
       lastCoatLookupRef.current = null;
       if (onNavigateToOpen) {
         onNavigateToOpen();
@@ -404,7 +404,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       }
     }
     if (sessionId) await unlockSession(sessionId);
-    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbLogs([]);
+    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbRawLogs([]);
     lastCoatLookupRef.current = null;
     if (onNavigateToOpen) {
       onNavigateToOpen();
