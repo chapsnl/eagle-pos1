@@ -355,6 +355,25 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   // Reset to input screen (used by NEXT button and inactivity timer)
   const resetToInput = useCallback(async () => {
+    // Save new items to DB before navigating
+    if (sessionId && items.length > 0) {
+      try {
+        const logs = items.flatMap((item) =>
+          Array.from({ length: item.quantity }, () => ({
+            session_id: sessionId,
+            product_id: item.product.id,
+            price_at_time: item.product.price,
+          }))
+        );
+        await addDrinkLogs.mutateAsync(logs);
+        await updateSession.mutateAsync({
+          id: sessionId,
+          total_amount: sessionTotal + total,
+        });
+      } catch {
+        // continue anyway
+      }
+    }
     if (sessionId) await unlockSession(sessionId);
     setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbLogs([]);
     lastCoatLookupRef.current = null;
@@ -363,7 +382,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     } else {
       setPhase('input'); setActiveField('coat');
     }
-  }, [sessionId, unlockSession, onNavigateToOpen]);
+  }, [sessionId, items, total, sessionTotal, unlockSession, onNavigateToOpen, addDrinkLogs, updateSession]);
 
   // 20s inactivity timer: reset to input when idle in products phase
   // Pause timer when any popup/dialog is open
