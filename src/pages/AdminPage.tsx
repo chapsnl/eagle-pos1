@@ -105,6 +105,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const [deleteNumber, setDeleteNumber] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [deleteConfirmStep, setDeleteConfirmStep] = useState(false);
   const [bulkStart, setBulkStart] = useState('');
   const [bulkEnd, setBulkEnd] = useState('');
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -379,7 +380,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
           GENEREER NUMMERS
         </button>
         <button
-          onClick={() => { setDeleteOpen(true); setDeleteNumber(''); setDeleteError(''); }}
+          onClick={() => { setDeleteOpen(true); setDeleteNumber(''); setDeleteError(''); setDeleteConfirmStep(false); }}
           className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px] transition-all active:scale-[0.98]"
           style={{ backgroundColor: '#ef4444', color: '#fff' }}
         >
@@ -632,7 +633,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
       </Dialog>
 
       {/* Delete Single Number Dialog */}
-      <Dialog open={deleteOpen} onOpenChange={(o) => { if (!o) setDeleteOpen(false); }}>
+      <Dialog open={deleteOpen} onOpenChange={(o) => { if (!o) { setDeleteOpen(false); setDeleteConfirmStep(false); } }}>
         <DialogContent
           className="bg-black max-w-sm"
           style={{ borderColor: '#ef444440', borderRadius: '12px' }}
@@ -646,71 +647,103 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1 items-center">
-              <label className="text-xs font-bold uppercase" style={{ color: '#00cc13' }}>Te verwijderen gastnummer</label>
-              <div
-                className="w-full h-16 rounded-lg flex items-center justify-center text-4xl font-extrabold"
-                style={{
-                  backgroundColor: '#2a2a2a',
-                  color: '#fff',
-                  border: '2px solid #00cc13',
-                  boxShadow: '0 0 12px #00cc1340',
-                }}
-              >
-                {deleteNumber || <span style={{ color: '#555' }}>—</span>}
-              </div>
-            </div>
-            {deleteError && (
-              <p className="text-sm text-center font-bold" style={{ color: '#ef4444' }}>{deleteError}</p>
+            {!deleteConfirmStep ? (
+              <>
+                <div className="flex flex-col gap-1 items-center">
+                  <label className="text-xs font-bold uppercase" style={{ color: '#00cc13' }}>Te verwijderen gastnummer</label>
+                  <div
+                    className="w-full h-16 rounded-lg flex items-center justify-center text-4xl font-extrabold"
+                    style={{
+                      backgroundColor: '#2a2a2a',
+                      color: '#fff',
+                      border: '2px solid #00cc13',
+                      boxShadow: '0 0 12px #00cc1340',
+                    }}
+                  >
+                    {deleteNumber || <span style={{ color: '#555' }}>—</span>}
+                  </div>
+                </div>
+                {deleteError && (
+                  <p className="text-sm text-center font-bold" style={{ color: '#ef4444' }}>{deleteError}</p>
+                )}
+                <NumPad onKey={(key) => {
+                  setDeleteError('');
+                  if (key === 'DEL') { setDeleteNumber(''); return; }
+                  if (key === 'BACK') { setDeleteNumber(prev => prev.slice(0, -1)); return; }
+                  setDeleteNumber(prev => prev.length >= 3 ? prev : prev + key);
+                }} />
+                <button
+                  disabled={!deleteNumber.trim()}
+                  onClick={() => {
+                    if (!deleteNumber.trim()) { setDeleteError('Vul een nummer in'); return; }
+                    setDeleteConfirmStep(true);
+                  }}
+                  className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px] disabled:opacity-50"
+                  style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
+                >
+                  VERWIJDEREN
+                </button>
+                <button
+                  onClick={() => setDeleteOpen(false)}
+                  className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px]"
+                  style={{ backgroundColor: '#2a2a2a', color: '#00cc13', border: '1px solid #00cc1340' }}
+                >
+                  ANNULEER
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-center font-bold text-lg" style={{ color: '#fff' }}>
+                  Weet je het zeker? Nummer <span style={{ color: '#ef4444' }}>{deleteNumber}</span> wordt definitief verwijderd.
+                </p>
+                {deleteError && (
+                  <p className="text-sm text-center font-bold" style={{ color: '#ef4444' }}>{deleteError}</p>
+                )}
+                <button
+                  onClick={() => { setDeleteConfirmStep(false); }}
+                  className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px]"
+                  style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
+                >
+                  CANCEL
+                </button>
+                <button
+                  disabled={deleteLoading}
+                  onClick={async () => {
+                    const num = deleteNumber.trim();
+                    setDeleteLoading(true);
+                    setDeleteError('');
+                    try {
+                      const { data: session, error: findErr } = await supabase
+                        .from('sessions')
+                        .select('id')
+                        .eq('wardrobe_number', num)
+                        .eq('status', 'active')
+                        .maybeSingle();
+                      if (findErr) throw findErr;
+                      if (!session) { setDeleteError(`Geen actieve sessie met nummer ${num}`); setDeleteLoading(false); return; }
+                      await supabase.from('drink_logs').delete().eq('session_id', session.id);
+                      const { error: delErr } = await supabase.from('sessions').delete().eq('id', session.id);
+                      if (delErr) throw delErr;
+                      qc.invalidateQueries({ queryKey: ['sessions'] });
+                      qc.invalidateQueries({ queryKey: ['active-sessions'] });
+                      setDeleteOpen(false);
+                      setDeleteConfirmStep(false);
+                      setDeleteNumber('');
+                      const { toast } = await import('sonner');
+                      toast.success(`Nummer ${num} succesvol verwijderd`);
+                    } catch (err: any) {
+                      setDeleteError(err.message ?? 'Er ging iets mis');
+                    } finally {
+                      setDeleteLoading(false);
+                    }
+                  }}
+                  className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px] disabled:opacity-50"
+                  style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
+                >
+                  {deleteLoading ? 'BEZIG...' : 'DOORGAAN'}
+                </button>
+              </>
             )}
-            <NumPad onKey={(key) => {
-              setDeleteError('');
-              if (key === 'DEL') { setDeleteNumber(''); return; }
-              if (key === 'BACK') { setDeleteNumber(prev => prev.slice(0, -1)); return; }
-              setDeleteNumber(prev => prev.length >= 3 ? prev : prev + key);
-            }} />
-            <button
-              disabled={deleteLoading}
-              onClick={async () => {
-                const num = deleteNumber.trim();
-                if (!num) { setDeleteError('Vul een nummer in'); return; }
-                setDeleteLoading(true);
-                setDeleteError('');
-                try {
-                  const { data: session, error: findErr } = await supabase
-                    .from('sessions')
-                    .select('id')
-                    .eq('wardrobe_number', num)
-                    .eq('status', 'active')
-                    .maybeSingle();
-                  if (findErr) throw findErr;
-                  if (!session) { setDeleteError(`Geen actieve sessie met nummer ${num}`); setDeleteLoading(false); return; }
-                  await supabase.from('drink_logs').delete().eq('session_id', session.id);
-                  const { error: delErr } = await supabase.from('sessions').delete().eq('id', session.id);
-                  if (delErr) throw delErr;
-                  qc.invalidateQueries({ queryKey: ['sessions'] });
-                  qc.invalidateQueries({ queryKey: ['active-sessions'] });
-                  setDeleteOpen(false);
-                  const { toast } = await import('sonner');
-                  toast.success(`Nummer ${num} succesvol verwijderd`);
-                } catch (err: any) {
-                  setDeleteError(err.message ?? 'Er ging iets mis');
-                } finally {
-                  setDeleteLoading(false);
-                }
-              }}
-              className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px] disabled:opacity-50"
-              style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
-            >
-              {deleteLoading ? 'BEZIG...' : 'VERWIJDEREN'}
-            </button>
-            <button
-              onClick={() => setDeleteOpen(false)}
-              className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px]"
-              style={{ backgroundColor: '#2a2a2a', color: '#00cc13', border: '1px solid #00cc1340' }}
-            >
-              ANNULEER
-            </button>
           </div>
         </DialogContent>
       </Dialog>
