@@ -331,8 +331,25 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     setShowPayDialog(false);
     setShowEntreeWarning(false);
     try {
+      // Save new items to DB before marking paid
+      if (items.length > 0) {
+        const logs = items.flatMap((item) =>
+          Array.from({ length: item.quantity }, () => ({
+            session_id: sessionId,
+            product_id: item.product.id,
+            price_at_time: item.product.price,
+          }))
+        );
+        await addDrinkLogs.mutateAsync(logs);
+        await updateSession.mutateAsync({
+          id: sessionId,
+          status: 'paid',
+          total_amount: sessionTotal + total,
+        });
+      } else {
+        await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
+      }
       await unlockSession(sessionId);
-      await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
       clearOrder();
       setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbLogs([]);
       lastCoatLookupRef.current = null;
@@ -345,7 +362,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [sessionId, updateSession, unlockSession, onNavigateToOpen]);
+  }, [sessionId, items, total, sessionTotal, updateSession, unlockSession, onNavigateToOpen, addDrinkLogs]);
 
   const handlePayVerwerk = useCallback(() => {
     if (!sessionId) return;
