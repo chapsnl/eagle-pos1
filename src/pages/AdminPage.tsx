@@ -365,6 +365,13 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
           PIN WIJZIGEN
         </button>
         <button
+          onClick={() => { setBulkOpen(true); setBulkStart(''); setBulkEnd(''); setBulkError(''); }}
+          className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px] transition-all active:scale-[0.98]"
+          style={{ backgroundColor: '#2563eb', color: '#fff' }}
+        >
+          GENEREER NUMMERS
+        </button>
+        <button
           onClick={() => setCloseShiftStep(1)}
           className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px] transition-all active:scale-[0.98]"
           style={{ backgroundColor: '#ef4444', color: '#fff' }}
