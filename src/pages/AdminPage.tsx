@@ -525,32 +525,55 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               GENEREER NUMMERS
             </DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
             <div className="flex gap-3">
-              <div className="flex-1 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => setBulkActiveField('start')}
+                className="flex-1 flex flex-col gap-1 items-center"
+              >
                 <label className="text-xs font-bold uppercase" style={{ color: '#888' }}>Start Nummer</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={bulkStart}
-                  onChange={(e) => setBulkStart(e.target.value)}
-                  className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#00cc13]"
-                />
-              </div>
-              <div className="flex-1 flex flex-col gap-1">
+                <div
+                  className="w-full h-14 rounded-lg flex items-center justify-center text-3xl font-extrabold"
+                  style={{
+                    backgroundColor: '#2a2a2a',
+                    color: '#fff',
+                    border: bulkActiveField === 'start' ? '2px solid #00cc13' : '1px solid #444',
+                    boxShadow: bulkActiveField === 'start' ? '0 0 12px #00cc1340' : 'none',
+                  }}
+                >
+                  {bulkStart || <span style={{ color: '#555' }}>—</span>}
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkActiveField('end')}
+                className="flex-1 flex flex-col gap-1 items-center"
+              >
                 <label className="text-xs font-bold uppercase" style={{ color: '#888' }}>Eind Nummer</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={bulkEnd}
-                  onChange={(e) => setBulkEnd(e.target.value)}
-                  className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#00cc13]"
-                />
-              </div>
+                <div
+                  className="w-full h-14 rounded-lg flex items-center justify-center text-3xl font-extrabold"
+                  style={{
+                    backgroundColor: '#2a2a2a',
+                    color: '#fff',
+                    border: bulkActiveField === 'end' ? '2px solid #00cc13' : '1px solid #444',
+                    boxShadow: bulkActiveField === 'end' ? '0 0 12px #00cc1340' : 'none',
+                  }}
+                >
+                  {bulkEnd || <span style={{ color: '#555' }}>—</span>}
+                </div>
+              </button>
             </div>
             {bulkError && (
               <p className="text-sm text-center font-bold" style={{ color: '#ef4444' }}>{bulkError}</p>
             )}
+            <NumPad onKey={(key) => {
+              setBulkError('');
+              const setter = bulkActiveField === 'start' ? setBulkStart : setBulkEnd;
+              if (key === 'DEL') { setter(''); return; }
+              if (key === 'BACK') { setter(prev => prev.slice(0, -1)); return; }
+              setter(prev => prev.length >= 4 ? prev : prev + key);
+            }} />
             <button
               disabled={bulkLoading}
               onClick={async () => {
