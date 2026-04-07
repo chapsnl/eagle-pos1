@@ -151,25 +151,25 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     return () => { supabase.removeChannel(channel); };
   }, [sessionId, fetchLogsFromDb]);
 
-  const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string, onNotFound: () => void) => {
+  const autoCreateAndOpen = useCallback(async (wardrobeNum: string) => {
     try {
-      const session = await findActiveSessionByWardrobe.mutateAsync(wardrobeNum);
-      if (!session) {
-        onNotFound();
+      const { data: existing } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('wardrobe_number', wardrobeNum)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+      if (existing) {
+        toast.error(`Gast ${wardrobeNum} bestaat al als actieve klant!`);
+        setCoatNumber('');
+        lastCoatLookupRef.current = null;
         return;
       }
-      // Check if locked by another device
-      const lockedBy = (session as any).locked_by;
-      const lockedAt = (session as any).locked_at;
-      if (lockedBy && lockedBy !== deviceId) {
-        // Check if lock is stale (> 60 seconds old = auto-expired)
-        const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
-        if (lockAge < 60000) {
-          setShowLockedWarning(true);
-          return;
-        }
-      }
-      // Lock session for this device
+      const session = await createSession.mutateAsync({
+        wardrobe_number: wardrobeNum,
+        is_event_numbered: true,
+      });
       await lockSession(session.id);
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
@@ -179,7 +179,34 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [findActiveSessionByWardrobe, deviceId, lockSession]);
+  }, [createSession, lockSession]);
+
+  const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string) => {
+    try {
+      const session = await findActiveSessionByWardrobe.mutateAsync(wardrobeNum);
+      if (!session) {
+        await autoCreateAndOpen(wardrobeNum);
+        return;
+      }
+      const lockedBy = (session as any).locked_by;
+      const lockedAt = (session as any).locked_at;
+      if (lockedBy && lockedBy !== deviceId) {
+        const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
+        if (lockAge < 60000) {
+          setShowLockedWarning(true);
+          return;
+        }
+      }
+      await lockSession(session.id);
+      setSessionId(session.id);
+      setSessionTotal(Number(session.total_amount ?? 0));
+      setPhase('products');
+      setActiveField(null);
+    } catch {
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+    }
+  }, [findActiveSessionByWardrobe, deviceId, lockSession, autoCreateAndOpen]);
 
   // Auto-lookup coat number at 3 digits
   useEffect(() => {
