@@ -531,54 +531,13 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       return;
     }
 
-    // NORMAL MODE: add product
+    // NORMAL MODE: add product to local newItems only (saved on NEXT)
     setItems((prev) => {
       const existing = prev.find((i) => i.product.id === product.id);
       if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
       return [{ product, quantity: 1 }, ...prev];
     });
-    setLiveDbLogs((prev) => {
-      const existing = prev.find((l) => l.product_id === product.id);
-      if (existing) {
-        const rest = prev.filter((l) => l.product_id !== product.id);
-        return [{ ...existing, quantity: existing.quantity + 1 }, ...rest];
-      }
-      return [{ product_id: product.id, product_name: product.full_name, quantity: 1 }, ...prev];
-    });
-    try {
-      await addDrinkLogs.mutateAsync([{
-        session_id: sessionId,
-        product_id: product.id,
-        price_at_time: product.price,
-      }]);
-      const newTotal = sessionTotal + product.price;
-      await updateSession.mutateAsync({
-        id: sessionId,
-        total_amount: newTotal,
-      });
-      setSessionTotal(newTotal);
-
-      const guestNum = coatNumber || '';
-      const updatedItems = [...items];
-      const ex = updatedItems.find((i) => i.product.id === product.id);
-      if (ex) ex.quantity++;
-      else updatedItems.unshift({ product, quantity: 1 });
-      broadcastOrder({
-        guestNumber: guestNum,
-        sessionId,
-        items: updatedItems.map((i) => ({ product_id: i.product.id, product_name: i.product.full_name, shorthand: i.product.shorthand, price: i.product.price, quantity: i.quantity })),
-        totalAmount: newTotal + existingTotal,
-        timestamp: Date.now(),
-      });
-    } catch {
-      setItems((prev) => {
-        const item = prev.find((i) => i.product.id === product.id);
-        if (!item) return prev;
-        if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
-        return prev.filter((i) => i.product.id !== product.id);
-      });
-    }
-  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs, coatNumber, existingTotal]);
+  }, [sessionId, sessionTotal, updateSession, retourMode, items, existingLogs]);
 
   if (phase === 'input') {
     return (
