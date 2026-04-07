@@ -364,7 +364,6 @@ const Index = () => {
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
-      {addDialog}
       {barPayDialog}
       {barLockedDialog}
       <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
