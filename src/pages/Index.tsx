@@ -71,8 +71,6 @@ const Index = () => {
   const [barNumber, setBarNumber] = useState('');
   const [barSessionId, setBarSessionId] = useState<string | null>(null);
   const [barSessionTotal, setBarSessionTotal] = useState(0);
-  const [barSessionId, setBarSessionId] = useState<string | null>(null);
-  const [barSessionTotal, setBarSessionTotal] = useState(0);
   const lastLookupRef = useRef<string | null>(null);
   const [barRetourMode, setBarRetourMode] = useState(false);
   const [showBarPayDialog, setShowBarPayDialog] = useState(false);
