@@ -133,11 +133,27 @@ const Index = () => {
     }
   }, [activeView]);
 
-  const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string, onNotFound: () => void) => {
+  const autoCreateAndOpen = useCallback(async (wardrobeNum: string) => {
+    try {
+      const session = await createSession.mutateAsync({
+        wardrobe_number: wardrobeNum,
+        is_event_numbered: true,
+      });
+      await lockSession(session.id);
+      setBarSessionId(session.id);
+      setBarSessionTotal(Number(session.total_amount ?? 0));
+      setBarPhase('products');
+    } catch {
+      setFeedback('error');
+      setTimeout(() => setFeedback(null), 2000);
+    }
+  }, [createSession, lockSession]);
+
+  const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string) => {
     try {
       const session = await findActiveSessionByWardrobe.mutateAsync(wardrobeNum);
       if (!session) {
-        onNotFound();
+        await autoCreateAndOpen(wardrobeNum);
         return;
       }
       // Check if locked by another device
@@ -158,7 +174,7 @@ const Index = () => {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [findActiveSessionByWardrobe, deviceId, lockSession]);
+  }, [findActiveSessionByWardrobe, deviceId, lockSession, autoCreateAndOpen]);
 
   // Auto-lookup when 3 digits entered
   useEffect(() => {
