@@ -105,6 +105,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const [deleteNumber, setDeleteNumber] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [deleteConfirmStep, setDeleteConfirmStep] = useState(false);
   const [bulkStart, setBulkStart] = useState('');
   const [bulkEnd, setBulkEnd] = useState('');
   const [bulkLoading, setBulkLoading] = useState(false);
