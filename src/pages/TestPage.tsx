@@ -570,7 +570,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
           <img src="/placeholder.svg" alt="" className="object-cover w-full h-full opacity-10" />
         </div>
         <FeedbackOverlay type={feedback} />
-        {addDialog}
         {closedBlockDialog}
         {lockedWarningDialog}
         {bonDialog}
