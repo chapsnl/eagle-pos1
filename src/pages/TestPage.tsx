@@ -345,9 +345,14 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   // Reset to input screen (used by NEXT button and inactivity timer)
   const resetToInput = useCallback(async () => {
     if (sessionId) await unlockSession(sessionId);
-    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); clearOrder(); setLiveDbLogs([]);
+    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbLogs([]);
     lastCoatLookupRef.current = null;
-  }, [sessionId, unlockSession]);
+    if (onNavigateToOpen) {
+      onNavigateToOpen();
+    } else {
+      setPhase('input'); setActiveField('coat');
+    }
+  }, [sessionId, unlockSession, onNavigateToOpen]);
 
   // 20s inactivity timer: reset to input when idle in products phase
   // Pause timer when any popup/dialog is open
