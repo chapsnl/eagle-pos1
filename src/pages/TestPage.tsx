@@ -400,66 +400,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     />
   );
 
-  const handleConfirmAdd = useCallback(async () => {
-    if (!pendingWardrobe) return;
-    setShowAddDialog(false);
-    try {
-      const { data: existing } = await supabase
-        .from('sessions')
-        .select('id')
-        .eq('wardrobe_number', pendingWardrobe)
-        .eq('status', 'active')
-        .limit(1)
-        .maybeSingle();
-      if (existing) {
-        toast.error(`Gast ${pendingWardrobe} bestaat al als actieve klant!`);
-        setPendingWardrobe(null);
-        setCoatNumber('');
-        lastCoatLookupRef.current = null;
-        return;
-      }
-      const session = await createSession.mutateAsync({
-        wardrobe_number: pendingWardrobe,
-        is_event_numbered: true,
-      });
-      await lockSession(session.id);
-      setSessionId(session.id);
-      setSessionTotal(Number(session.total_amount ?? 0));
-      setPendingWardrobe(null);
-      setPhase('products');
-      setActiveField(null);
-    } catch {
-      setFeedback('error');
-      setTimeout(() => setFeedback(null), 2000);
-    }
-  }, [pendingWardrobe, createSession]);
-
-  const handleCancelAdd = useCallback(() => {
-    setShowAddDialog(false);
-    setPendingWardrobe(null);
-    setCoatNumber('');
-    setActiveField('coat');
-    lastCoatLookupRef.current = null;
-  }, []);
-
-  const addDialog = (
-    <Dialog open={showAddDialog} onOpenChange={(open) => { if (!open) handleCancelAdd(); }}>
-      <DialogContent className="bg-card" style={{ borderColor: '#00cc1340', borderRadius: 12 }}>
-        <DialogHeader>
-          <DialogTitle className="font-extrabold uppercase text-lg" style={{ color: '#00cc13' }}>Nummer niet gevonden</DialogTitle>
-          <DialogDescription className="text-sm pt-2">
-            <span className="font-extrabold text-base" style={{ color: '#00cc13' }}>{pendingWardrobe}</span>{' '}
-            Wil je dit nummer toevoegen?
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="flex gap-3 sm:gap-3">
-          <button onClick={handleCancelAdd} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 6 }}>NEE</button>
-          <button onClick={handleConfirmAdd} className="flex-1 py-3 font-extrabold uppercase text-sm" style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 6 }}>JA</button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-
   const handleClosedBlockDismiss = useCallback(() => {
     setShowClosedBlockDialog(false);
     setPendingWardrobe(null);
