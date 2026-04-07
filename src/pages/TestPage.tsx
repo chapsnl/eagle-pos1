@@ -365,34 +365,16 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   // Reset to input screen (used by NEXT button and inactivity timer)
   const resetToInput = useCallback(async () => {
-    // All items already saved to DB in real-time, just navigate
-    if (sessionId && items.length > 0) {
-      try {
-        const logs = items.flatMap((item) =>
-          Array.from({ length: item.quantity }, () => ({
-            session_id: sessionId,
-            product_id: item.product.id,
-            price_at_time: item.product.price,
-          }))
-        );
-        await addDrinkLogs.mutateAsync(logs);
-        await updateSession.mutateAsync({
-          id: sessionId,
-          total_amount: sessionTotal + total,
-        });
-      } catch {
-        // continue anyway
-      }
-    }
+    // All items already saved to DB in real-time, just unlock and navigate
     if (sessionId) await unlockSession(sessionId);
-    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbRawLogs([]);
+    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbRawLogs([]); setSessionAddedIds([]);
     lastCoatLookupRef.current = null;
     if (onNavigateToOpen) {
       onNavigateToOpen();
     } else {
       setPhase('input'); setActiveField('coat');
     }
-  }, [sessionId, items, total, sessionTotal, unlockSession, onNavigateToOpen, addDrinkLogs, updateSession]);
+  }, [sessionId, unlockSession, onNavigateToOpen]);
 
   // 20s inactivity timer: reset to input when idle in products phase
   // Pause timer when any popup/dialog is open
