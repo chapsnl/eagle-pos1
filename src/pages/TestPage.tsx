@@ -301,7 +301,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     if (!sessionId) return;
     try {
       await unlockSession(sessionId);
-      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]); setSessionAddedIds([]);
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]); ;
       lastCoatLookupRef.current = null;
       if (onNavigateToOpen) {
         onNavigateToOpen();
@@ -340,7 +340,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
       await unlockSession(sessionId);
       clearOrder();
-      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]); setSessionAddedIds([]);
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]); ;
       lastCoatLookupRef.current = null;
       if (onNavigateToOpen) {
         onNavigateToOpen();
@@ -363,7 +363,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const resetToInput = useCallback(async () => {
     // All items already saved to DB in real-time, just unlock and navigate
     if (sessionId) await unlockSession(sessionId);
-    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbRawLogs([]); setSessionAddedIds([]);
+    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbRawLogs([]); ;
     lastCoatLookupRef.current = null;
     if (onNavigateToOpen) {
       onNavigateToOpen();
