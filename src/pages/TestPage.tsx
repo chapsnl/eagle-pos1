@@ -318,13 +318,22 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     }
   }, [sessionId, unlockSession, onNavigateToOpen]);
 
+  const allDbLogs = useMemo(() => {
+    const map = new Map<string, { product_id: string; product_name: string; quantity: number }>();
+    for (const l of liveDbRawLogs) {
+      const e = map.get(l.product_id);
+      if (e) e.quantity++; else map.set(l.product_id, { product_id: l.product_id, product_name: l.product_name, quantity: 1 });
+    }
+    return Array.from(map.values());
+  }, [liveDbRawLogs]);
+
   const popupOrderLines: OrderLine[] = useMemo(() => {
-    return [...existingDbLogs].reverse().map((l) => ({
+    return [...allDbLogs].reverse().map((l) => ({
       name: l.product_name,
       qty: l.quantity,
       price: 0,
     }));
-  }, [existingDbLogs]);
+  }, [allDbLogs]);
 
   const executePayVerwerk = useCallback(async () => {
     if (!sessionId) return;
