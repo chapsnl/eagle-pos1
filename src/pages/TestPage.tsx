@@ -488,12 +488,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
         if (logToDelete) {
           await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
-          // Remove from sessionAddedIds if it was added this session
-          setSessionAddedIds((prev) => {
-            const idx = prev.indexOf(logToDelete.id);
-            if (idx >= 0) { const next = [...prev]; next.splice(idx, 1); return next; }
-            return prev;
-          });
+          // timestamp-based split handles visibility automatically
           const newTotal = Math.max(0, sessionTotal - product.price);
           await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
           setSessionTotal(newTotal);
