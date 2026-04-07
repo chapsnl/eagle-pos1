@@ -585,10 +585,10 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         </div>
 
         {/* Grand total */}
-        {(items.length > 0 || liveDbLogs.length > 0) && (
+        {liveDbLogs.length > 0 && (
           <div className="border-t px-2 py-2" style={{ borderColor: '#333' }}>
             <div style={{ color: '#fff', fontSize: 'clamp(12px, 1.8vw, 20px)', fontWeight: 800, textAlign: 'right' }}>
-              Totaal: €{(sessionTotal + total).toFixed(2)}
+              Totaal: €{sessionTotal.toFixed(2)}
             </div>
           </div>
         )}
