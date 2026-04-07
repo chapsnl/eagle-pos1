@@ -331,8 +331,25 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     setShowPayDialog(false);
     setShowEntreeWarning(false);
     try {
+      // Save new items to DB before marking paid
+      if (items.length > 0) {
+        const logs = items.flatMap((item) =>
+          Array.from({ length: item.quantity }, () => ({
+            session_id: sessionId,
+            product_id: item.product.id,
+            price_at_time: item.product.price,
+          }))
+        );
+        await addDrinkLogs.mutateAsync(logs);
+        await updateSession.mutateAsync({
+          id: sessionId,
+          status: 'paid',
+          total_amount: sessionTotal + total,
+        });
+      } else {
+        await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
+      }
       await unlockSession(sessionId);
-      await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
       clearOrder();
       setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbLogs([]);
       lastCoatLookupRef.current = null;
@@ -345,7 +362,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [sessionId, updateSession, unlockSession, onNavigateToOpen]);
+  }, [sessionId, items, total, sessionTotal, updateSession, unlockSession, onNavigateToOpen, addDrinkLogs]);
 
   const handlePayVerwerk = useCallback(() => {
     if (!sessionId) return;
@@ -355,6 +372,25 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   // Reset to input screen (used by NEXT button and inactivity timer)
   const resetToInput = useCallback(async () => {
+    // Save new items to DB before navigating
+    if (sessionId && items.length > 0) {
+      try {
+        const logs = items.flatMap((item) =>
+          Array.from({ length: item.quantity }, () => ({
+            session_id: sessionId,
+            product_id: item.product.id,
+            price_at_time: item.product.price,
+          }))
+        );
+        await addDrinkLogs.mutateAsync(logs);
+        await updateSession.mutateAsync({
+          id: sessionId,
+          total_amount: sessionTotal + total,
+        });
+      } catch {
+        // continue anyway
+      }
+    }
     if (sessionId) await unlockSession(sessionId);
     setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbLogs([]);
     lastCoatLookupRef.current = null;
@@ -363,7 +399,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     } else {
       setPhase('input'); setActiveField('coat');
     }
-  }, [sessionId, unlockSession, onNavigateToOpen]);
+  }, [sessionId, items, total, sessionTotal, unlockSession, onNavigateToOpen, addDrinkLogs, updateSession]);
 
   // 20s inactivity timer: reset to input when idle in products phase
   // Pause timer when any popup/dialog is open
@@ -475,6 +511,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setTimeout(() => setRetourFlash(null), 600);
 
       if (inItems) {
+        // Remove from local new items (not yet in DB)
         setItems((prev) => {
           const item = prev.find((i) => i.product.id === product.id);
           if (!item) return prev;
@@ -482,45 +519,36 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
           return prev.filter((i) => i.product.id !== product.id);
         });
       } else {
+        // Remove from existing DB items
         setExistingLogs((prev) => {
           const item = prev.find((l) => l.product_id === product.id);
           if (!item) return prev;
           if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
           return prev.filter((l) => l.product_id !== product.id);
         });
-      }
-      setLiveDbLogs((prev) => {
-        const item = prev.find((l) => l.product_id === product.id);
-        if (!item) return prev;
-        if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
-        return prev.filter((l) => l.product_id !== product.id);
-      });
+        setLiveDbLogs((prev) => {
+          const item = prev.find((l) => l.product_id === product.id);
+          if (!item) return prev;
+          if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
+          return prev.filter((l) => l.product_id !== product.id);
+        });
 
-      setRetourMode(false);
+        try {
+          const { data: logToDelete } = await supabase
+            .from('drink_logs')
+            .select('id')
+            .eq('session_id', sessionId)
+            .eq('product_id', product.id)
+            .limit(1)
+            .maybeSingle();
 
-      try {
-        const { data: logToDelete } = await supabase
-          .from('drink_logs')
-          .select('id')
-          .eq('session_id', sessionId)
-          .eq('product_id', product.id)
-          .limit(1)
-          .maybeSingle();
-
-        if (logToDelete) {
-          await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
-          const newTotal = Math.max(0, sessionTotal - product.price);
-          await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
-          setSessionTotal(newTotal);
-        }
-      } catch {
-        if (inItems) {
-          setItems((prev) => {
-            const existing = prev.find((i) => i.product.id === product.id);
-            if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-            return [{ product, quantity: 1 }, ...prev];
-          });
-        } else {
+          if (logToDelete) {
+            await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
+            const newTotal = Math.max(0, sessionTotal - product.price);
+            await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
+            setSessionTotal(newTotal);
+          }
+        } catch {
           setExistingLogs((prev) => {
             const existing = prev.find((l) => l.product_id === product.id);
             if (existing) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l);
@@ -528,57 +556,17 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
           });
         }
       }
+      setRetourMode(false);
       return;
     }
 
-    // NORMAL MODE: add product
+    // NORMAL MODE: add product to local newItems only (saved on NEXT)
     setItems((prev) => {
       const existing = prev.find((i) => i.product.id === product.id);
       if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
       return [{ product, quantity: 1 }, ...prev];
     });
-    setLiveDbLogs((prev) => {
-      const existing = prev.find((l) => l.product_id === product.id);
-      if (existing) {
-        const rest = prev.filter((l) => l.product_id !== product.id);
-        return [{ ...existing, quantity: existing.quantity + 1 }, ...rest];
-      }
-      return [{ product_id: product.id, product_name: product.full_name, quantity: 1 }, ...prev];
-    });
-    try {
-      await addDrinkLogs.mutateAsync([{
-        session_id: sessionId,
-        product_id: product.id,
-        price_at_time: product.price,
-      }]);
-      const newTotal = sessionTotal + product.price;
-      await updateSession.mutateAsync({
-        id: sessionId,
-        total_amount: newTotal,
-      });
-      setSessionTotal(newTotal);
-
-      const guestNum = coatNumber || '';
-      const updatedItems = [...items];
-      const ex = updatedItems.find((i) => i.product.id === product.id);
-      if (ex) ex.quantity++;
-      else updatedItems.unshift({ product, quantity: 1 });
-      broadcastOrder({
-        guestNumber: guestNum,
-        sessionId,
-        items: updatedItems.map((i) => ({ product_id: i.product.id, product_name: i.product.full_name, shorthand: i.product.shorthand, price: i.product.price, quantity: i.quantity })),
-        totalAmount: newTotal + existingTotal,
-        timestamp: Date.now(),
-      });
-    } catch {
-      setItems((prev) => {
-        const item = prev.find((i) => i.product.id === product.id);
-        if (!item) return prev;
-        if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
-        return prev.filter((i) => i.product.id !== product.id);
-      });
-    }
-  }, [sessionId, sessionTotal, addDrinkLogs, updateSession, retourMode, items, existingLogs, coatNumber, existingTotal]);
+  }, [sessionId, sessionTotal, updateSession, retourMode, items, existingLogs]);
 
   if (phase === 'input') {
     return (
@@ -633,16 +621,51 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
-          {liveDbLogs.map((item, index) => (
-            <div key={item.product_id} style={{ color: '#e5e5e5', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', transition: 'all 0.3s ease', fontWeight: index === 0 ? 800 : 400, ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
-              {retourFlash === item.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
-              {item.quantity} x {item.product_name}
-            </div>
-          ))}
-          {liveDbLogs.length === 0 && (
+          {/* Nieuwe Bestelling section */}
+          {items.length > 0 && (
+            <>
+              <div className="text-center py-1" style={{ borderBottom: '1px solid #333' }}>
+                <span className="font-extrabold uppercase" style={{ color: '#00cc13', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>Nieuwe Bestelling</span>
+              </div>
+              {items.map((item) => (
+                <div key={`new-${item.product.id}`} style={{ color: '#00cc13', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
+                  {item.quantity} x {item.product.full_name}
+                </div>
+              ))}
+              <div style={{ color: '#00cc13', fontSize: 'clamp(10px, 1.4vw, 16px)', padding: '4px 0', fontWeight: 800, textAlign: 'right', borderTop: '1px solid #333' }}>
+                Subtotaal: €{total.toFixed(2)}
+              </div>
+            </>
+          )}
+
+          {/* Reeds Besteld section */}
+          {liveDbLogs.length > 0 && (
+            <>
+              <div className="text-center py-1" style={{ borderBottom: '1px solid #333', marginTop: items.length > 0 ? '8px' : '0' }}>
+                <span className="font-extrabold uppercase" style={{ color: '#888', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>Reeds Besteld</span>
+              </div>
+              {liveDbLogs.map((item) => (
+                <div key={`existing-${item.product_id}`} style={{ color: '#e5e5e5', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 400, ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
+                  {retourFlash === item.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
+                  {item.quantity} x {item.product_name}
+                </div>
+              ))}
+            </>
+          )}
+
+          {items.length === 0 && liveDbLogs.length === 0 && (
             <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1.2vw, 14px)' }}>Geen producten</div>
           )}
         </div>
+
+        {/* Grand total */}
+        {(items.length > 0 || liveDbLogs.length > 0) && (
+          <div className="border-t px-2 py-2" style={{ borderColor: '#333' }}>
+            <div style={{ color: '#fff', fontSize: 'clamp(12px, 1.8vw, 20px)', fontWeight: 800, textAlign: 'right' }}>
+              Totaal: €{(sessionTotal + total).toFixed(2)}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Right column - Product grid */}
