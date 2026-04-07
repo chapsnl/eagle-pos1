@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useInactivityTimer } from '@/hooks/useInactivityTimer';
 import { DbProduct } from '@/hooks/useProducts';
 import { FeedbackType, AppView } from '@/types/pos';
-import IntroPage from './IntroPage';
+
 import { NavTabs } from '@/components/pos/NavTabs';
 import { OrderBar } from '@/components/pos/OrderBar';
 import { ProductGrid } from '@/components/pos/ProductGrid';
@@ -26,41 +26,13 @@ export interface DbOrderItem {
 }
 
 
-const ENTRY_STORAGE_KEY = 'pos_started';
 
-const readStartedFlag = () => {
-  try {
-    const persisted = localStorage.getItem(ENTRY_STORAGE_KEY);
-    if (persisted === '1') return true;
 
-    const legacySessionValue = sessionStorage.getItem(ENTRY_STORAGE_KEY);
-    if (legacySessionValue === '1') {
-      localStorage.setItem(ENTRY_STORAGE_KEY, '1');
-      return true;
-    }
-  } catch {
-    // Ignore storage access issues and fall back to intro page
-  }
-
-  return false;
-};
 
 type BarPhase = 'input-number' | 'products';
 
 const Index = () => {
-  
-  const [started, setStarted] = useState(readStartedFlag);
-
-  const handleEnter = useCallback(() => {
-    try {
-      localStorage.setItem(ENTRY_STORAGE_KEY, '1');
-      sessionStorage.setItem(ENTRY_STORAGE_KEY, '1');
-    } catch {
-      // Ignore storage access issues and continue in-memory
-    }
-    setStarted(true);
-  }, []);
-  const [activeView, setActiveView] = useState<AppView>('test');
+  const [activeView, setActiveView] = useState<AppView>('open');
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [pendingGuestNumber, setPendingGuestNumber] = useState<string | null>(null);
@@ -356,7 +328,21 @@ const Index = () => {
     </Dialog>
   );
 
-  if (!started) return <IntroPage onEnter={handleEnter} />;
+  const handleNavigateToOpen = useCallback(async () => {
+    // Clean up current session state before navigating back to open
+    if (barSessionId) await unlockSession(barSessionId);
+    setItems([]);
+    setBarNumber('');
+    setBarSessionId(null);
+    setBarSessionTotal(0);
+    setBarPhase('input-number');
+    setBarRetourMode(false);
+    lastLookupRef.current = null;
+    clearOrder();
+    setPendingGuestNumber(null);
+    setPendingSessionData(null);
+    setActiveView('open');
+  }, [barSessionId, unlockSession]);
 
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
@@ -402,7 +388,7 @@ const Index = () => {
         )
       )}
 
-      {activeView === 'test' && <TestPage initialGuestNumber={pendingGuestNumber} initialSessionData={pendingSessionData} onGuestNumberConsumed={() => { setPendingGuestNumber(null); setPendingSessionData(null); }} />}
+      {activeView === 'test' && <TestPage initialGuestNumber={pendingGuestNumber} initialSessionData={pendingSessionData} onGuestNumberConsumed={() => { setPendingGuestNumber(null); setPendingSessionData(null); }} onNavigateToOpen={handleNavigateToOpen} />}
       {activeView === 'admin' && <AdminPage onNavigateToGuest={(wardrobe, sessionId, totalAmount) => {
         setPendingSessionData({ sessionId, wardrobeNumber: wardrobe, totalAmount });
         setActiveView('test');
