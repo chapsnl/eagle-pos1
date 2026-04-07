@@ -229,10 +229,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         setShowClosedBlockDialog(true);
         return;
       }
-      void resolveSessionByWardrobe(wardrobe, () => {
-        setPendingWardrobe(wardrobe);
-        setShowAddDialog(true);
-      });
+      void resolveSessionByWardrobe(wardrobe);
     }, 300);
     return () => window.clearTimeout(t);
   }, [coatNumber, phase, resolveSessionByWardrobe]);
