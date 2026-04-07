@@ -305,12 +305,18 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         total_amount: sessionTotal + total,
       });
       await unlockSession(sessionId);
-      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat');
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbLogs([]);
+      lastCoatLookupRef.current = null;
+      if (onNavigateToOpen) {
+        onNavigateToOpen();
+      } else {
+        setPhase('input'); setActiveField('coat');
+      }
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession, unlockSession]);
+  }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession, unlockSession, onNavigateToOpen]);
 
   const popupOrderLines: OrderLine[] = useMemo(() => {
     return [...liveDbLogs].reverse().map((l) => ({
