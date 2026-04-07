@@ -152,7 +152,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const newTotal = useMemo(() => liveDbRawLogs.filter((l) => sessionAddedSet.has(l.id)).reduce((s, l) => s + l.price, 0), [liveDbRawLogs, sessionAddedSet]);
 
   useEffect(() => {
-    if (!sessionId) { setExistingLogs([]); setLiveDbLogs([]); return; }
+    if (!sessionId) { setExistingLogs([]); setLiveDbRawLogs([]); return; }
     fetchLogsFromDb(sessionId);
     const channel = supabase
       .channel(`drink_logs_${sessionId}`)
