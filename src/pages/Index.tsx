@@ -388,7 +388,7 @@ const Index = () => {
         )
       )}
 
-      {activeView === 'test' && <TestPage initialGuestNumber={pendingGuestNumber} initialSessionData={pendingSessionData} onGuestNumberConsumed={() => { setPendingGuestNumber(null); setPendingSessionData(null); }} />}
+      {activeView === 'test' && <TestPage initialGuestNumber={pendingGuestNumber} initialSessionData={pendingSessionData} onGuestNumberConsumed={() => { setPendingGuestNumber(null); setPendingSessionData(null); }} onNavigateToOpen={handleNavigateToOpen} />}
       {activeView === 'admin' && <AdminPage onNavigateToGuest={(wardrobe, sessionId, totalAmount) => {
         setPendingSessionData({ sessionId, wardrobeNumber: wardrobe, totalAmount });
         setActiveView('test');
