@@ -334,13 +334,18 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       await unlockSession(sessionId);
       await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
       clearOrder();
-      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setPhase('input'); setActiveField('coat'); setRetourMode(false); setLiveDbLogs([]);
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbLogs([]);
       lastCoatLookupRef.current = null;
+      if (onNavigateToOpen) {
+        onNavigateToOpen();
+      } else {
+        setPhase('input'); setActiveField('coat');
+      }
     } catch {
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [sessionId, updateSession, unlockSession]);
+  }, [sessionId, updateSession, unlockSession, onNavigateToOpen]);
 
   const handlePayVerwerk = useCallback(() => {
     if (!sessionId) return;
