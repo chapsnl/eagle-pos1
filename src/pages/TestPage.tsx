@@ -80,7 +80,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionTotal, setSessionTotal] = useState(0);
   const [existingLogs, setExistingLogs] = useState<{ product_id: string; product_name: string; quantity: number; unit_price: number }[]>([]);
-  const [sessionAddedIds, setSessionAddedIds] = useState<string[]>([]);
   const [showLockedWarning, setShowLockedWarning] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const [showClosedBlockDialog, setShowClosedBlockDialog] = useState(false);
@@ -107,52 +106,41 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   }, []);
 
   // Live drink logs via Realtime subscription + initial fetch
-  // Store individual log records with their IDs for sessionAddedIds filtering
-  const [liveDbRawLogs, setLiveDbRawLogs] = useState<{ id: string; product_id: string; product_name: string; price: number; timestamp: string }[]>([]);
+  const [liveDbLogs, setLiveDbLogs] = useState<{ product_id: string; product_name: string; quantity: number }[]>([]);
 
   const fetchLogsFromDb = useCallback(async (sid: string) => {
     const { data } = await supabase
       .from('drink_logs')
-      .select('id, price_at_time, product_id, timestamp, products(full_name)')
+      .select('price_at_time, product_id, timestamp, products(full_name)')
       .eq('session_id', sid);
     if (!data) return;
-    const raw = data.map((log) => ({
-      id: log.id,
-      product_id: log.product_id,
-      product_name: (log.products as any)?.full_name ?? 'Unknown',
-      price: log.price_at_time,
-      timestamp: log.timestamp,
-    }));
-    setLiveDbRawLogs(raw);
+    const map = new Map<string, { product_id: string; product_name: string; quantity: number; unit_price: number }>();
+    const dbMap = new Map<string, { product_id: string; product_name: string; quantity: number; last_touched_at: number }>();
+    for (const log of data) {
+      const name = (log.products as any)?.full_name ?? 'Unknown';
+      const pid = log.product_id;
+      const touchedAt = new Date(log.timestamp).getTime();
+      const existing = map.get(pid);
+      if (existing) existing.quantity++;
+      else map.set(pid, { product_id: pid, product_name: name, quantity: 1, unit_price: log.price_at_time });
+      const dbExisting = dbMap.get(pid);
+      if (dbExisting) {
+        dbExisting.quantity++;
+        dbExisting.last_touched_at = Math.max(dbExisting.last_touched_at, touchedAt);
+      } else {
+        dbMap.set(pid, { product_id: pid, product_name: name, quantity: 1, last_touched_at: touchedAt });
+      }
+    }
+    setExistingLogs(Array.from(map.values()));
+    setLiveDbLogs(
+      Array.from(dbMap.values())
+        .sort((a, b) => b.last_touched_at - a.last_touched_at)
+        .map(({ last_touched_at, ...item }) => item)
+    );
   }, []);
 
-  // Derived: group raw logs into display lines, split by sessionAddedIds
-  const sessionAddedSet = useMemo(() => new Set(sessionAddedIds), [sessionAddedIds]);
-
-  const newDbLogs = useMemo(() => {
-    const filtered = liveDbRawLogs.filter((l) => sessionAddedSet.has(l.id));
-    const map = new Map<string, { product_id: string; product_name: string; quantity: number }>();
-    for (const l of filtered) {
-      const e = map.get(l.product_id);
-      if (e) e.quantity++; else map.set(l.product_id, { product_id: l.product_id, product_name: l.product_name, quantity: 1 });
-    }
-    return Array.from(map.values());
-  }, [liveDbRawLogs, sessionAddedSet]);
-
-  const existingDbLogs = useMemo(() => {
-    const filtered = liveDbRawLogs.filter((l) => !sessionAddedSet.has(l.id));
-    const map = new Map<string, { product_id: string; product_name: string; quantity: number }>();
-    for (const l of filtered) {
-      const e = map.get(l.product_id);
-      if (e) e.quantity++; else map.set(l.product_id, { product_id: l.product_id, product_name: l.product_name, quantity: 1 });
-    }
-    return Array.from(map.values());
-  }, [liveDbRawLogs, sessionAddedSet]);
-
-  const newTotal = useMemo(() => liveDbRawLogs.filter((l) => sessionAddedSet.has(l.id)).reduce((s, l) => s + l.price, 0), [liveDbRawLogs, sessionAddedSet]);
-
   useEffect(() => {
-    if (!sessionId) { setExistingLogs([]); setLiveDbRawLogs([]); return; }
+    if (!sessionId) { setExistingLogs([]); setLiveDbLogs([]); return; }
     fetchLogsFromDb(sessionId);
     const channel = supabase
       .channel(`drink_logs_${sessionId}`)
@@ -302,10 +290,22 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const [retourFlash, setRetourFlash] = useState<string | null>(null);
 
   const handleSubmit = useCallback(async () => {
-    if (!sessionId) return;
+    if (items.length === 0 || !sessionId) return;
     try {
+      const logs = items.flatMap((item) =>
+        Array.from({ length: item.quantity }, () => ({
+          session_id: sessionId,
+          product_id: item.product.id,
+          price_at_time: item.product.price,
+        }))
+      );
+      await addDrinkLogs.mutateAsync(logs);
+      await updateSession.mutateAsync({
+        id: sessionId,
+        total_amount: sessionTotal + total,
+      });
       await unlockSession(sessionId);
-      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]); setSessionAddedIds([]);
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbLogs([]);
       lastCoatLookupRef.current = null;
       if (onNavigateToOpen) {
         onNavigateToOpen();
@@ -316,35 +316,42 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [sessionId, unlockSession, onNavigateToOpen]);
-
-  const allDbLogs = useMemo(() => {
-    const map = new Map<string, { product_id: string; product_name: string; quantity: number }>();
-    for (const l of liveDbRawLogs) {
-      const e = map.get(l.product_id);
-      if (e) e.quantity++; else map.set(l.product_id, { product_id: l.product_id, product_name: l.product_name, quantity: 1 });
-    }
-    return Array.from(map.values());
-  }, [liveDbRawLogs]);
+  }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession, unlockSession, onNavigateToOpen]);
 
   const popupOrderLines: OrderLine[] = useMemo(() => {
-    return [...allDbLogs].reverse().map((l) => ({
+    return [...liveDbLogs].reverse().map((l) => ({
       name: l.product_name,
       qty: l.quantity,
       price: 0,
     }));
-  }, [allDbLogs]);
+  }, [liveDbLogs]);
 
   const executePayVerwerk = useCallback(async () => {
     if (!sessionId) return;
     setShowPayDialog(false);
     setShowEntreeWarning(false);
     try {
-      // All items already saved to DB in real-time, just mark as paid
-      await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
+      // Save new items to DB before marking paid
+      if (items.length > 0) {
+        const logs = items.flatMap((item) =>
+          Array.from({ length: item.quantity }, () => ({
+            session_id: sessionId,
+            product_id: item.product.id,
+            price_at_time: item.product.price,
+          }))
+        );
+        await addDrinkLogs.mutateAsync(logs);
+        await updateSession.mutateAsync({
+          id: sessionId,
+          status: 'paid',
+          total_amount: sessionTotal + total,
+        });
+      } else {
+        await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
+      }
       await unlockSession(sessionId);
       clearOrder();
-      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]); setSessionAddedIds([]);
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbLogs([]);
       lastCoatLookupRef.current = null;
       if (onNavigateToOpen) {
         onNavigateToOpen();
@@ -355,7 +362,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [sessionId, updateSession, unlockSession, onNavigateToOpen]);
+  }, [sessionId, items, total, sessionTotal, updateSession, unlockSession, onNavigateToOpen, addDrinkLogs]);
 
   const handlePayVerwerk = useCallback(() => {
     if (!sessionId) return;
@@ -365,16 +372,34 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   // Reset to input screen (used by NEXT button and inactivity timer)
   const resetToInput = useCallback(async () => {
-    // All items already saved to DB in real-time, just unlock and navigate
+    // Save new items to DB before navigating
+    if (sessionId && items.length > 0) {
+      try {
+        const logs = items.flatMap((item) =>
+          Array.from({ length: item.quantity }, () => ({
+            session_id: sessionId,
+            product_id: item.product.id,
+            price_at_time: item.product.price,
+          }))
+        );
+        await addDrinkLogs.mutateAsync(logs);
+        await updateSession.mutateAsync({
+          id: sessionId,
+          total_amount: sessionTotal + total,
+        });
+      } catch {
+        // continue anyway
+      }
+    }
     if (sessionId) await unlockSession(sessionId);
-    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbRawLogs([]); setSessionAddedIds([]);
+    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbLogs([]);
     lastCoatLookupRef.current = null;
     if (onNavigateToOpen) {
       onNavigateToOpen();
     } else {
       setPhase('input'); setActiveField('coat');
     }
-  }, [sessionId, unlockSession, onNavigateToOpen]);
+  }, [sessionId, items, total, sessionTotal, unlockSession, onNavigateToOpen, addDrinkLogs, updateSession]);
 
   // 20s inactivity timer: reset to input when idle in products phase
   // Pause timer when any popup/dialog is open
@@ -478,57 +503,70 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
     // RETOUR MODE: remove one of this product from the bill
     if (retourMode) {
+      const inItems = items.find((i) => i.product.id === product.id);
+      const inExisting = existingLogs.find((l) => l.product_id === product.id);
+      if (!inItems && !inExisting) return;
+
       setRetourFlash(product.id);
       setTimeout(() => setRetourFlash(null), 600);
 
-      try {
-        const { data: logToDelete } = await supabase
-          .from('drink_logs')
-          .select('id')
-          .eq('session_id', sessionId)
-          .eq('product_id', product.id)
-          .limit(1)
-          .maybeSingle();
+      if (inItems) {
+        // Remove from local new items (not yet in DB)
+        setItems((prev) => {
+          const item = prev.find((i) => i.product.id === product.id);
+          if (!item) return prev;
+          if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
+          return prev.filter((i) => i.product.id !== product.id);
+        });
+      } else {
+        // Remove from existing DB items
+        setExistingLogs((prev) => {
+          const item = prev.find((l) => l.product_id === product.id);
+          if (!item) return prev;
+          if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
+          return prev.filter((l) => l.product_id !== product.id);
+        });
+        setLiveDbLogs((prev) => {
+          const item = prev.find((l) => l.product_id === product.id);
+          if (!item) return prev;
+          if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
+          return prev.filter((l) => l.product_id !== product.id);
+        });
 
-        if (logToDelete) {
-          await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
-          // Remove from sessionAddedIds if it was added this session
-          setSessionAddedIds((prev) => {
-            const idx = prev.indexOf(logToDelete.id);
-            if (idx >= 0) { const next = [...prev]; next.splice(idx, 1); return next; }
-            return prev;
+        try {
+          const { data: logToDelete } = await supabase
+            .from('drink_logs')
+            .select('id')
+            .eq('session_id', sessionId)
+            .eq('product_id', product.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (logToDelete) {
+            await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
+            const newTotal = Math.max(0, sessionTotal - product.price);
+            await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
+            setSessionTotal(newTotal);
+          }
+        } catch {
+          setExistingLogs((prev) => {
+            const existing = prev.find((l) => l.product_id === product.id);
+            if (existing) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l);
+            return [{ product_id: product.id, product_name: product.full_name, quantity: 1, unit_price: product.price }, ...prev];
           });
-          const newTotal = Math.max(0, sessionTotal - product.price);
-          await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
-          setSessionTotal(newTotal);
         }
-      } catch {
-        // failed to delete
       }
       setRetourMode(false);
       return;
     }
 
-    // NORMAL MODE: save directly to DB
-    try {
-      const { data: inserted, error } = await supabase
-        .from('drink_logs')
-        .insert({ session_id: sessionId, product_id: product.id, price_at_time: product.price })
-        .select('id')
-        .single();
-      if (error) throw error;
-      // Track this ID as added in current session
-      if (inserted) {
-        setSessionAddedIds((prev) => [inserted.id, ...prev]);
-      }
-      const newTotal = sessionTotal + product.price;
-      await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
-      setSessionTotal(newTotal);
-    } catch {
-      setFeedback('error');
-      setTimeout(() => setFeedback(null), 2000);
-    }
-  }, [sessionId, sessionTotal, updateSession, retourMode, setFeedback]);
+    // NORMAL MODE: add product to local newItems only (saved on NEXT)
+    setItems((prev) => {
+      const existing = prev.find((i) => i.product.id === product.id);
+      if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      return [{ product, quantity: 1 }, ...prev];
+    });
+  }, [sessionId, sessionTotal, updateSession, retourMode, items, existingLogs]);
 
   if (phase === 'input') {
     return (
@@ -584,29 +622,29 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
           {/* Nieuwe Bestelling section */}
-          {newDbLogs.length > 0 && (
+          {items.length > 0 && (
             <>
               <div className="text-center py-1" style={{ borderBottom: '1px solid #333' }}>
                 <span className="font-extrabold uppercase" style={{ color: '#00cc13', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>Nieuwe Bestelling</span>
               </div>
-              {newDbLogs.map((item) => (
-                <div key={`new-${item.product_id}`} style={{ color: '#00cc13', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
-                  {item.quantity} x {item.product_name}
+              {items.map((item) => (
+                <div key={`new-${item.product.id}`} style={{ color: '#00cc13', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
+                  {item.quantity} x {item.product.full_name}
                 </div>
               ))}
               <div style={{ color: '#00cc13', fontSize: 'clamp(10px, 1.4vw, 16px)', padding: '4px 0', fontWeight: 800, textAlign: 'right', borderTop: '1px solid #333' }}>
-                Subtotaal: €{newTotal.toFixed(2)}
+                Subtotaal: €{total.toFixed(2)}
               </div>
             </>
           )}
 
           {/* Reeds Besteld section */}
-          {existingDbLogs.length > 0 && (
+          {liveDbLogs.length > 0 && (
             <>
-              <div className="text-center py-1" style={{ borderBottom: '1px solid #333', marginTop: newDbLogs.length > 0 ? '8px' : '0' }}>
+              <div className="text-center py-1" style={{ borderBottom: '1px solid #333', marginTop: items.length > 0 ? '8px' : '0' }}>
                 <span className="font-extrabold uppercase" style={{ color: '#888', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>Reeds Besteld</span>
               </div>
-              {existingDbLogs.map((item) => (
+              {liveDbLogs.map((item) => (
                 <div key={`existing-${item.product_id}`} style={{ color: '#e5e5e5', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 400, ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
                   {retourFlash === item.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
                   {item.quantity} x {item.product_name}
@@ -615,16 +653,16 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
             </>
           )}
 
-          {newDbLogs.length === 0 && existingDbLogs.length === 0 && (
+          {items.length === 0 && liveDbLogs.length === 0 && (
             <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1.2vw, 14px)' }}>Geen producten</div>
           )}
         </div>
 
         {/* Grand total */}
-        {(newDbLogs.length > 0 || existingDbLogs.length > 0) && (
+        {(items.length > 0 || liveDbLogs.length > 0) && (
           <div className="border-t px-2 py-2" style={{ borderColor: '#333' }}>
             <div style={{ color: '#fff', fontSize: 'clamp(12px, 1.8vw, 20px)', fontWeight: 800, textAlign: 'right' }}>
-              Totaal: €{sessionTotal.toFixed(2)}
+              Totaal: €{(sessionTotal + total).toFixed(2)}
             </div>
           </div>
         )}
