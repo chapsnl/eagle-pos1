@@ -307,7 +307,9 @@ const Index = () => {
     clearOrder();
   }, [barSessionId, unlockSession]);
 
-  // 20s inactivity timer already declared above
+  // 20s inactivity timer
+  const anyBarPopupOpen = showBarPayDialog || showBarLockedWarning;
+  useInactivityTimer(activeView === 'bar' && barPhase === 'products' && !anyBarPopupOpen, handleBarNext);
 
   const handleBarLockedDismiss = useCallback(() => {
     setShowBarLockedWarning(false);
