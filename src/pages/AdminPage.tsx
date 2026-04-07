@@ -533,7 +533,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                   min={1}
                   value={bulkStart}
                   onChange={(e) => setBulkStart(e.target.value)}
-                  className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#2563eb]"
+                  className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#00cc13]"
                 />
               </div>
               <div className="flex-1 flex flex-col gap-1">
