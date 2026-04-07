@@ -107,38 +107,49 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   }, []);
 
   // Live drink logs via Realtime subscription + initial fetch
-  const [liveDbLogs, setLiveDbLogs] = useState<{ product_id: string; product_name: string; quantity: number }[]>([]);
+  // Store individual log records with their IDs for sessionAddedIds filtering
+  const [liveDbRawLogs, setLiveDbRawLogs] = useState<{ id: string; product_id: string; product_name: string; price: number; timestamp: string }[]>([]);
 
   const fetchLogsFromDb = useCallback(async (sid: string) => {
     const { data } = await supabase
       .from('drink_logs')
-      .select('price_at_time, product_id, timestamp, products(full_name)')
+      .select('id, price_at_time, product_id, timestamp, products(full_name)')
       .eq('session_id', sid);
     if (!data) return;
-    const map = new Map<string, { product_id: string; product_name: string; quantity: number; unit_price: number }>();
-    const dbMap = new Map<string, { product_id: string; product_name: string; quantity: number; last_touched_at: number }>();
-    for (const log of data) {
-      const name = (log.products as any)?.full_name ?? 'Unknown';
-      const pid = log.product_id;
-      const touchedAt = new Date(log.timestamp).getTime();
-      const existing = map.get(pid);
-      if (existing) existing.quantity++;
-      else map.set(pid, { product_id: pid, product_name: name, quantity: 1, unit_price: log.price_at_time });
-      const dbExisting = dbMap.get(pid);
-      if (dbExisting) {
-        dbExisting.quantity++;
-        dbExisting.last_touched_at = Math.max(dbExisting.last_touched_at, touchedAt);
-      } else {
-        dbMap.set(pid, { product_id: pid, product_name: name, quantity: 1, last_touched_at: touchedAt });
-      }
-    }
-    setExistingLogs(Array.from(map.values()));
-    setLiveDbLogs(
-      Array.from(dbMap.values())
-        .sort((a, b) => b.last_touched_at - a.last_touched_at)
-        .map(({ last_touched_at, ...item }) => item)
-    );
+    const raw = data.map((log) => ({
+      id: log.id,
+      product_id: log.product_id,
+      product_name: (log.products as any)?.full_name ?? 'Unknown',
+      price: log.price_at_time,
+      timestamp: log.timestamp,
+    }));
+    setLiveDbRawLogs(raw);
   }, []);
+
+  // Derived: group raw logs into display lines, split by sessionAddedIds
+  const sessionAddedSet = useMemo(() => new Set(sessionAddedIds), [sessionAddedIds]);
+
+  const newDbLogs = useMemo(() => {
+    const filtered = liveDbRawLogs.filter((l) => sessionAddedSet.has(l.id));
+    const map = new Map<string, { product_id: string; product_name: string; quantity: number }>();
+    for (const l of filtered) {
+      const e = map.get(l.product_id);
+      if (e) e.quantity++; else map.set(l.product_id, { product_id: l.product_id, product_name: l.product_name, quantity: 1 });
+    }
+    return Array.from(map.values());
+  }, [liveDbRawLogs, sessionAddedSet]);
+
+  const existingDbLogs = useMemo(() => {
+    const filtered = liveDbRawLogs.filter((l) => !sessionAddedSet.has(l.id));
+    const map = new Map<string, { product_id: string; product_name: string; quantity: number }>();
+    for (const l of filtered) {
+      const e = map.get(l.product_id);
+      if (e) e.quantity++; else map.set(l.product_id, { product_id: l.product_id, product_name: l.product_name, quantity: 1 });
+    }
+    return Array.from(map.values());
+  }, [liveDbRawLogs, sessionAddedSet]);
+
+  const newTotal = useMemo(() => liveDbRawLogs.filter((l) => sessionAddedSet.has(l.id)).reduce((s, l) => s + l.price, 0), [liveDbRawLogs, sessionAddedSet]);
 
   useEffect(() => {
     if (!sessionId) { setExistingLogs([]); setLiveDbLogs([]); return; }
