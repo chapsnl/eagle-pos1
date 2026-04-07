@@ -95,6 +95,13 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
 
   // PIN change state
   const [pinDialogOpen, setPinDialogOpen] = useState(false);
+
+  // Bulk generate state
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkStart, setBulkStart] = useState('');
+  const [bulkEnd, setBulkEnd] = useState('');
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkError, setBulkError] = useState('');
   const [pinStep, setPinStep] = useState<'enter' | 'confirm'>('enter');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
