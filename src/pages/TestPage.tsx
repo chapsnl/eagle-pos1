@@ -475,6 +475,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setTimeout(() => setRetourFlash(null), 600);
 
       if (inItems) {
+        // Remove from local new items (not yet in DB)
         setItems((prev) => {
           const item = prev.find((i) => i.product.id === product.id);
           if (!item) return prev;
@@ -482,45 +483,36 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
           return prev.filter((i) => i.product.id !== product.id);
         });
       } else {
+        // Remove from existing DB items
         setExistingLogs((prev) => {
           const item = prev.find((l) => l.product_id === product.id);
           if (!item) return prev;
           if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
           return prev.filter((l) => l.product_id !== product.id);
         });
-      }
-      setLiveDbLogs((prev) => {
-        const item = prev.find((l) => l.product_id === product.id);
-        if (!item) return prev;
-        if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
-        return prev.filter((l) => l.product_id !== product.id);
-      });
+        setLiveDbLogs((prev) => {
+          const item = prev.find((l) => l.product_id === product.id);
+          if (!item) return prev;
+          if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
+          return prev.filter((l) => l.product_id !== product.id);
+        });
 
-      setRetourMode(false);
+        try {
+          const { data: logToDelete } = await supabase
+            .from('drink_logs')
+            .select('id')
+            .eq('session_id', sessionId)
+            .eq('product_id', product.id)
+            .limit(1)
+            .maybeSingle();
 
-      try {
-        const { data: logToDelete } = await supabase
-          .from('drink_logs')
-          .select('id')
-          .eq('session_id', sessionId)
-          .eq('product_id', product.id)
-          .limit(1)
-          .maybeSingle();
-
-        if (logToDelete) {
-          await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
-          const newTotal = Math.max(0, sessionTotal - product.price);
-          await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
-          setSessionTotal(newTotal);
-        }
-      } catch {
-        if (inItems) {
-          setItems((prev) => {
-            const existing = prev.find((i) => i.product.id === product.id);
-            if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-            return [{ product, quantity: 1 }, ...prev];
-          });
-        } else {
+          if (logToDelete) {
+            await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
+            const newTotal = Math.max(0, sessionTotal - product.price);
+            await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
+            setSessionTotal(newTotal);
+          }
+        } catch {
           setExistingLogs((prev) => {
             const existing = prev.find((l) => l.product_id === product.id);
             if (existing) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l);
@@ -528,6 +520,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
           });
         }
       }
+      setRetourMode(false);
       return;
     }
 
