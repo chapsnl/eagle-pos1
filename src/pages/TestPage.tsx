@@ -594,7 +594,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   return (
     <div className="flex-1 flex overflow-hidden h-full relative" style={{ ...(retourMode ? { border: '4px solid #ef4444', boxShadow: 'inset 0 0 30px rgba(239,68,68,0.15)' } : {}) }}>
       <FeedbackOverlay type={feedback} />
-      {addDialog}
       {closedBlockDialog}
       {lockedWarningDialog}
       {bonDialog}
