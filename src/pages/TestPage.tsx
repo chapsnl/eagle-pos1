@@ -80,7 +80,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionTotal, setSessionTotal] = useState(0);
   const [existingLogs, setExistingLogs] = useState<{ product_id: string; product_name: string; quantity: number; unit_price: number }[]>([]);
-  const [sessionAddedIds, setSessionAddedIds] = useState<string[]>([]);
+  const [sessionStartTime, setSessionStartTime] = useState<number>(Date.now());
   const [showLockedWarning, setShowLockedWarning] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const [showClosedBlockDialog, setShowClosedBlockDialog] = useState(false);
@@ -126,30 +126,26 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     setLiveDbRawLogs(raw);
   }, []);
 
-  // Derived: group raw logs into display lines, split by sessionAddedIds
-  const sessionAddedSet = useMemo(() => new Set(sessionAddedIds), [sessionAddedIds]);
-
+  // Derived: group raw logs into display lines, split by sessionStartTime
   const newDbLogs = useMemo(() => {
-    const filtered = liveDbRawLogs.filter((l) => sessionAddedSet.has(l.id));
+    const filtered = liveDbRawLogs.filter((l) => new Date(l.timestamp).getTime() >= sessionStartTime);
     const map = new Map<string, { product_id: string; product_name: string; quantity: number }>();
     for (const l of filtered) {
       const e = map.get(l.product_id);
       if (e) e.quantity++; else map.set(l.product_id, { product_id: l.product_id, product_name: l.product_name, quantity: 1 });
     }
     return Array.from(map.values());
-  }, [liveDbRawLogs, sessionAddedSet]);
+  }, [liveDbRawLogs, sessionStartTime]);
 
   const existingDbLogs = useMemo(() => {
-    const filtered = liveDbRawLogs.filter((l) => !sessionAddedSet.has(l.id));
+    const filtered = liveDbRawLogs.filter((l) => new Date(l.timestamp).getTime() < sessionStartTime);
     const map = new Map<string, { product_id: string; product_name: string; quantity: number }>();
     for (const l of filtered) {
       const e = map.get(l.product_id);
       if (e) e.quantity++; else map.set(l.product_id, { product_id: l.product_id, product_name: l.product_name, quantity: 1 });
     }
     return Array.from(map.values());
-  }, [liveDbRawLogs, sessionAddedSet]);
-
-  const newTotal = useMemo(() => liveDbRawLogs.filter((l) => sessionAddedSet.has(l.id)).reduce((s, l) => s + l.price, 0), [liveDbRawLogs, sessionAddedSet]);
+  }, [liveDbRawLogs, sessionStartTime]);
 
   useEffect(() => {
     if (!sessionId) { setExistingLogs([]); setLiveDbRawLogs([]); return; }
@@ -187,7 +183,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       await lockSession(session.id);
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
-      setPhase('products');
+      setSessionStartTime(Date.now()); setPhase('products');
       setActiveField(null);
     } catch {
       setFeedback('error');
@@ -214,7 +210,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       await lockSession(session.id);
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
-      setPhase('products');
+      setSessionStartTime(Date.now()); setPhase('products');
       setActiveField(null);
     } catch {
       setFeedback('error');
@@ -255,7 +251,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     setCoatNumber(num);
     setSessionId(initialSessionData.sessionId);
     setSessionTotal(initialSessionData.totalAmount);
-    setPhase('products');
+    setSessionStartTime(Date.now()); setPhase('products');
     setActiveField(null);
     lastCoatLookupRef.current = num;
     onGuestNumberConsumed?.();
@@ -305,7 +301,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     if (!sessionId) return;
     try {
       await unlockSession(sessionId);
-      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]); setSessionAddedIds([]);
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]); ;
       lastCoatLookupRef.current = null;
       if (onNavigateToOpen) {
         onNavigateToOpen();
@@ -344,7 +340,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
       await unlockSession(sessionId);
       clearOrder();
-      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]); setSessionAddedIds([]);
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]); ;
       lastCoatLookupRef.current = null;
       if (onNavigateToOpen) {
         onNavigateToOpen();
@@ -367,7 +363,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const resetToInput = useCallback(async () => {
     // All items already saved to DB in real-time, just unlock and navigate
     if (sessionId) await unlockSession(sessionId);
-    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbRawLogs([]); setSessionAddedIds([]);
+    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbRawLogs([]); ;
     lastCoatLookupRef.current = null;
     if (onNavigateToOpen) {
       onNavigateToOpen();
@@ -492,12 +488,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
         if (logToDelete) {
           await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
-          // Remove from sessionAddedIds if it was added this session
-          setSessionAddedIds((prev) => {
-            const idx = prev.indexOf(logToDelete.id);
-            if (idx >= 0) { const next = [...prev]; next.splice(idx, 1); return next; }
-            return prev;
-          });
+          // timestamp-based split handles visibility automatically
           const newTotal = Math.max(0, sessionTotal - product.price);
           await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
           setSessionTotal(newTotal);
@@ -517,10 +508,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         .select('id')
         .single();
       if (error) throw error;
-      // Track this ID as added in current session
-      if (inserted) {
-        setSessionAddedIds((prev) => [inserted.id, ...prev]);
-      }
+      // timestamp-based split handles visibility automatically
       const newTotal = sessionTotal + product.price;
       await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
       setSessionTotal(newTotal);
@@ -594,9 +582,6 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
                   {item.quantity} x {item.product_name}
                 </div>
               ))}
-              <div style={{ color: '#00cc13', fontSize: 'clamp(10px, 1.4vw, 16px)', padding: '4px 0', fontWeight: 800, textAlign: 'right', borderTop: '1px solid #333' }}>
-                Subtotaal: €{newTotal.toFixed(2)}
-              </div>
             </>
           )}
 
