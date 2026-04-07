@@ -302,22 +302,10 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const [retourFlash, setRetourFlash] = useState<string | null>(null);
 
   const handleSubmit = useCallback(async () => {
-    if (items.length === 0 || !sessionId) return;
+    if (!sessionId) return;
     try {
-      const logs = items.flatMap((item) =>
-        Array.from({ length: item.quantity }, () => ({
-          session_id: sessionId,
-          product_id: item.product.id,
-          price_at_time: item.product.price,
-        }))
-      );
-      await addDrinkLogs.mutateAsync(logs);
-      await updateSession.mutateAsync({
-        id: sessionId,
-        total_amount: sessionTotal + total,
-      });
       await unlockSession(sessionId);
-      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]);
+      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbRawLogs([]); setSessionAddedIds([]);
       lastCoatLookupRef.current = null;
       if (onNavigateToOpen) {
         onNavigateToOpen();
@@ -328,7 +316,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession, unlockSession, onNavigateToOpen]);
+  }, [sessionId, unlockSession, onNavigateToOpen]);
 
   const popupOrderLines: OrderLine[] = useMemo(() => {
     return [...liveDbLogs].reverse().map((l) => ({
