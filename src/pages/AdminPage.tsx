@@ -572,10 +572,10 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               const setter = bulkActiveField === 'start' ? setBulkStart : setBulkEnd;
               if (key === 'DEL') { setter(''); return; }
               if (key === 'BACK') { setter(prev => prev.slice(0, -1)); return; }
-              setter(prev => prev.length >= 4 ? prev : prev + key);
+              setter(prev => prev.length >= 3 ? prev : prev + key);
             }} />
             <button
-              disabled={bulkLoading}
+              disabled={bulkLoading || bulkStart.length !== 3 || bulkEnd.length !== 3}
               onClick={async () => {
                 const s = parseInt(bulkStart, 10);
                 const e = parseInt(bulkEnd, 10);
@@ -585,6 +585,21 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                 setBulkLoading(true);
                 setBulkError('');
                 try {
+                  // Check for existing active sessions in the range
+                  const rangeNumbers = [];
+                  for (let i = s; i <= e; i++) rangeNumbers.push(String(i));
+                  const { data: existing, error: checkErr } = await supabase
+                    .from('sessions')
+                    .select('wardrobe_number')
+                    .eq('status', 'active')
+                    .in('wardrobe_number', rangeNumbers);
+                  if (checkErr) throw checkErr;
+                  if (existing && existing.length > 0) {
+                    const nums = existing.map(s => s.wardrobe_number).join(', ');
+                    setBulkError(`Let op: Nummer(s) ${nums} bestaan al. Doe eerst een 'Close Shift' of kies een andere reeks.`);
+                    setBulkLoading(false);
+                    return;
+                  }
                   const rows = [];
                   for (let i = s; i <= e; i++) {
                     rows.push({ wardrobe_number: String(i), status: 'active' as const, total_amount: 0 });
