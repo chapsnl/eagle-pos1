@@ -26,24 +26,8 @@ export interface DbOrderItem {
 }
 
 
-const ENTRY_STORAGE_KEY = 'pos_started';
 
-const readStartedFlag = () => {
-  try {
-    const persisted = localStorage.getItem(ENTRY_STORAGE_KEY);
-    if (persisted === '1') return true;
 
-    const legacySessionValue = sessionStorage.getItem(ENTRY_STORAGE_KEY);
-    if (legacySessionValue === '1') {
-      localStorage.setItem(ENTRY_STORAGE_KEY, '1');
-      return true;
-    }
-  } catch {
-    // Ignore storage access issues and fall back to intro page
-  }
-
-  return false;
-};
 
 type BarPhase = 'input-number' | 'products';
 
