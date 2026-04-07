@@ -319,12 +319,12 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   }, [sessionId, unlockSession, onNavigateToOpen]);
 
   const popupOrderLines: OrderLine[] = useMemo(() => {
-    return [...liveDbLogs].reverse().map((l) => ({
+    return [...existingDbLogs].reverse().map((l) => ({
       name: l.product_name,
       qty: l.quantity,
       price: 0,
     }));
-  }, [liveDbLogs]);
+  }, [existingDbLogs]);
 
   const executePayVerwerk = useCallback(async () => {
     if (!sessionId) return;
@@ -626,12 +626,12 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
           )}
 
           {/* Reeds Besteld section */}
-          {liveDbLogs.length > 0 && (
+          {existingDbLogs.length > 0 && (
             <>
               <div className="text-center py-1" style={{ borderBottom: '1px solid #333', marginTop: items.length > 0 ? '8px' : '0' }}>
                 <span className="font-extrabold uppercase" style={{ color: '#888', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>Reeds Besteld</span>
               </div>
-              {liveDbLogs.map((item) => (
+              {existingDbLogs.map((item) => (
                 <div key={`existing-${item.product_id}`} style={{ color: '#e5e5e5', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 400, ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
                   {retourFlash === item.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
                   {item.quantity} x {item.product_name}
@@ -640,13 +640,13 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
             </>
           )}
 
-          {items.length === 0 && liveDbLogs.length === 0 && (
+          {items.length === 0 && existingDbLogs.length === 0 && (
             <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1.2vw, 14px)' }}>Geen producten</div>
           )}
         </div>
 
         {/* Grand total */}
-        {(items.length > 0 || liveDbLogs.length > 0) && (
+        {(items.length > 0 || existingDbLogs.length > 0) && (
           <div className="border-t px-2 py-2" style={{ borderColor: '#333' }}>
             <div style={{ color: '#fff', fontSize: 'clamp(12px, 1.8vw, 20px)', fontWeight: 800, textAlign: 'right' }}>
               Totaal: €{(sessionTotal + total).toFixed(2)}
