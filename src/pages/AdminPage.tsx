@@ -543,7 +543,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                   min={1}
                   value={bulkEnd}
                   onChange={(e) => setBulkEnd(e.target.value)}
-                  className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#2563eb]"
+                  className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#00cc13]"
                 />
               </div>
             </div>
