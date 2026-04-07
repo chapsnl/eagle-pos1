@@ -53,9 +53,10 @@ interface TestPageProps {
   initialGuestNumber?: string | null;
   initialSessionData?: { sessionId: string; wardrobeNumber: string; totalAmount: number } | null;
   onGuestNumberConsumed?: () => void;
+  onNavigateToOpen?: () => void;
 }
 
-export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumberConsumed }: TestPageProps) => {
+export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumberConsumed, onNavigateToOpen }: TestPageProps) => {
 
   // Lock to landscape on this page
   useEffect(() => {
