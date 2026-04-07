@@ -204,10 +204,7 @@ const Index = () => {
     if (barNumber.length < 3) setBarNumber(barNumber + key);
   };
 
-  // 20s inactivity timer: reset to input-number when idle in products phase
-  // Pause timer when any popup/dialog is open
-  const anyBarPopupOpen = showBarPayDialog || showBarLockedWarning;
-  useInactivityTimer(activeView === 'bar' && barPhase === 'products' && !anyBarPopupOpen, handleBarNext);
+  // Broadcast current order to localStorage whenever items/session change
   useEffect(() => {
     if (activeView !== 'bar' || barPhase !== 'products' || !barSessionId) return;
     const syncItems: SyncOrderItem[] = items.map((i) => ({
