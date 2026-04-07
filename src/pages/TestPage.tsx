@@ -183,7 +183,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       await lockSession(session.id);
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
-      setPhase('products');
+      setSessionStartTime(Date.now()); setPhase('products');
       setActiveField(null);
     } catch {
       setFeedback('error');
@@ -210,7 +210,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       await lockSession(session.id);
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
-      setPhase('products');
+      setSessionStartTime(Date.now()); setPhase('products');
       setActiveField(null);
     } catch {
       setFeedback('error');
@@ -251,7 +251,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     setCoatNumber(num);
     setSessionId(initialSessionData.sessionId);
     setSessionTotal(initialSessionData.totalAmount);
-    setPhase('products');
+    setSessionStartTime(Date.now()); setPhase('products');
     setActiveField(null);
     lastCoatLookupRef.current = num;
     onGuestNumberConsumed?.();
