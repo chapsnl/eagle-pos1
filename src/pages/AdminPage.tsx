@@ -372,7 +372,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
           PIN WIJZIGEN
         </button>
         <button
-          onClick={() => { setBulkOpen(true); setBulkStart(''); setBulkEnd(''); setBulkError(''); }}
+          onClick={() => { setBulkOpen(true); setBulkStart(''); setBulkEnd(''); setBulkError(''); setBulkActiveField('start'); }}
           className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px] transition-all active:scale-[0.98]"
           style={{ backgroundColor: '#ef4444', color: '#fff' }}
         >
