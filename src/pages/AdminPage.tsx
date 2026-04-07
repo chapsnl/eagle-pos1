@@ -95,6 +95,13 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
 
   // PIN change state
   const [pinDialogOpen, setPinDialogOpen] = useState(false);
+
+  // Bulk generate state
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkStart, setBulkStart] = useState('');
+  const [bulkEnd, setBulkEnd] = useState('');
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkError, setBulkError] = useState('');
   const [pinStep, setPinStep] = useState<'enter' | 'confirm'>('enter');
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -358,6 +365,13 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
           PIN WIJZIGEN
         </button>
         <button
+          onClick={() => { setBulkOpen(true); setBulkStart(''); setBulkEnd(''); setBulkError(''); }}
+          className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px] transition-all active:scale-[0.98]"
+          style={{ backgroundColor: '#2563eb', color: '#fff' }}
+        >
+          GENEREER NUMMERS
+        </button>
+        <button
           onClick={() => setCloseShiftStep(1)}
           className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px] transition-all active:scale-[0.98]"
           style={{ backgroundColor: '#ef4444', color: '#fff' }}
@@ -476,6 +490,88 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               onClick={() => setReopenSession(null)}
               className="w-full py-3 font-extrabold uppercase text-sm"
               style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 6 }}
+            >
+              ANNULEER
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Generate Dialog */}
+      <Dialog open={bulkOpen} onOpenChange={(o) => { if (!o) setBulkOpen(false); }}>
+        <DialogContent
+          className="bg-black max-w-sm"
+          style={{ borderColor: '#2563eb40', borderRadius: '12px' }}
+        >
+          <DialogHeader>
+            <DialogTitle
+              className="text-xl font-extrabold uppercase tracking-wider text-center"
+              style={{ color: '#2563eb' }}
+            >
+              GENEREER NUMMERS
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-3">
+              <div className="flex-1 flex flex-col gap-1">
+                <label className="text-xs font-bold uppercase" style={{ color: '#888' }}>Start Nummer</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={bulkStart}
+                  onChange={(e) => setBulkStart(e.target.value)}
+                  className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#2563eb]"
+                />
+              </div>
+              <div className="flex-1 flex flex-col gap-1">
+                <label className="text-xs font-bold uppercase" style={{ color: '#888' }}>Eind Nummer</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={bulkEnd}
+                  onChange={(e) => setBulkEnd(e.target.value)}
+                  className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#2563eb]"
+                />
+              </div>
+            </div>
+            {bulkError && (
+              <p className="text-sm text-center font-bold" style={{ color: '#ef4444' }}>{bulkError}</p>
+            )}
+            <button
+              disabled={bulkLoading}
+              onClick={async () => {
+                const s = parseInt(bulkStart, 10);
+                const e = parseInt(bulkEnd, 10);
+                if (isNaN(s) || isNaN(e)) { setBulkError('Vul beide velden in'); return; }
+                if (e < s) { setBulkError('Eind nummer moet ≥ start nummer zijn'); return; }
+                if (e - s + 1 > 500) { setBulkError('Maximaal 500 nummers tegelijk'); return; }
+                setBulkLoading(true);
+                setBulkError('');
+                try {
+                  const rows = [];
+                  for (let i = s; i <= e; i++) {
+                    rows.push({ wardrobe_number: String(i), status: 'active' as const, total_amount: 0 });
+                  }
+                  const { error } = await supabase.from('sessions').insert(rows);
+                  if (error) throw error;
+                  qc.invalidateQueries({ queryKey: ['sessions'] });
+                  qc.invalidateQueries({ queryKey: ['active-sessions'] });
+                  setBulkOpen(false);
+                } catch (err: any) {
+                  setBulkError(err.message ?? 'Er ging iets mis');
+                } finally {
+                  setBulkLoading(false);
+                }
+              }}
+              className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px] disabled:opacity-50"
+              style={{ backgroundColor: '#2563eb', color: '#fff', boxShadow: '0 0 12px #2563eb80' }}
+            >
+              {bulkLoading ? 'BEZIG...' : 'AANMAKEN'}
+            </button>
+            <button
+              onClick={() => setBulkOpen(false)}
+              className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px]"
+              style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
             >
               ANNULEER
             </button>
