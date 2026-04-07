@@ -32,19 +32,7 @@ export interface DbOrderItem {
 type BarPhase = 'input-number' | 'products';
 
 const Index = () => {
-  
-  const [started, setStarted] = useState(readStartedFlag);
-
-  const handleEnter = useCallback(() => {
-    try {
-      localStorage.setItem(ENTRY_STORAGE_KEY, '1');
-      sessionStorage.setItem(ENTRY_STORAGE_KEY, '1');
-    } catch {
-      // Ignore storage access issues and continue in-memory
-    }
-    setStarted(true);
-  }, []);
-  const [activeView, setActiveView] = useState<AppView>('test');
+  const [activeView, setActiveView] = useState<AppView>('open');
   const [items, setItems] = useState<DbOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [pendingGuestNumber, setPendingGuestNumber] = useState<string | null>(null);
