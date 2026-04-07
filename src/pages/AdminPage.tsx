@@ -577,7 +577,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                 }
               }}
               className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px] disabled:opacity-50"
-              style={{ backgroundColor: '#2563eb', color: '#fff', boxShadow: '0 0 12px #2563eb80' }}
+              style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
             >
               {bulkLoading ? 'BEZIG...' : 'AANMAKEN'}
             </button>
