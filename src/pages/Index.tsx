@@ -312,10 +312,7 @@ const Index = () => {
     clearOrder();
   }, [barSessionId, unlockSession]);
 
-  // 20s inactivity timer: reset to input-number when idle in products phase
-  // Pause timer when any popup/dialog is open
-  const anyBarPopupOpen = showAddDialog || showBarPayDialog || showBarLockedWarning;
-  useInactivityTimer(activeView === 'bar' && barPhase === 'products' && !anyBarPopupOpen, handleBarNext);
+  // 20s inactivity timer already declared above
 
   const handleBarLockedDismiss = useCallback(() => {
     setShowBarLockedWarning(false);
