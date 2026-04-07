@@ -98,6 +98,12 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
 
   // Bulk generate state
   const [bulkOpen, setBulkOpen] = useState(false);
+
+  // Delete single number state
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteNumber, setDeleteNumber] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [bulkStart, setBulkStart] = useState('');
   const [bulkEnd, setBulkEnd] = useState('');
   const [bulkLoading, setBulkLoading] = useState(false);
