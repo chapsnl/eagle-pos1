@@ -290,8 +290,20 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
   const [retourFlash, setRetourFlash] = useState<string | null>(null);
 
   const handleSubmit = useCallback(async () => {
-    if (!sessionId) return;
+    if (items.length === 0 || !sessionId) return;
     try {
+      const logs = items.flatMap((item) =>
+        Array.from({ length: item.quantity }, () => ({
+          session_id: sessionId,
+          product_id: item.product.id,
+          price_at_time: item.product.price,
+        }))
+      );
+      await addDrinkLogs.mutateAsync(logs);
+      await updateSession.mutateAsync({
+        id: sessionId,
+        total_amount: sessionTotal + total,
+      });
       await unlockSession(sessionId);
       setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbLogs([]);
       lastCoatLookupRef.current = null;
@@ -304,7 +316,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [sessionId, unlockSession, onNavigateToOpen]);
+  }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession, unlockSession, onNavigateToOpen]);
 
   const popupOrderLines: OrderLine[] = useMemo(() => {
     return [...liveDbLogs].reverse().map((l) => ({
@@ -319,7 +331,24 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     setShowPayDialog(false);
     setShowEntreeWarning(false);
     try {
-      await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
+      // Save new items to DB before marking paid
+      if (items.length > 0) {
+        const logs = items.flatMap((item) =>
+          Array.from({ length: item.quantity }, () => ({
+            session_id: sessionId,
+            product_id: item.product.id,
+            price_at_time: item.product.price,
+          }))
+        );
+        await addDrinkLogs.mutateAsync(logs);
+        await updateSession.mutateAsync({
+          id: sessionId,
+          status: 'paid',
+          total_amount: sessionTotal + total,
+        });
+      } else {
+        await updateSession.mutateAsync({ id: sessionId, status: 'paid' });
+      }
       await unlockSession(sessionId);
       clearOrder();
       setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbLogs([]);
@@ -333,7 +362,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [sessionId, updateSession, unlockSession, onNavigateToOpen]);
+  }, [sessionId, items, total, sessionTotal, updateSession, unlockSession, onNavigateToOpen, addDrinkLogs]);
 
   const handlePayVerwerk = useCallback(() => {
     if (!sessionId) return;
@@ -343,6 +372,25 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   // Reset to input screen (used by NEXT button and inactivity timer)
   const resetToInput = useCallback(async () => {
+    // Save new items to DB before navigating
+    if (sessionId && items.length > 0) {
+      try {
+        const logs = items.flatMap((item) =>
+          Array.from({ length: item.quantity }, () => ({
+            session_id: sessionId,
+            product_id: item.product.id,
+            price_at_time: item.product.price,
+          }))
+        );
+        await addDrinkLogs.mutateAsync(logs);
+        await updateSession.mutateAsync({
+          id: sessionId,
+          total_amount: sessionTotal + total,
+        });
+      } catch {
+        // continue anyway
+      }
+    }
     if (sessionId) await unlockSession(sessionId);
     setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbLogs([]);
     lastCoatLookupRef.current = null;
@@ -351,7 +399,7 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     } else {
       setPhase('input'); setActiveField('coat');
     }
-  }, [sessionId, unlockSession, onNavigateToOpen]);
+  }, [sessionId, items, total, sessionTotal, unlockSession, onNavigateToOpen, addDrinkLogs, updateSession]);
 
   // 20s inactivity timer: reset to input when idle in products phase
   // Pause timer when any popup/dialog is open
@@ -455,65 +503,70 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
     // RETOUR MODE: remove one of this product from the bill
     if (retourMode) {
+      const inItems = items.find((i) => i.product.id === product.id);
       const inExisting = existingLogs.find((l) => l.product_id === product.id);
-      if (!inExisting) return;
+      if (!inItems && !inExisting) return;
 
       setRetourFlash(product.id);
       setTimeout(() => setRetourFlash(null), 600);
 
-      setExistingLogs((prev) => {
-        const item = prev.find((l) => l.product_id === product.id);
-        if (!item) return prev;
-        if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
-        return prev.filter((l) => l.product_id !== product.id);
-      });
-      setLiveDbLogs((prev) => {
-        const item = prev.find((l) => l.product_id === product.id);
-        if (!item) return prev;
-        if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
-        return prev.filter((l) => l.product_id !== product.id);
-      });
-
-      try {
-        const { data: logToDelete } = await supabase
-          .from('drink_logs')
-          .select('id')
-          .eq('session_id', sessionId)
-          .eq('product_id', product.id)
-          .limit(1)
-          .maybeSingle();
-
-        if (logToDelete) {
-          await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
-          const newTotal = Math.max(0, sessionTotal - product.price);
-          await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
-          setSessionTotal(newTotal);
-        }
-      } catch {
-        setExistingLogs((prev) => {
-          const existing = prev.find((l) => l.product_id === product.id);
-          if (existing) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l);
-          return [{ product_id: product.id, product_name: product.full_name, quantity: 1, unit_price: product.price }, ...prev];
+      if (inItems) {
+        // Remove from local new items (not yet in DB)
+        setItems((prev) => {
+          const item = prev.find((i) => i.product.id === product.id);
+          if (!item) return prev;
+          if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
+          return prev.filter((i) => i.product.id !== product.id);
         });
+      } else {
+        // Remove from existing DB items
+        setExistingLogs((prev) => {
+          const item = prev.find((l) => l.product_id === product.id);
+          if (!item) return prev;
+          if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
+          return prev.filter((l) => l.product_id !== product.id);
+        });
+        setLiveDbLogs((prev) => {
+          const item = prev.find((l) => l.product_id === product.id);
+          if (!item) return prev;
+          if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
+          return prev.filter((l) => l.product_id !== product.id);
+        });
+
+        try {
+          const { data: logToDelete } = await supabase
+            .from('drink_logs')
+            .select('id')
+            .eq('session_id', sessionId)
+            .eq('product_id', product.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (logToDelete) {
+            await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
+            const newTotal = Math.max(0, sessionTotal - product.price);
+            await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
+            setSessionTotal(newTotal);
+          }
+        } catch {
+          setExistingLogs((prev) => {
+            const existing = prev.find((l) => l.product_id === product.id);
+            if (existing) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l);
+            return [{ product_id: product.id, product_name: product.full_name, quantity: 1, unit_price: product.price }, ...prev];
+          });
+        }
       }
       setRetourMode(false);
       return;
     }
 
-    // NORMAL MODE: write directly to database
-    try {
-      await supabase.from('drink_logs').insert({
-        session_id: sessionId,
-        product_id: product.id,
-        price_at_time: product.price,
-      });
-      const newTotal = sessionTotal + product.price;
-      await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
-      setSessionTotal(newTotal);
-    } catch {
-      // silent fail – realtime will correct UI
-    }
-  }, [sessionId, sessionTotal, updateSession, retourMode, existingLogs]);
+    // NORMAL MODE: add product to local newItems only (saved on NEXT)
+    setItems((prev) => {
+      const existing = prev.find((i) => i.product.id === product.id);
+      if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      return [{ product, quantity: 1 }, ...prev];
+    });
+  }, [sessionId, sessionTotal, updateSession, retourMode, items, existingLogs]);
 
   if (phase === 'input') {
     return (
@@ -568,10 +621,31 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
+          {/* Nieuwe Bestelling section */}
+          {items.length > 0 && (
+            <>
+              <div className="text-center py-1" style={{ borderBottom: '1px solid #333' }}>
+                <span className="font-extrabold uppercase" style={{ color: '#00cc13', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>Nieuwe Bestelling</span>
+              </div>
+              {items.map((item) => (
+                <div key={`new-${item.product.id}`} style={{ color: '#00cc13', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
+                  {item.quantity} x {item.product.full_name}
+                </div>
+              ))}
+              <div style={{ color: '#00cc13', fontSize: 'clamp(10px, 1.4vw, 16px)', padding: '4px 0', fontWeight: 800, textAlign: 'right', borderTop: '1px solid #333' }}>
+                Subtotaal: €{total.toFixed(2)}
+              </div>
+            </>
+          )}
+
+          {/* Reeds Besteld section */}
           {liveDbLogs.length > 0 && (
             <>
+              <div className="text-center py-1" style={{ borderBottom: '1px solid #333', marginTop: items.length > 0 ? '8px' : '0' }}>
+                <span className="font-extrabold uppercase" style={{ color: '#888', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>Reeds Besteld</span>
+              </div>
               {liveDbLogs.map((item) => (
-                <div key={`db-${item.product_id}`} style={{ color: '#e5e5e5', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800, ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
+                <div key={`existing-${item.product_id}`} style={{ color: '#e5e5e5', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 400, ...(retourFlash === item.product_id ? { backgroundColor: '#ef444440', transform: 'scale(0.95)' } : {}) }}>
                   {retourFlash === item.product_id && <span style={{ color: '#ef4444', marginRight: 4 }}>−</span>}
                   {item.quantity} x {item.product_name}
                 </div>
@@ -579,16 +653,16 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
             </>
           )}
 
-          {liveDbLogs.length === 0 && (
+          {items.length === 0 && liveDbLogs.length === 0 && (
             <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1.2vw, 14px)' }}>Geen producten</div>
           )}
         </div>
 
         {/* Grand total */}
-        {liveDbLogs.length > 0 && (
+        {(items.length > 0 || liveDbLogs.length > 0) && (
           <div className="border-t px-2 py-2" style={{ borderColor: '#333' }}>
             <div style={{ color: '#fff', fontSize: 'clamp(12px, 1.8vw, 20px)', fontWeight: 800, textAlign: 'right' }}>
-              Totaal: €{sessionTotal.toFixed(2)}
+              Totaal: €{(sessionTotal + total).toFixed(2)}
             </div>
           </div>
         )}
