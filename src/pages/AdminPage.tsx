@@ -630,20 +630,30 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               VERWIJDER NUMMER
             </DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1 items-center">
               <label className="text-xs font-bold uppercase" style={{ color: '#00cc13' }}>Te verwijderen gastnummer</label>
-              <input
-                type="number"
-                min={1}
-                value={deleteNumber}
-                onChange={(e) => setDeleteNumber(e.target.value)}
-                className="w-full h-12 rounded-lg text-center text-xl font-extrabold bg-[#2a2a2a] text-white border border-[#444] outline-none focus:border-[#00cc13]"
-              />
+              <div
+                className="w-full h-16 rounded-lg flex items-center justify-center text-4xl font-extrabold"
+                style={{
+                  backgroundColor: '#2a2a2a',
+                  color: '#fff',
+                  border: '2px solid #00cc13',
+                  boxShadow: '0 0 12px #00cc1340',
+                }}
+              >
+                {deleteNumber || <span style={{ color: '#555' }}>—</span>}
+              </div>
             </div>
             {deleteError && (
               <p className="text-sm text-center font-bold" style={{ color: '#ef4444' }}>{deleteError}</p>
             )}
+            <NumPad onKey={(key) => {
+              setDeleteError('');
+              if (key === 'DEL') { setDeleteNumber(''); return; }
+              if (key === 'BACK') { setDeleteNumber(prev => prev.slice(0, -1)); return; }
+              setDeleteNumber(prev => prev.length >= 4 ? prev : prev + key);
+            }} />
             <button
               disabled={deleteLoading}
               onClick={async () => {
@@ -652,7 +662,6 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                 setDeleteLoading(true);
                 setDeleteError('');
                 try {
-                  // Find active session with this wardrobe number
                   const { data: session, error: findErr } = await supabase
                     .from('sessions')
                     .select('id')
@@ -661,15 +670,12 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                     .maybeSingle();
                   if (findErr) throw findErr;
                   if (!session) { setDeleteError(`Geen actieve sessie met nummer ${num}`); setDeleteLoading(false); return; }
-                  // Delete drink_logs for this session first
                   await supabase.from('drink_logs').delete().eq('session_id', session.id);
-                  // Delete the session
                   const { error: delErr } = await supabase.from('sessions').delete().eq('id', session.id);
                   if (delErr) throw delErr;
                   qc.invalidateQueries({ queryKey: ['sessions'] });
                   qc.invalidateQueries({ queryKey: ['active-sessions'] });
                   setDeleteOpen(false);
-                  // Success toast
                   const { toast } = await import('sonner');
                   toast.success(`Nummer ${num} succesvol verwijderd`);
                 } catch (err: any) {
