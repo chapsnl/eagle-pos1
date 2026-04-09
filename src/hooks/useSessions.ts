@@ -124,7 +124,7 @@ export const useActiveSessions = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sessions')
-        .select('*, drink_logs(*, products(*))')
+        .select('id, wardrobe_number, status, total_amount, created_at, locked_by, locked_at, is_event_numbered, nfc_uid')
         .eq('status', 'active')
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -132,6 +132,24 @@ export const useActiveSessions = () => {
     },
     staleTime: Infinity,
     refetchOnWindowFocus: true,
+  });
+};
+
+export const useSessionDetail = (sessionId: string | null) => {
+  return useQuery({
+    queryKey: ['session-detail', sessionId],
+    queryFn: async () => {
+      if (!sessionId) return null;
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('*, drink_logs(*, products(*))')
+        .eq('id', sessionId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sessionId,
+    staleTime: 30000,
   });
 };
 

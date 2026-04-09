@@ -177,12 +177,9 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   };
 
 
-  // KPI calculations - based on actual drink_logs (qty × price)
-  const calcSessionTotal = (session: any) =>
-    (session.drink_logs ?? []).reduce((sum: number, log: any) => sum + Number(log.price_at_time ?? 0), 0);
-
+  // KPI calculations - based on total_amount (no drink_logs needed)
   const nogTeOntvangen = (activeSessions ?? []).reduce(
-    (sum, s) => sum + calcSessionTotal(s), 0
+    (sum, s) => sum + Number(s.total_amount ?? 0), 0
   );
   const reedsOntvangen = (closedSessions ?? []).reduce(
     (sum, s) => sum + calcSessionTotal(s), 0
@@ -300,7 +297,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
             ) : (
               <div className="grid grid-cols-4 gap-2">
                 {sortedActive.map((s) => {
-                  const hasItems = (s.drink_logs ?? []).length > 0;
+                  const hasItems = Number(s.total_amount ?? 0) > 0;
                   return (
                     <button
                       key={s.id}
