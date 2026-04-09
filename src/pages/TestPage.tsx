@@ -407,9 +407,11 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   const saveAndCleanupState = useCallback(() => {
     const sid = sessionId;
     const hasItems = sid && items.length > 0;
-    const newTotal = sessionTotal + total;
+    const newTotal = Math.max(0, sessionTotal + total);
+    const positiveItems = items.filter(i => i.quantity > 0);
+    const negativeItems = items.filter(i => i.quantity < 0);
     const logs = hasItems
-      ? items.flatMap((item) =>
+      ? positiveItems.flatMap((item) =>
           Array.from({ length: item.quantity }, () => ({
             session_id: sid!,
             product_id: item.product.id,
@@ -426,10 +428,24 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     if (sid) {
       (async () => {
         try {
-          if (logs.length > 0) {
-            await addDrinkLogs.mutateAsync(logs);
-            await updateSession.mutateAsync({ id: sid, total_amount: newTotal });
+          if (logs.length > 0) await addDrinkLogs.mutateAsync(logs);
+          // Delete negative items (retours) from DB
+          for (const item of negativeItems) {
+            const deleteCount = Math.abs(item.quantity);
+            for (let i = 0; i < deleteCount; i++) {
+              const { data: logToDelete } = await supabase
+                .from('drink_logs')
+                .select('id')
+                .eq('session_id', sid)
+                .eq('product_id', item.product.id)
+                .limit(1)
+                .maybeSingle();
+              if (logToDelete) {
+                await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
+              }
+            }
           }
+          if (hasItems) await updateSession.mutateAsync({ id: sid, total_amount: newTotal });
           await unlockSession(sid);
         } catch {
           toast.error('Opslaan mislukt — probeer opnieuw');
