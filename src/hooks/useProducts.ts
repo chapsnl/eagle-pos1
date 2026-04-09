@@ -23,7 +23,9 @@ export const useProducts = () => {
       if (error) throw error;
       return (data ?? []) as DbProduct[];
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 60 * 8, // 8 hours — full shift
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };
 
