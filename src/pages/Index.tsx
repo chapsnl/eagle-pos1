@@ -359,12 +359,24 @@ const Index = () => {
     setActiveView('open');
   }, [barSessionId, unlockSession]);
 
+  const handleViewChange = useCallback((view: AppView) => {
+    // If leaving TestPage with an active session, save & cleanup
+    if (activeView === 'test' && view !== 'test') {
+      testPageRef.current?.saveAndCleanup();
+    }
+    // If leaving bar with an active session, save & cleanup
+    if (activeView === 'bar' && view !== 'bar' && barSessionId) {
+      handleBarNext();
+    }
+    setActiveView(view);
+  }, [activeView, barSessionId, handleBarNext]);
+
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
       {barPayDialog}
       {barLockedDialog}
-      <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
+      <NavTabs activeView={activeView} onViewChange={handleViewChange} itemCount={items.length} />
 
       {activeView === 'bar' && (
         barPhase === 'input-number' ? (
