@@ -48,7 +48,7 @@ const gridLayout: { code: string; span: number; hideLabel?: boolean; label?: str
 
 
 
-type Phase = 'input' | 'products';
+type Phase = 'input' | 'products' | 'loading';
 
 interface TestPageProps {
   initialGuestNumber?: string | null;
@@ -77,7 +77,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     };
   }, []);
 
-  const [phase, setPhase] = useState<Phase>('input');
+  const [phase, setPhase] = useState<Phase>(initialSessionData ? 'loading' : 'input');
   const [activeField, setActiveField] = useState<'coat' | null>('coat');
   const [coatNumber, setCoatNumber] = useState('');
   const [items, setItems] = useState<TestOrderItem[]>([]);
@@ -638,6 +638,15 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       return [{ product, quantity: 1 }, ...prev];
     });
   }, [sessionId, sessionTotal, updateSession, retourMode, items, existingLogs]);
+
+  if (phase === 'loading') {
+    return (
+      <div className="bg-black w-full h-full flex-1 overflow-hidden flex items-center justify-center">
+        {lockedWarningDialog}
+        <span className="text-lg font-bold" style={{ color: '#555' }}>Laden...</span>
+      </div>
+    );
+  }
 
   if (phase === 'input') {
     return (
