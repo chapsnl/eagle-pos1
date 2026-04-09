@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { useInactivityTimer } from '@/hooks/useInactivityTimer';
 import { toast } from 'sonner';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
@@ -56,7 +56,11 @@ interface TestPageProps {
   onNavigateToOpen?: () => void;
 }
 
-export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumberConsumed, onNavigateToOpen }: TestPageProps) => {
+export interface TestPageHandle {
+  saveAndCleanup: () => void;
+}
+
+export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGuestNumber, initialSessionData, onGuestNumberConsumed, onNavigateToOpen }, ref) => {
 
   // Lock to landscape on this page
   useEffect(() => {
