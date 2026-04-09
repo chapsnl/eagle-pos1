@@ -38,6 +38,7 @@ const Index = () => {
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [pendingGuestNumber, setPendingGuestNumber] = useState<string | null>(null);
   const [pendingSessionData, setPendingSessionData] = useState<{ sessionId: string; wardrobeNumber: string; totalAmount: number } | null>(null);
+  const [openInlineSession, setOpenInlineSession] = useState<{ sessionId: string; wardrobeNumber: string; totalAmount: number } | null>(null);
   const testPageRef = useRef<TestPageHandle>(null);
   const openTestPageRef = useRef<TestPageHandle>(null);
 
@@ -357,6 +358,7 @@ const Index = () => {
     clearOrder();
     setPendingGuestNumber(null);
     setPendingSessionData(null);
+    setOpenInlineSession(null);
     setActiveView('open');
   }, [barSessionId, unlockSession]);
 
@@ -366,16 +368,16 @@ const Index = () => {
       testPageRef.current?.saveAndCleanup();
     }
     // If leaving open page while a session is open inline, save & cleanup
-    if (activeView === 'open' && view !== 'open' && pendingSessionData) {
+    if (activeView === 'open' && view !== 'open' && openInlineSession) {
       openTestPageRef.current?.saveAndCleanup();
-      setPendingSessionData(null);
+      setOpenInlineSession(null);
     }
     // If leaving bar with an active session, save & cleanup
     if (activeView === 'bar' && view !== 'bar' && barSessionId) {
       handleBarNext();
     }
     setActiveView(view);
-  }, [activeView, barSessionId, handleBarNext, pendingSessionData]);
+  }, [activeView, barSessionId, handleBarNext, openInlineSession]);
 
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
@@ -427,16 +429,16 @@ const Index = () => {
         setActiveView('test');
       }} />}
       {activeView === 'open' && (
-        pendingSessionData ? (
+        openInlineSession ? (
           <TestPage
             ref={openTestPageRef}
-            initialSessionData={pendingSessionData}
-            onGuestNumberConsumed={() => { setPendingSessionData(null); }}
-            onNavigateToOpen={() => { setPendingSessionData(null); }}
+            initialSessionData={openInlineSession}
+            onGuestNumberConsumed={() => {}}
+            onNavigateToOpen={() => { setOpenInlineSession(null); }}
           />
         ) : (
           <OpenPage onNavigateToGuest={(wardrobe, sessionId, totalAmount) => {
-            setPendingSessionData({ sessionId, wardrobeNumber: wardrobe, totalAmount });
+            setOpenInlineSession({ sessionId, wardrobeNumber: wardrobe, totalAmount });
           }} />
         )
       )}
