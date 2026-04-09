@@ -112,20 +112,7 @@ export const useActiveSessions = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'drink_logs' }, (payload) => {
         const sessionId = (payload.new as any)?.session_id || (payload.old as any)?.session_id;
         if (sessionId) {
-          // Re-fetch only the affected session's drink_logs
-          supabase
-            .from('sessions')
-            .select('*, drink_logs(*, products(*))')
-            .eq('id', sessionId)
-            .single()
-            .then(({ data }) => {
-              if (data) {
-                qc.setQueryData(['sessions', 'active'], (old: any[] | undefined) => {
-                  if (!old) return old;
-                  return old.map(s => s.id === sessionId ? data : s);
-                });
-              }
-            });
+          qc.invalidateQueries({ queryKey: ['session-detail', sessionId] });
         }
       })
       .subscribe();
@@ -137,7 +124,7 @@ export const useActiveSessions = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sessions')
-        .select('*, drink_logs(*, products(*))')
+        .select('id, wardrobe_number, status, total_amount, created_at, locked_by, locked_at, is_event_numbered, nfc_uid')
         .eq('status', 'active')
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -145,6 +132,24 @@ export const useActiveSessions = () => {
     },
     staleTime: Infinity,
     refetchOnWindowFocus: true,
+  });
+};
+
+export const useSessionDetail = (sessionId: string | null) => {
+  return useQuery({
+    queryKey: ['session-detail', sessionId],
+    queryFn: async () => {
+      if (!sessionId) return null;
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('*, drink_logs(*, products(*))')
+        .eq('id', sessionId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sessionId,
+    staleTime: 30000,
   });
 };
 
