@@ -22,7 +22,8 @@ const useClosedSessions = () =>
       if (error) throw error;
       return data ?? [];
     },
-    refetchInterval: 5000,
+    staleTime: Infinity,
+    refetchOnWindowFocus: true,
   });
 
 const sortByWardrobe = (list: any[]) =>

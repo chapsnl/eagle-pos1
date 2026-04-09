@@ -35,7 +35,8 @@ const useClosedSessions = () => {
       if (error) throw error;
       return data ?? [];
     },
-    refetchInterval: 10000,
+    staleTime: Infinity,
+    refetchOnWindowFocus: true,
   });
 };
 
