@@ -112,20 +112,7 @@ export const useActiveSessions = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'drink_logs' }, (payload) => {
         const sessionId = (payload.new as any)?.session_id || (payload.old as any)?.session_id;
         if (sessionId) {
-          // Re-fetch only the affected session's drink_logs
-          supabase
-            .from('sessions')
-            .select('*, drink_logs(*, products(*))')
-            .eq('id', sessionId)
-            .single()
-            .then(({ data }) => {
-              if (data) {
-                qc.setQueryData(['sessions', 'active'], (old: any[] | undefined) => {
-                  if (!old) return old;
-                  return old.map(s => s.id === sessionId ? data : s);
-                });
-              }
-            });
+          qc.invalidateQueries({ queryKey: ['session-detail', sessionId] });
         }
       })
       .subscribe();
