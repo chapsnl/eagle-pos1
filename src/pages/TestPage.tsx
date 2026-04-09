@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useInactivityTimer } from '@/hooks/useInactivityTimer';
 import { toast } from 'sonner';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
