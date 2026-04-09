@@ -84,20 +84,50 @@ export const useUpdateSession = () => {
 export const useActiveSessions = () => {
   const qc = useQueryClient();
 
-  // Realtime: invalidate on any drink_logs change
   useEffect(() => {
     const channel = supabase
       .channel('active-sessions-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'drink_logs' },
-        () => { qc.invalidateQueries({ queryKey: ['sessions', 'active'] }); }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'sessions' },
-        () => { qc.invalidateQueries({ queryKey: ['sessions', 'active'] }); }
-      )
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sessions' }, (payload) => {
+        qc.setQueryData(['sessions', 'active'], (old: any[] | undefined) => {
+          if (!old) return old;
+          const updated = payload.new as any;
+          if (updated.status !== 'active') return old.filter(s => s.id !== updated.id);
+          return old.map(s => s.id === updated.id ? { ...s, ...updated } : s);
+        });
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sessions' }, (payload) => {
+        qc.setQueryData(['sessions', 'active'], (old: any[] | undefined) => {
+          const inserted = payload.new as any;
+          if (inserted.status !== 'active') return old;
+          if (!old) return [inserted];
+          if (old.some(s => s.id === inserted.id)) return old;
+          return [...old, inserted];
+        });
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'sessions' }, (payload) => {
+        qc.setQueryData(['sessions', 'active'], (old: any[] | undefined) =>
+          old?.filter(s => s.id !== (payload.old as any).id)
+        );
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'drink_logs' }, (payload) => {
+        const sessionId = (payload.new as any)?.session_id || (payload.old as any)?.session_id;
+        if (sessionId) {
+          // Re-fetch only the affected session's drink_logs
+          supabase
+            .from('sessions')
+            .select('*, drink_logs(*, products(*))')
+            .eq('id', sessionId)
+            .single()
+            .then(({ data }) => {
+              if (data) {
+                qc.setQueryData(['sessions', 'active'], (old: any[] | undefined) => {
+                  if (!old) return old;
+                  return old.map(s => s.id === sessionId ? data : s);
+                });
+              }
+            });
+        }
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [qc]);
@@ -113,7 +143,8 @@ export const useActiveSessions = () => {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 10000,
+    staleTime: Infinity,
+    refetchOnWindowFocus: true,
   });
 };
 
