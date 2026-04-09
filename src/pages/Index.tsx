@@ -198,40 +198,52 @@ const Index = () => {
 
   const handleBoek = useCallback(async () => {
     if (items.length === 0 || !barSessionId) return;
-    try {
-      const logs = items.flatMap((item) =>
-        Array.from({ length: item.quantity }, () => ({
-          session_id: barSessionId,
-          product_id: item.product.id,
-          price_at_time: item.product.price,
-        }))
-      );
-      await addDrinkLogs.mutateAsync(logs);
-      await updateSession.mutateAsync({
-        id: barSessionId,
-        total_amount: barSessionTotal + total,
-      });
 
-      broadcastOrder({
-        guestNumber: barNumber,
-        sessionId: barSessionId,
-        items: items.map((i) => ({ product_id: i.product.id, product_name: i.product.full_name, shorthand: i.product.shorthand, price: i.product.price, quantity: i.quantity })),
-        totalAmount: barSessionTotal + total,
-        timestamp: Date.now(),
-      });
+    // Capture everything needed for the writes BEFORE clearing state
+    const sessionId = barSessionId;
+    const newTotal = barSessionTotal + total;
+    const logs = items.flatMap((item) =>
+      Array.from({ length: item.quantity }, () => ({
+        session_id: sessionId,
+        product_id: item.product.id,
+        price_at_time: item.product.price,
+      }))
+    );
 
-      await unlockSession(barSessionId);
-      setItems([]);
-      setBarNumber('');
-      setBarSessionId(null);
-      setBarSessionTotal(0);
-      setBarPhase('input-number');
-      lastLookupRef.current = null;
-      clearOrder();
-    } catch {
-      showFeedback('error');
-    }
-  }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, showFeedback, unlockSession]);
+    broadcastOrder({
+      guestNumber: barNumber,
+      sessionId,
+      items: items.map((i) => ({
+        product_id: i.product.id,
+        product_name: i.product.full_name,
+        shorthand: i.product.shorthand,
+        price: i.product.price,
+        quantity: i.quantity,
+      })),
+      totalAmount: newTotal,
+      timestamp: Date.now(),
+    });
+
+    // Reset UI immediately — do not wait for network
+    setItems([]);
+    setBarNumber('');
+    setBarSessionId(null);
+    setBarSessionTotal(0);
+    setBarPhase('input-number');
+    lastLookupRef.current = null;
+    clearOrder();
+
+    // Write to Supabase in background — staff can already serve next customer
+    (async () => {
+      try {
+        await addDrinkLogs.mutateAsync(logs);
+        await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
+        await unlockSession(sessionId);
+      } catch {
+        toast.error('Opslaan mislukt — probeer opnieuw');
+      }
+    })();
+  }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, unlockSession]);
 
   const handleBarPayVerwerk = useCallback(async () => {
     if (!barSessionId) return;
