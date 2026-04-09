@@ -39,6 +39,7 @@ const Index = () => {
   const [pendingGuestNumber, setPendingGuestNumber] = useState<string | null>(null);
   const [pendingSessionData, setPendingSessionData] = useState<{ sessionId: string; wardrobeNumber: string; totalAmount: number } | null>(null);
   const testPageRef = useRef<TestPageHandle>(null);
+  const openTestPageRef = useRef<TestPageHandle>(null);
 
   // Bar number entry state
   const [barPhase, setBarPhase] = useState<BarPhase>('input-number');
@@ -364,12 +365,17 @@ const Index = () => {
     if (activeView === 'test' && view !== 'test') {
       testPageRef.current?.saveAndCleanup();
     }
+    // If leaving open page while a session is open inline, save & cleanup
+    if (activeView === 'open' && view !== 'open' && pendingSessionData) {
+      openTestPageRef.current?.saveAndCleanup();
+      setPendingSessionData(null);
+    }
     // If leaving bar with an active session, save & cleanup
     if (activeView === 'bar' && view !== 'bar' && barSessionId) {
       handleBarNext();
     }
     setActiveView(view);
-  }, [activeView, barSessionId, handleBarNext]);
+  }, [activeView, barSessionId, handleBarNext, pendingSessionData]);
 
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
@@ -420,10 +426,20 @@ const Index = () => {
         setPendingSessionData({ sessionId, wardrobeNumber: wardrobe, totalAmount });
         setActiveView('test');
       }} />}
-      {activeView === 'open' && <OpenPage onNavigateToGuest={(wardrobe, sessionId, totalAmount) => {
-        setPendingSessionData({ sessionId, wardrobeNumber: wardrobe, totalAmount });
-        setActiveView('test');
-      }} />}
+      {activeView === 'open' && (
+        pendingSessionData ? (
+          <TestPage
+            ref={openTestPageRef}
+            initialSessionData={pendingSessionData}
+            onGuestNumberConsumed={() => { setPendingSessionData(null); }}
+            onNavigateToOpen={() => { setPendingSessionData(null); }}
+          />
+        ) : (
+          <OpenPage onNavigateToGuest={(wardrobe, sessionId, totalAmount) => {
+            setPendingSessionData({ sessionId, wardrobeNumber: wardrobe, totalAmount });
+          }} />
+        )
+      )}
       {activeView === 'closed' && <ClosedPage />}
     </div>
   );
