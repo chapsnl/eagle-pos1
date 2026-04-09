@@ -291,31 +291,37 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   const handleSubmit = useCallback(async () => {
     if (items.length === 0 || !sessionId) return;
-    try {
-      const logs = items.flatMap((item) =>
-        Array.from({ length: item.quantity }, () => ({
-          session_id: sessionId,
-          product_id: item.product.id,
-          price_at_time: item.product.price,
-        }))
-      );
-      await addDrinkLogs.mutateAsync(logs);
-      await updateSession.mutateAsync({
-        id: sessionId,
-        total_amount: sessionTotal + total,
-      });
-      await unlockSession(sessionId);
-      setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbLogs([]);
-      lastCoatLookupRef.current = null;
-      if (onNavigateToOpen) {
-        onNavigateToOpen();
-      } else {
-        setPhase('input'); setActiveField('coat');
-      }
-    } catch {
-      setFeedback('error');
-      setTimeout(() => setFeedback(null), 2000);
+
+    // Capture values before clearing state
+    const sid = sessionId;
+    const newTotal = sessionTotal + total;
+    const logs = items.flatMap((item) =>
+      Array.from({ length: item.quantity }, () => ({
+        session_id: sid,
+        product_id: item.product.id,
+        price_at_time: item.product.price,
+      }))
+    );
+
+    // Reset UI immediately
+    setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); setLiveDbLogs([]);
+    lastCoatLookupRef.current = null;
+    if (onNavigateToOpen) {
+      onNavigateToOpen();
+    } else {
+      setPhase('input'); setActiveField('coat');
     }
+
+    // Fire-and-forget DB writes
+    (async () => {
+      try {
+        await addDrinkLogs.mutateAsync(logs);
+        await updateSession.mutateAsync({ id: sid, total_amount: newTotal });
+        await unlockSession(sid);
+      } catch {
+        toast.error('Opslaan mislukt — probeer opnieuw');
+      }
+    })();
   }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession, unlockSession, onNavigateToOpen]);
 
   const popupOrderLines: OrderLine[] = useMemo(() => {
@@ -372,32 +378,42 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
 
   // Reset to input screen (used by NEXT button and inactivity timer)
   const resetToInput = useCallback(async () => {
-    // Save new items to DB before navigating
-    if (sessionId && items.length > 0) {
-      try {
-        const logs = items.flatMap((item) =>
+    // Capture values before clearing state
+    const sid = sessionId;
+    const hasItems = sid && items.length > 0;
+    const newTotal = sessionTotal + total;
+    const logs = hasItems
+      ? items.flatMap((item) =>
           Array.from({ length: item.quantity }, () => ({
-            session_id: sessionId,
+            session_id: sid!,
             product_id: item.product.id,
             price_at_time: item.product.price,
           }))
-        );
-        await addDrinkLogs.mutateAsync(logs);
-        await updateSession.mutateAsync({
-          id: sessionId,
-          total_amount: sessionTotal + total,
-        });
-      } catch {
-        // continue anyway
-      }
-    }
-    if (sessionId) await unlockSession(sessionId);
+        )
+      : [];
+
+    // Reset UI immediately
     setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbLogs([]);
     lastCoatLookupRef.current = null;
     if (onNavigateToOpen) {
       onNavigateToOpen();
     } else {
       setPhase('input'); setActiveField('coat');
+    }
+
+    // Fire-and-forget DB writes
+    if (sid) {
+      (async () => {
+        try {
+          if (logs.length > 0) {
+            await addDrinkLogs.mutateAsync(logs);
+            await updateSession.mutateAsync({ id: sid, total_amount: newTotal });
+          }
+          await unlockSession(sid);
+        } catch {
+          toast.error('Opslaan mislukt — probeer opnieuw');
+        }
+      })();
     }
   }, [sessionId, items, total, sessionTotal, unlockSession, onNavigateToOpen, addDrinkLogs, updateSession]);
 
