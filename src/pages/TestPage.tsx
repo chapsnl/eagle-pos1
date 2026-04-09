@@ -48,7 +48,7 @@ const gridLayout: { code: string; span: number; hideLabel?: boolean; label?: str
 
 
 
-type Phase = 'input' | 'products' | 'loading';
+type Phase = 'input' | 'products';
 
 interface TestPageProps {
   initialGuestNumber?: string | null;
@@ -77,7 +77,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     };
   }, []);
 
-  const [phase, setPhase] = useState<Phase>(initialSessionData ? 'loading' : 'input');
+  const [phase, setPhase] = useState<Phase>(initialSessionData ? 'products' : 'input');
   const [activeField, setActiveField] = useState<'coat' | null>('coat');
   const [coatNumber, setCoatNumber] = useState('');
   const [items, setItems] = useState<TestOrderItem[]>([]);
@@ -252,38 +252,19 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   }, [coatNumber, phase, resolveSessionByWardrobe, qc]);
 
   // Handle direct navigation with full session data (e.g. from OPEN page BEWERK button)
+  // Lock is already acquired by the caller — just set state
   useEffect(() => {
     if (!initialSessionData) return;
     const num = initialSessionData.wardrobeNumber.replace(/\D/g, '');
     const sid = initialSessionData.sessionId;
-    // Fetch fresh lock state — the data passed in may be stale
-    supabase
-      .from('sessions')
-      .select('locked_by, locked_at')
-      .eq('id', sid)
-      .single()
-      .then(({ data: fresh }) => {
-        const lockedBy = fresh?.locked_by;
-        const lockedAt = fresh?.locked_at;
-        if (lockedBy && lockedBy !== deviceId) {
-          const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
-          if (lockAge < 60000) {
-            setShowLockedWarning(true);
-            onGuestNumberConsumed?.();
-            return;
-          }
-        }
-        lockSession(sid).then(() => {
-          setCoatNumber(num);
-          setSessionId(sid);
-          setSessionTotal(initialSessionData.totalAmount);
-          setPhase('products');
-          setActiveField(null);
-          lastCoatLookupRef.current = num;
-          onGuestNumberConsumed?.();
-        });
-      });
-  }, [initialSessionData, onGuestNumberConsumed, deviceId, lockSession]);
+    setCoatNumber(num);
+    setSessionId(sid);
+    setSessionTotal(initialSessionData.totalAmount);
+    setPhase('products');
+    setActiveField(null);
+    lastCoatLookupRef.current = num;
+    onGuestNumberConsumed?.();
+  }, [initialSessionData, onGuestNumberConsumed]);
 
   // Handle external navigation with a guest number (e.g. from OVERZICHT page)
   useEffect(() => {
