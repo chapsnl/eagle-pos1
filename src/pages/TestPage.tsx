@@ -620,14 +620,6 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     });
   }, [sessionId, sessionTotal, updateSession, retourMode, items, existingLogs]);
 
-  if (phase === 'loading') {
-    return (
-      <div className="bg-black w-full h-full flex-1 overflow-hidden flex items-center justify-center">
-        {lockedWarningDialog}
-        <span className="text-lg font-bold" style={{ color: '#555' }}>Laden...</span>
-      </div>
-    );
-  }
 
   if (phase === 'input') {
     return (
