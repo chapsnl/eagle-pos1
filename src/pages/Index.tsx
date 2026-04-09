@@ -11,7 +11,7 @@ import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { AdminPage } from './AdminPage';
 import { OpenPage } from './OpenPage';
 import { ClosedPage } from './ClosedPage';
-import { TestPage } from './TestPage';
+import { TestPage, TestPageHandle } from './TestPage';
 import { Send, AlertCircle } from 'lucide-react';
 import { NumPad } from '@/components/pos/NumPad';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -38,6 +38,7 @@ const Index = () => {
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [pendingGuestNumber, setPendingGuestNumber] = useState<string | null>(null);
   const [pendingSessionData, setPendingSessionData] = useState<{ sessionId: string; wardrobeNumber: string; totalAmount: number } | null>(null);
+  const testPageRef = useRef<TestPageHandle>(null);
 
   // Bar number entry state
   const [barPhase, setBarPhase] = useState<BarPhase>('input-number');
@@ -358,12 +359,24 @@ const Index = () => {
     setActiveView('open');
   }, [barSessionId, unlockSession]);
 
+  const handleViewChange = useCallback((view: AppView) => {
+    // If leaving TestPage with an active session, save & cleanup
+    if (activeView === 'test' && view !== 'test') {
+      testPageRef.current?.saveAndCleanup();
+    }
+    // If leaving bar with an active session, save & cleanup
+    if (activeView === 'bar' && view !== 'bar' && barSessionId) {
+      handleBarNext();
+    }
+    setActiveView(view);
+  }, [activeView, barSessionId, handleBarNext]);
+
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden">
       <FeedbackOverlay type={feedback} />
       {barPayDialog}
       {barLockedDialog}
-      <NavTabs activeView={activeView} onViewChange={setActiveView} itemCount={items.length} />
+      <NavTabs activeView={activeView} onViewChange={handleViewChange} itemCount={items.length} />
 
       {activeView === 'bar' && (
         barPhase === 'input-number' ? (
@@ -402,7 +415,7 @@ const Index = () => {
         )
       )}
 
-      {activeView === 'test' && <TestPage initialGuestNumber={pendingGuestNumber} initialSessionData={pendingSessionData} onGuestNumberConsumed={() => { setPendingGuestNumber(null); setPendingSessionData(null); }} onNavigateToOpen={handleNavigateToOpen} />}
+      {activeView === 'test' && <TestPage ref={testPageRef} initialGuestNumber={pendingGuestNumber} initialSessionData={pendingSessionData} onGuestNumberConsumed={() => { setPendingGuestNumber(null); setPendingSessionData(null); }} onNavigateToOpen={handleNavigateToOpen} />}
       {activeView === 'admin' && <AdminPage onNavigateToGuest={(wardrobe, sessionId, totalAmount) => {
         setPendingSessionData({ sessionId, wardrobeNumber: wardrobe, totalAmount });
         setActiveView('test');

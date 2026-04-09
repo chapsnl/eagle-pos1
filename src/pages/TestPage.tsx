@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { useInactivityTimer } from '@/hooks/useInactivityTimer';
 import { toast } from 'sonner';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
@@ -56,7 +56,11 @@ interface TestPageProps {
   onNavigateToOpen?: () => void;
 }
 
-export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumberConsumed, onNavigateToOpen }: TestPageProps) => {
+export interface TestPageHandle {
+  saveAndCleanup: () => void;
+}
+
+export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGuestNumber, initialSessionData, onGuestNumberConsumed, onNavigateToOpen }, ref) => {
 
   // Lock to landscape on this page
   useEffect(() => {
@@ -376,9 +380,8 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
     setShowEntreeWarning(true);
   }, [sessionId]);
 
-  // Reset to input screen (used by NEXT button and inactivity timer)
-  const resetToInput = useCallback(async () => {
-    // Capture values before clearing state
+  // Core save & cleanup logic (no navigation)
+  const saveAndCleanupState = useCallback(() => {
     const sid = sessionId;
     const hasItems = sid && items.length > 0;
     const newTotal = sessionTotal + total;
@@ -392,14 +395,9 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         )
       : [];
 
-    // Reset UI immediately
+    // Reset state immediately
     setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbLogs([]);
     lastCoatLookupRef.current = null;
-    if (onNavigateToOpen) {
-      onNavigateToOpen();
-    } else {
-      setPhase('input'); setActiveField('coat');
-    }
 
     // Fire-and-forget DB writes
     if (sid) {
@@ -415,7 +413,22 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
         }
       })();
     }
-  }, [sessionId, items, total, sessionTotal, unlockSession, onNavigateToOpen, addDrinkLogs, updateSession]);
+  }, [sessionId, items, total, sessionTotal, unlockSession, addDrinkLogs, updateSession]);
+
+  // Reset to input screen (used by NEXT button and inactivity timer)
+  const resetToInput = useCallback(() => {
+    saveAndCleanupState();
+    if (onNavigateToOpen) {
+      onNavigateToOpen();
+    } else {
+      setPhase('input'); setActiveField('coat');
+    }
+  }, [saveAndCleanupState, onNavigateToOpen]);
+
+  // Expose cleanup for parent (tab switching)
+  useImperativeHandle(ref, () => ({
+    saveAndCleanup: saveAndCleanupState,
+  }), [saveAndCleanupState]);
 
   // 20s inactivity timer: reset to input when idle in products phase
   // Pause timer when any popup/dialog is open
@@ -750,4 +763,4 @@ export const TestPage = ({ initialGuestNumber, initialSessionData, onGuestNumber
       </div>
     </div>
   );
-};
+});
