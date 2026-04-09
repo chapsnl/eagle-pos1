@@ -449,7 +449,7 @@ const Index = () => {
             if (lockedBy && lockedBy !== deviceId) {
               const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
               if (lockAge < 60000) {
-                toast.error(`Sessie ${wardrobe} is vergrendeld door een ander apparaat`);
+                setShowBarLockedWarning(true);
                 return;
               }
             }
