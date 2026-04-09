@@ -421,6 +421,11 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     }
   }, [sessionId, items, total, sessionTotal, unlockSession, onNavigateToOpen, addDrinkLogs, updateSession]);
 
+  // Expose cleanup for parent (tab switching)
+  useImperativeHandle(ref, () => ({
+    saveAndCleanup: () => { resetToInput(); },
+  }), [resetToInput]);
+
   // 20s inactivity timer: reset to input when idle in products phase
   // Pause timer when any popup/dialog is open
   const anyPopupOpen = showLockedWarning || showClosedBlockDialog || showBonDialog || showPayDialog || showEntreeWarning;
