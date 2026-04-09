@@ -437,7 +437,24 @@ const Index = () => {
             onNavigateToOpen={() => { setOpenInlineSession(null); }}
           />
         ) : (
-          <OpenPage onNavigateToGuest={(wardrobe, sessionId, totalAmount) => {
+          <OpenPage onNavigateToGuest={async (wardrobe, sessionId, totalAmount) => {
+            // Check lock before opening — stay on grid if locked
+            const { data: fresh } = await supabase
+              .from('sessions')
+              .select('locked_by, locked_at')
+              .eq('id', sessionId)
+              .single();
+            const lockedBy = fresh?.locked_by;
+            const lockedAt = fresh?.locked_at;
+            if (lockedBy && lockedBy !== deviceId) {
+              const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
+              if (lockAge < 60000) {
+                toast.error(`Sessie ${wardrobe} is vergrendeld door een ander apparaat`);
+                return;
+              }
+            }
+            // Acquire lock before showing session
+            await lockSession(sessionId);
             setOpenInlineSession({ sessionId, wardrobeNumber: wardrobe, totalAmount });
           }} />
         )
