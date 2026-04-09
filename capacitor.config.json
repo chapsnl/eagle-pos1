@@ -2,10 +2,6 @@
   "appId": "com.eagle.pos",
   "appName": "Eagle POS",
   "webDir": "dist",
-  "server": {
-    "url": "https://98b2f7f3-955f-4f91-ad09-8ad46ec62ff1.lovableproject.com?forceHideBadge=true",
-    "cleartext": true
-  },
   "plugins": {
     "CapacitorNfc": {
       "androidReaderModeFlags": 15
