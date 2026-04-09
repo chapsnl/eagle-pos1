@@ -280,8 +280,8 @@ const Index = () => {
     }
   }, [barSessionId, items, barSessionTotal, total, addDrinkLogs, updateSession, showFeedback, unlockSession]);
 
-  const handleBarNext = useCallback(async () => {
-    if (barSessionId) await unlockSession(barSessionId);
+  const handleBarNext = useCallback(() => {
+    const sid = barSessionId;
     setItems([]);
     setBarNumber('');
     setBarSessionId(null);
@@ -290,6 +290,7 @@ const Index = () => {
     setBarRetourMode(false);
     lastLookupRef.current = null;
     clearOrder();
+    if (sid) unlockSession(sid).catch(() => {});
   }, [barSessionId, unlockSession]);
 
   // 20s inactivity timer
