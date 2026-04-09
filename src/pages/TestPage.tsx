@@ -255,14 +255,35 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   useEffect(() => {
     if (!initialSessionData) return;
     const num = initialSessionData.wardrobeNumber.replace(/\D/g, '');
-    setCoatNumber(num);
-    setSessionId(initialSessionData.sessionId);
-    setSessionTotal(initialSessionData.totalAmount);
-    setPhase('products');
-    setActiveField(null);
-    lastCoatLookupRef.current = num;
-    onGuestNumberConsumed?.();
-  }, [initialSessionData, onGuestNumberConsumed]);
+    const sid = initialSessionData.sessionId;
+    // Fetch fresh lock state — the data passed in may be stale
+    supabase
+      .from('sessions')
+      .select('locked_by, locked_at')
+      .eq('id', sid)
+      .single()
+      .then(({ data: fresh }) => {
+        const lockedBy = fresh?.locked_by;
+        const lockedAt = fresh?.locked_at;
+        if (lockedBy && lockedBy !== deviceId) {
+          const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
+          if (lockAge < 60000) {
+            setShowLockedWarning(true);
+            onGuestNumberConsumed?.();
+            return;
+          }
+        }
+        lockSession(sid).then(() => {
+          setCoatNumber(num);
+          setSessionId(sid);
+          setSessionTotal(initialSessionData.totalAmount);
+          setPhase('products');
+          setActiveField(null);
+          lastCoatLookupRef.current = num;
+          onGuestNumberConsumed?.();
+        });
+      });
+  }, [initialSessionData, onGuestNumberConsumed, deviceId, lockSession]);
 
   // Handle external navigation with a guest number (e.g. from OVERZICHT page)
   useEffect(() => {
