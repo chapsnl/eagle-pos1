@@ -38,6 +38,7 @@ const Index = () => {
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [pendingGuestNumber, setPendingGuestNumber] = useState<string | null>(null);
   const [pendingSessionData, setPendingSessionData] = useState<{ sessionId: string; wardrobeNumber: string; totalAmount: number } | null>(null);
+  const testPageRef = useRef<TestPageHandle>(null);
 
   // Bar number entry state
   const [barPhase, setBarPhase] = useState<BarPhase>('input-number');
