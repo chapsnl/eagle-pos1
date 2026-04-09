@@ -670,11 +670,14 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
               <div className="text-center py-1" style={{ borderBottom: '1px solid #333' }}>
                 <span className="font-extrabold uppercase" style={{ color: '#00cc13', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>Nieuwe Bestelling</span>
               </div>
-              {items.map((item) => (
-                <div key={`new-${item.product.id}`} style={{ color: '#00cc13', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
-                  {item.quantity} x {item.product.full_name}
-                </div>
-              ))}
+              {items.map((item) => {
+                const isRetour = item.quantity < 0;
+                return (
+                  <div key={`new-${item.product.id}`} style={{ color: isRetour ? '#ef4444' : '#00cc13', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
+                    {isRetour ? `−${Math.abs(item.quantity)}` : item.quantity} x {item.product.full_name}
+                  </div>
+                );
+              })}
             </>
           )}
 
