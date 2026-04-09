@@ -11,7 +11,7 @@ import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { AdminPage } from './AdminPage';
 import { OpenPage } from './OpenPage';
 import { ClosedPage } from './ClosedPage';
-import { TestPage } from './TestPage';
+import { TestPage, TestPageHandle } from './TestPage';
 import { Send, AlertCircle } from 'lucide-react';
 import { NumPad } from '@/components/pos/NumPad';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
