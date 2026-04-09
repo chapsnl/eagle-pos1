@@ -38,6 +38,7 @@ const Index = () => {
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [pendingGuestNumber, setPendingGuestNumber] = useState<string | null>(null);
   const [pendingSessionData, setPendingSessionData] = useState<{ sessionId: string; wardrobeNumber: string; totalAmount: number } | null>(null);
+  const [openInlineSession, setOpenInlineSession] = useState<{ sessionId: string; wardrobeNumber: string; totalAmount: number } | null>(null);
   const testPageRef = useRef<TestPageHandle>(null);
   const openTestPageRef = useRef<TestPageHandle>(null);
 
