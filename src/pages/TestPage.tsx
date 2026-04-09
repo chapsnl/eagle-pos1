@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useInactivityTimer } from '@/hooks/useInactivityTimer';
 import { toast } from 'sonner';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
@@ -6,7 +7,7 @@ import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { Send, AlertCircle } from 'lucide-react';
 import { NumPad } from '@/components/pos/NumPad';
-import { useFindActiveSessionByWardrobe, useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
+import { useUpdateSession, useAddDrinkLogs, useCreateSession } from '@/hooks/useSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
@@ -89,7 +90,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   const [showClosedBlockDialog, setShowClosedBlockDialog] = useState(false);
   const lastCoatLookupRef = useRef<string | null>(null);
   const { data: products } = useProducts();
-  const findActiveSessionByWardrobe = useFindActiveSessionByWardrobe();
+  const qc = useQueryClient();
   const updateSession = useUpdateSession();
   const addDrinkLogs = useAddDrinkLogs();
   const createSession = useCreateSession();
@@ -159,14 +160,9 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
 
   const autoCreateAndOpen = useCallback(async (wardrobeNum: string) => {
     try {
-      const { data: existing } = await supabase
-        .from('sessions')
-        .select('id')
-        .eq('wardrobe_number', wardrobeNum)
-        .eq('status', 'active')
-        .limit(1)
-        .maybeSingle();
-      if (existing) {
+      // Check cache first instead of network
+      const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
+      if (cachedSessions?.some(s => s.wardrobe_number === wardrobeNum)) {
         toast.error(`Gast ${wardrobeNum} bestaat al als actieve klant!`);
         setCoatNumber('');
         lastCoatLookupRef.current = null;
@@ -185,17 +181,20 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [createSession, lockSession]);
+  }, [createSession, lockSession, qc]);
 
   const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string) => {
     try {
-      const session = await findActiveSessionByWardrobe.mutateAsync(wardrobeNum);
+      // Look up from cached active sessions — no network call needed
+      const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
+      const session = cachedSessions?.find(s => s.wardrobe_number === wardrobeNum) ?? null;
+
       if (!session) {
         await autoCreateAndOpen(wardrobeNum);
         return;
       }
-      const lockedBy = (session as any).locked_by;
-      const lockedAt = (session as any).locked_at;
+      const lockedBy = session.locked_by;
+      const lockedAt = session.locked_at;
       if (lockedBy && lockedBy !== deviceId) {
         const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
         if (lockAge < 60000) {
@@ -203,7 +202,8 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
           return;
         }
       }
-      await lockSession(session.id);
+      // Lock is the only network call needed
+      lockSession(session.id).catch(() => {});
       setSessionId(session.id);
       setSessionTotal(Number(session.total_amount ?? 0));
       setPhase('products');
@@ -212,7 +212,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       setFeedback('error');
       setTimeout(() => setFeedback(null), 2000);
     }
-  }, [findActiveSessionByWardrobe, deviceId, lockSession, autoCreateAndOpen]);
+  }, [qc, deviceId, lockSession, autoCreateAndOpen]);
 
   // Auto-lookup coat number at 3 digits
   useEffect(() => {
@@ -221,24 +221,28 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     const wardrobe = coatNumber;
     if (lastCoatLookupRef.current === wardrobe) return;
     lastCoatLookupRef.current = wardrobe;
+    const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
+    const isActive = cachedSessions?.some(s => s.wardrobe_number === wardrobe);
     const t = window.setTimeout(async () => {
-      // Pre-check: is this number already closed?
-      const { data: closedSession } = await supabase
-        .from('sessions')
-        .select('id')
-        .eq('wardrobe_number', wardrobe)
-        .in('status', ['paid', 'archived'])
-        .limit(1)
-        .maybeSingle();
-      if (closedSession) {
-        setPendingWardrobe(wardrobe);
-        setShowClosedBlockDialog(true);
-        return;
+      if (!isActive) {
+        // Only check closed sessions via network if not in active cache
+        const { data: closedSession } = await supabase
+          .from('sessions')
+          .select('id')
+          .eq('wardrobe_number', wardrobe)
+          .in('status', ['paid', 'archived'])
+          .limit(1)
+          .maybeSingle();
+        if (closedSession) {
+          setPendingWardrobe(wardrobe);
+          setShowClosedBlockDialog(true);
+          return;
+        }
       }
       void resolveSessionByWardrobe(wardrobe);
-    }, 300);
+    }, isActive ? 0 : 150);
     return () => window.clearTimeout(t);
-  }, [coatNumber, phase, resolveSessionByWardrobe]);
+  }, [coatNumber, phase, resolveSessionByWardrobe, qc]);
 
   // Handle direct navigation with full session data (e.g. from OPEN page BEWERK button)
   useEffect(() => {
