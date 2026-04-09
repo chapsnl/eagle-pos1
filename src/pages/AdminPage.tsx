@@ -182,7 +182,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
     (sum, s) => sum + Number(s.total_amount ?? 0), 0
   );
   const reedsOntvangen = (closedSessions ?? []).reduce(
-    (sum, s) => sum + calcSessionTotal(s), 0
+    (sum, s) => sum + Number(s.total_amount ?? 0), 0
   );
   const verwachtTotaal = nogTeOntvangen + reedsOntvangen;
 
