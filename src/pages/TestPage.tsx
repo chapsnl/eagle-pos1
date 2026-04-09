@@ -380,9 +380,8 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     setShowEntreeWarning(true);
   }, [sessionId]);
 
-  // Reset to input screen (used by NEXT button and inactivity timer)
-  const resetToInput = useCallback(async () => {
-    // Capture values before clearing state
+  // Core save & cleanup logic (no navigation)
+  const saveAndCleanupState = useCallback(() => {
     const sid = sessionId;
     const hasItems = sid && items.length > 0;
     const newTotal = sessionTotal + total;
@@ -396,14 +395,9 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
         )
       : [];
 
-    // Reset UI immediately
+    // Reset state immediately
     setCoatNumber(''); setItems([]); setSessionId(null); setSessionTotal(0); setExistingLogs([]); setRetourMode(false); clearOrder(); setLiveDbLogs([]);
     lastCoatLookupRef.current = null;
-    if (onNavigateToOpen) {
-      onNavigateToOpen();
-    } else {
-      setPhase('input'); setActiveField('coat');
-    }
 
     // Fire-and-forget DB writes
     if (sid) {
@@ -419,12 +413,22 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
         }
       })();
     }
-  }, [sessionId, items, total, sessionTotal, unlockSession, onNavigateToOpen, addDrinkLogs, updateSession]);
+  }, [sessionId, items, total, sessionTotal, unlockSession, addDrinkLogs, updateSession]);
+
+  // Reset to input screen (used by NEXT button and inactivity timer)
+  const resetToInput = useCallback(() => {
+    saveAndCleanupState();
+    if (onNavigateToOpen) {
+      onNavigateToOpen();
+    } else {
+      setPhase('input'); setActiveField('coat');
+    }
+  }, [saveAndCleanupState, onNavigateToOpen]);
 
   // Expose cleanup for parent (tab switching)
   useImperativeHandle(ref, () => ({
-    saveAndCleanup: () => { resetToInput(); },
-  }), [resetToInput]);
+    saveAndCleanup: saveAndCleanupState,
+  }), [saveAndCleanupState]);
 
   // 20s inactivity timer: reset to input when idle in products phase
   // Pause timer when any popup/dialog is open
