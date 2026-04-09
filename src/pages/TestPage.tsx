@@ -185,16 +185,24 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
 
   const resolveSessionByWardrobe = useCallback(async (wardrobeNum: string) => {
     try {
-      // Look up from cached active sessions — no network call needed
+      // Look up from cached active sessions for fast ID resolution
       const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
-      const session = cachedSessions?.find(s => s.wardrobe_number === wardrobeNum) ?? null;
+      const cached = cachedSessions?.find(s => s.wardrobe_number === wardrobeNum) ?? null;
 
-      if (!session) {
+      if (!cached) {
         await autoCreateAndOpen(wardrobeNum);
         return;
       }
-      const lockedBy = session.locked_by;
-      const lockedAt = session.locked_at;
+
+      // Fetch fresh lock state from DB — cache may be stale
+      const { data: fresh } = await supabase
+        .from('sessions')
+        .select('locked_by, locked_at')
+        .eq('id', cached.id)
+        .single();
+
+      const lockedBy = fresh?.locked_by;
+      const lockedAt = fresh?.locked_at;
       if (lockedBy && lockedBy !== deviceId) {
         const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
         if (lockAge < 60000) {
@@ -202,15 +210,14 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
           return;
         }
       }
-      // Lock is the only network call needed
-      lockSession(session.id).catch(() => {});
-      setSessionId(session.id);
-      setSessionTotal(Number(session.total_amount ?? 0));
+      await lockSession(cached.id);
+      setSessionId(cached.id);
+      setSessionTotal(Number(cached.total_amount ?? 0));
       setPhase('products');
       setActiveField(null);
     } catch {
       setFeedback('error');
-      setTimeout(() => setFeedback(null), 2000);
+      setTimeout(() => setFeedback(null), 2000;
     }
   }, [qc, deviceId, lockSession, autoCreateAndOpen]);
 
