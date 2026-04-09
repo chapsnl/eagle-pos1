@@ -302,8 +302,10 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
 
     // Capture values before clearing state
     const sid = sessionId;
-    const newTotal = sessionTotal + total;
-    const logs = items.flatMap((item) =>
+    const newTotal = Math.max(0, sessionTotal + total);
+    const positiveItems = items.filter(i => i.quantity > 0);
+    const negativeItems = items.filter(i => i.quantity < 0);
+    const logs = positiveItems.flatMap((item) =>
       Array.from({ length: item.quantity }, () => ({
         session_id: sid,
         product_id: item.product.id,
@@ -323,7 +325,24 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     // Fire-and-forget DB writes
     (async () => {
       try {
-        await addDrinkLogs.mutateAsync(logs);
+        // Insert positive items
+        if (logs.length > 0) await addDrinkLogs.mutateAsync(logs);
+        // Delete negative items (retours) from DB
+        for (const item of negativeItems) {
+          const deleteCount = Math.abs(item.quantity);
+          for (let i = 0; i < deleteCount; i++) {
+            const { data: logToDelete } = await supabase
+              .from('drink_logs')
+              .select('id')
+              .eq('session_id', sid)
+              .eq('product_id', item.product.id)
+              .limit(1)
+              .maybeSingle();
+            if (logToDelete) {
+              await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
+            }
+          }
+        }
         await updateSession.mutateAsync({ id: sid, total_amount: newTotal });
         await unlockSession(sid);
       } catch {
