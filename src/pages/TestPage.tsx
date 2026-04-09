@@ -534,61 +534,36 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   const addAndBook = useCallback(async (product: DbProduct) => {
     if (!sessionId) return;
 
-    // RETOUR MODE: remove one of this product from the bill
+    // RETOUR MODE: add a negative entry to the new order (ledger-style)
     if (retourMode) {
+      // Check the product exists somewhere (new items or existing logs) to retour
       const inItems = items.find((i) => i.product.id === product.id);
       const inExisting = existingLogs.find((l) => l.product_id === product.id);
       if (!inItems && !inExisting) return;
 
+      // Calculate max retourable: existing DB quantity minus already-negative local entries
+      const existingQty = inExisting?.quantity ?? 0;
+      const currentLocalQty = inItems?.quantity ?? 0;
+      // If local qty is already negative, that's how many retours we've already booked
+      // If local qty is positive, we can retour those too
+      const maxRetourable = existingQty + Math.max(0, currentLocalQty);
+      const alreadyRetouredLocal = Math.abs(Math.min(0, currentLocalQty));
+      if (alreadyRetouredLocal >= maxRetourable) return; // can't retour more than exists
+
       setRetourFlash(product.id);
       setTimeout(() => setRetourFlash(null), 600);
 
-      if (inItems) {
-        // Remove from local new items (not yet in DB)
-        setItems((prev) => {
-          const item = prev.find((i) => i.product.id === product.id);
-          if (!item) return prev;
-          if (item.quantity > 1) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
-          return prev.filter((i) => i.product.id !== product.id);
-        });
-      } else {
-        // Remove from existing DB items
-        setExistingLogs((prev) => {
-          const item = prev.find((l) => l.product_id === product.id);
-          if (!item) return prev;
-          if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
-          return prev.filter((l) => l.product_id !== product.id);
-        });
-        setLiveDbLogs((prev) => {
-          const item = prev.find((l) => l.product_id === product.id);
-          if (!item) return prev;
-          if (item.quantity > 1) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity - 1 } : l);
-          return prev.filter((l) => l.product_id !== product.id);
-        });
-
-        try {
-          const { data: logToDelete } = await supabase
-            .from('drink_logs')
-            .select('id')
-            .eq('session_id', sessionId)
-            .eq('product_id', product.id)
-            .limit(1)
-            .maybeSingle();
-
-          if (logToDelete) {
-            await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
-            const newTotal = Math.max(0, sessionTotal - product.price);
-            await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
-            setSessionTotal(newTotal);
-          }
-        } catch {
-          setExistingLogs((prev) => {
-            const existing = prev.find((l) => l.product_id === product.id);
-            if (existing) return prev.map((l) => l.product_id === product.id ? { ...l, quantity: l.quantity + 1 } : l);
-            return [{ product_id: product.id, product_name: product.full_name, quantity: 1, unit_price: product.price }, ...prev];
-          });
+      setItems((prev) => {
+        const existing = prev.find((i) => i.product.id === product.id);
+        if (existing) {
+          // Decrease quantity (can go negative for retour entries)
+          return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i)
+            .filter((i) => i.quantity !== 0); // remove if hits zero
         }
-      }
+        // Add new negative entry
+        return [{ product, quantity: -1 }, ...prev];
+      });
+
       setRetourMode(false);
       return;
     }
