@@ -217,7 +217,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       setActiveField(null);
     } catch {
       setFeedback('error');
-      setTimeout(() => setFeedback(null), 2000;
+      setTimeout(() => setFeedback(null), 2000);
     }
   }, [qc, deviceId, lockSession, autoCreateAndOpen]);
 
