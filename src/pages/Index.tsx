@@ -429,16 +429,16 @@ const Index = () => {
         setActiveView('test');
       }} />}
       {activeView === 'open' && (
-        pendingSessionData ? (
+        openInlineSession ? (
           <TestPage
             ref={openTestPageRef}
-            initialSessionData={pendingSessionData}
-            onGuestNumberConsumed={() => { setPendingSessionData(null); }}
-            onNavigateToOpen={() => { setPendingSessionData(null); }}
+            initialSessionData={openInlineSession}
+            onGuestNumberConsumed={() => {}}
+            onNavigateToOpen={() => { setOpenInlineSession(null); }}
           />
         ) : (
           <OpenPage onNavigateToGuest={(wardrobe, sessionId, totalAmount) => {
-            setPendingSessionData({ sessionId, wardrobeNumber: wardrobe, totalAmount });
+            setOpenInlineSession({ sessionId, wardrobeNumber: wardrobe, totalAmount });
           }} />
         )
       )}
