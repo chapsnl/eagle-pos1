@@ -221,14 +221,11 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     const wardrobe = coatNumber;
     if (lastCoatLookupRef.current === wardrobe) return;
     lastCoatLookupRef.current = wardrobe;
-    // Use cache for closed-session check too — no 300ms delay needed
     const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
-    // If it's in active cache, resolve immediately
-    // If not, check closed sessions from a quick lookup but don't block
+    const isActive = cachedSessions?.some(s => s.wardrobe_number === wardrobe);
     const t = window.setTimeout(async () => {
-      // Check closed sessions only if not found in active cache
-      const isActive = cachedSessions?.some(s => s.wardrobe_number === wardrobe);
       if (!isActive) {
+        // Only check closed sessions via network if not in active cache
         const { data: closedSession } = await supabase
           .from('sessions')
           .select('id')
@@ -244,7 +241,6 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       }
       void resolveSessionByWardrobe(wardrobe);
     }, isActive ? 0 : 150);
-    const isActive = cachedSessions?.some(s => s.wardrobe_number === wardrobe);
     return () => window.clearTimeout(t);
   }, [coatNumber, phase, resolveSessionByWardrobe, qc]);
 
