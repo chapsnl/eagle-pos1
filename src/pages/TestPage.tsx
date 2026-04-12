@@ -89,7 +89,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const [showClosedBlockDialog, setShowClosedBlockDialog] = useState(false);
   const lastCoatLookupRef = useRef<string | null>(null);
-  const { data: products } = useProducts();
+  const { data: products, isLoading: productsLoading } = useProducts();
   const qc = useQueryClient();
   const updateSession = useUpdateSession();
   const addDrinkLogs = useAddDrinkLogs();
@@ -715,7 +715,15 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
 
       {/* Right column - Product grid */}
       <div className="flex-1 flex flex-col overflow-hidden gap-[1px]" style={{ width: '80%', backgroundColor: 'rgba(0,0,0,0.3)' }}>
-        {gridLayout.map((row, ri) => (
+        {productsLoading ? (
+          gridLayout.map((row, ri) => (
+            <div key={ri} className="flex-1 flex gap-[1px]" style={{ minHeight: 0 }}>
+              {row.map((cell, ci) => (
+                <div key={ci} style={{ flex: cell.span, backgroundColor: '#2a2a2a' }} className="flex items-center justify-center p-1 min-w-0 animate-pulse" />
+              ))}
+            </div>
+          ))
+        ) : gridLayout.map((row, ri) => (
           <div key={ri} className="flex-1 flex gap-[1px]" style={{ minHeight: 0 }}>
             {row.map((cell, ci) => {
               if (ri === 3 && ci === 0) {
@@ -791,3 +799,4 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     </div>
   );
 });
+
