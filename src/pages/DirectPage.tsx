@@ -164,7 +164,7 @@ export const DirectPage = () => {
       await updateSession.mutateAsync({ id: session.id, total_amount: newTotal });
       await supabase.from('sessions').update({ locked_by: null, locked_at: null } as any).eq('id', session.id);
 
-      toast.success(`${items.reduce((s, i) => s + i.quantity, 0)} item(s) geboekt op nummer ${wardrobeNum}`);
+      // Silent reset — no toast to keep flow fast
 
       // Reset
       setItems([]);
