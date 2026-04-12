@@ -46,6 +46,8 @@ export const DirectPage = () => {
   const [numberInput, setNumberInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
+  const [retourMode, setRetourMode] = useState(false);
+  const [retourFlash, setRetourFlash] = useState<string | null>(null);
 
   const qc = useQueryClient();
   const createSession = useCreateSession();
@@ -56,12 +58,21 @@ export const DirectPage = () => {
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
 
   const addProduct = useCallback((product: DbProduct) => {
+    if (retourMode) {
+      const inItems = items.find((i) => i.product.id === product.id);
+      if (!inItems || inItems.quantity <= 0) return;
+      setRetourFlash(product.id);
+      setTimeout(() => setRetourFlash(null), 600);
+      setItems((prev) => prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i).filter((i) => i.quantity !== 0));
+      setRetourMode(false);
+      return;
+    }
     setItems((prev) => {
       const existing = prev.find((i) => i.product.id === product.id);
       if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
       return [{ product, quantity: 1 }, ...prev];
     });
-  }, []);
+  }, [retourMode, items]);
 
   const handleNumberKey = useCallback((key: string) => {
     if (key === 'DEL') { setNumberInput(''); return; }
