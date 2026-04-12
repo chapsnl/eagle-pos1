@@ -260,10 +260,26 @@ export const DirectPage = () => {
                     </button>
                   );
                 }
-                // Row 5 col 0: NEXT button (resets items)
+                // Row 4 col 0: PAY button (opens number popup for pay)
+                if (ri === 4 && ci === 0) {
+                  return (
+                    <button key={ci} onClick={handlePayButton} style={{ flex: cell.span, backgroundColor: '#ef4444', color: '#fff' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75" {...pointerHandlers}>
+                      <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>PAY</span>
+                    </button>
+                  );
+                }
+                // Row 4 col 1: RETOUR button
+                if (ri === 4 && ci === 1) {
+                  return (
+                    <button key={ci} onClick={() => setRetourMode((m) => !m)} style={{ flex: cell.span, backgroundColor: retourMode ? '#ef4444' : '#7c3aed', color: '#fff', transition: 'background-color 0.2s ease' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75" {...pointerHandlers}>
+                      <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>RETOUR</span>
+                    </button>
+                  );
+                }
+                // Row 5 col 0: NEXT button
                 if (ri === 5 && ci === 0) {
                   return (
-                    <button key={ci} onClick={() => setItems([])} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75" {...pointerHandlers}>
+                    <button key={ci} onClick={handleNext} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75" {...pointerHandlers}>
                       <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>NEXT</span>
                     </button>
                   );
