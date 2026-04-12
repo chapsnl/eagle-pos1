@@ -762,6 +762,190 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
         </DialogContent>
       </Dialog>
 
+      {/* Bulk Delete Range Dialog */}
+      <Dialog open={bulkDeleteOpen} onOpenChange={(o) => { if (!o) { setBulkDeleteOpen(false); setBulkDeleteConfirmStep(false); } }}>
+        <DialogContent
+          className="bg-black max-w-sm"
+          style={{ borderColor: '#ef444440', borderRadius: '12px' }}
+        >
+          <DialogHeader>
+            <DialogTitle
+              className="text-xl font-extrabold uppercase tracking-wider text-center"
+              style={{ color: '#00cc13' }}
+            >
+              VERWIJDER REEKS
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3">
+            {!bulkDeleteConfirmStep ? (
+              <>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setBulkDeleteActiveField('start')}
+                    className="flex-1 flex flex-col gap-1 items-center"
+                  >
+                    <label className="text-xs font-bold uppercase" style={{ color: '#888' }}>Van</label>
+                    <div
+                      className="w-full h-14 rounded-lg flex items-center justify-center text-3xl font-extrabold"
+                      style={{
+                        backgroundColor: '#2a2a2a',
+                        color: '#fff',
+                        border: bulkDeleteActiveField === 'start' ? '2px solid #00cc13' : '1px solid #444',
+                        boxShadow: bulkDeleteActiveField === 'start' ? '0 0 12px #00cc1340' : 'none',
+                      }}
+                    >
+                      {bulkDeleteStart || <span style={{ color: '#555' }}>—</span>}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBulkDeleteActiveField('end')}
+                    className="flex-1 flex flex-col gap-1 items-center"
+                  >
+                    <label className="text-xs font-bold uppercase" style={{ color: '#888' }}>Tot</label>
+                    <div
+                      className="w-full h-14 rounded-lg flex items-center justify-center text-3xl font-extrabold"
+                      style={{
+                        backgroundColor: '#2a2a2a',
+                        color: '#fff',
+                        border: bulkDeleteActiveField === 'end' ? '2px solid #00cc13' : '1px solid #444',
+                        boxShadow: bulkDeleteActiveField === 'end' ? '0 0 12px #00cc1340' : 'none',
+                      }}
+                    >
+                      {bulkDeleteEnd || <span style={{ color: '#555' }}>—</span>}
+                    </div>
+                  </button>
+                </div>
+                {bulkDeleteError && (
+                  <p className="text-sm text-center font-bold" style={{ color: '#ef4444' }}>{bulkDeleteError}</p>
+                )}
+                <NumPad onKey={(key) => {
+                  setBulkDeleteError('');
+                  const setter = bulkDeleteActiveField === 'start' ? setBulkDeleteStart : setBulkDeleteEnd;
+                  if (key === 'DEL') { setter(''); return; }
+                  if (key === 'BACK') { setter(prev => prev.slice(0, -1)); return; }
+                  setter(prev => prev.length >= 3 ? prev : prev + key);
+                }} />
+                <button
+                  disabled={bulkDeleteStart.length !== 3 || bulkDeleteEnd.length !== 3}
+                  onClick={async () => {
+                    const s = parseInt(bulkDeleteStart, 10);
+                    const e = parseInt(bulkDeleteEnd, 10);
+                    if (isNaN(s) || isNaN(e)) { setBulkDeleteError('Vul beide velden in'); return; }
+                    if (e < s) { setBulkDeleteError('Eind nummer moet ≥ start nummer zijn'); return; }
+                    if (e - s + 1 > 500) { setBulkDeleteError('Maximaal 500 nummers tegelijk'); return; }
+                    setBulkDeleteLoading(true);
+                    setBulkDeleteError('');
+                    try {
+                      const rangeNumbers = [];
+                      for (let i = s; i <= e; i++) rangeNumbers.push(String(i));
+                      // Check for sessions with drink_logs (in use) or paid status
+                      const { data: inUseSessions, error: checkErr } = await supabase
+                        .from('sessions')
+                        .select('wardrobe_number, status, drink_logs(id)')
+                        .in('wardrobe_number', rangeNumbers)
+                        .in('status', ['active', 'paid']);
+                      if (checkErr) throw checkErr;
+                      const blockedNumbers: string[] = [];
+                      for (const sess of (inUseSessions ?? [])) {
+                        const hasLogs = Array.isArray(sess.drink_logs) && sess.drink_logs.length > 0;
+                        if (sess.status === 'paid') {
+                          blockedNumbers.push(`${sess.wardrobe_number} (betaald)`);
+                        } else if (hasLogs) {
+                          blockedNumbers.push(`${sess.wardrobe_number} (in gebruik)`);
+                        }
+                      }
+                      if (blockedNumbers.length > 0) {
+                        setBulkDeleteError(`Kan niet verwijderen: ${blockedNumbers.join(', ')}`);
+                        setBulkDeleteLoading(false);
+                        return;
+                      }
+                      setBulkDeleteLoading(false);
+                      setBulkDeleteConfirmStep(true);
+                    } catch (err: any) {
+                      setBulkDeleteError(err.message ?? 'Er ging iets mis');
+                      setBulkDeleteLoading(false);
+                    }
+                  }}
+                  className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px] disabled:opacity-50"
+                  style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
+                >
+                  {bulkDeleteLoading ? 'CONTROLEREN...' : 'VERWIJDEREN'}
+                </button>
+                <button
+                  onClick={() => setBulkDeleteOpen(false)}
+                  className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px]"
+                  style={{ backgroundColor: '#2a2a2a', color: '#00cc13', border: '1px solid #00cc1340' }}
+                >
+                  ANNULEER
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-center font-bold text-lg" style={{ color: '#fff' }}>
+                  Weet je het zeker? Nummers <span style={{ color: '#ef4444' }}>{bulkDeleteStart}</span> t/m <span style={{ color: '#ef4444' }}>{bulkDeleteEnd}</span> worden definitief verwijderd.
+                </p>
+                {bulkDeleteError && (
+                  <p className="text-sm text-center font-bold" style={{ color: '#ef4444' }}>{bulkDeleteError}</p>
+                )}
+                <button
+                  onClick={() => setBulkDeleteConfirmStep(false)}
+                  className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px]"
+                  style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380' }}
+                >
+                  CANCEL
+                </button>
+                <button
+                  disabled={bulkDeleteLoading}
+                  onClick={async () => {
+                    const s = parseInt(bulkDeleteStart, 10);
+                    const e = parseInt(bulkDeleteEnd, 10);
+                    setBulkDeleteLoading(true);
+                    setBulkDeleteError('');
+                    try {
+                      const rangeNumbers = [];
+                      for (let i = s; i <= e; i++) rangeNumbers.push(String(i));
+                      // Find all active empty sessions in range
+                      const { data: sessions, error: findErr } = await supabase
+                        .from('sessions')
+                        .select('id')
+                        .in('wardrobe_number', rangeNumbers)
+                        .eq('status', 'active');
+                      if (findErr) throw findErr;
+                      if (!sessions || sessions.length === 0) {
+                        setBulkDeleteError('Geen actieve sessies gevonden in deze reeks');
+                        setBulkDeleteLoading(false);
+                        return;
+                      }
+                      const sessionIds = sessions.map(ss => ss.id);
+                      // Delete drink_logs just in case
+                      await supabase.from('drink_logs').delete().in('session_id', sessionIds);
+                      const { error: delErr } = await supabase.from('sessions').delete().in('id', sessionIds);
+                      if (delErr) throw delErr;
+                      qc.invalidateQueries({ queryKey: ['sessions'] });
+                      qc.invalidateQueries({ queryKey: ['active-sessions'] });
+                      setBulkDeleteOpen(false);
+                      setBulkDeleteConfirmStep(false);
+                      const { toast } = await import('sonner');
+                      toast.success(`Nummers ${bulkDeleteStart} t/m ${bulkDeleteEnd} verwijderd (${sessions.length} sessies)`);
+                    } catch (err: any) {
+                      setBulkDeleteError(err.message ?? 'Er ging iets mis');
+                    } finally {
+                      setBulkDeleteLoading(false);
+                    }
+                  }}
+                  className="w-full py-3 font-extrabold uppercase text-sm rounded-[6px] disabled:opacity-50"
+                  style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480' }}
+                >
+                  {bulkDeleteLoading ? 'BEZIG...' : 'DOORGAAN'}
+                </button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* PIN Change Dialog */}
       <Dialog open={pinDialogOpen} onOpenChange={(o) => { if (!o) handlePinDialogClose(); }}>
         <DialogContent
