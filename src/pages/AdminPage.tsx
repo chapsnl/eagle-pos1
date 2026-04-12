@@ -105,6 +105,15 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteNumber, setDeleteNumber] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Bulk delete range state
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteStart, setBulkDeleteStart] = useState('');
+  const [bulkDeleteEnd, setBulkDeleteEnd] = useState('');
+  const [bulkDeleteActiveField, setBulkDeleteActiveField] = useState<'start' | 'end'>('start');
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  const [bulkDeleteError, setBulkDeleteError] = useState('');
+  const [bulkDeleteConfirmStep, setBulkDeleteConfirmStep] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [deleteConfirmStep, setDeleteConfirmStep] = useState(false);
   const [bulkStart, setBulkStart] = useState('');
