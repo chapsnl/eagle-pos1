@@ -12,6 +12,7 @@ import { AdminPage } from './AdminPage';
 import { OpenPage } from './OpenPage';
 import { ClosedPage } from './ClosedPage';
 import { TestPage, TestPageHandle } from './TestPage';
+import { DirectPage } from './DirectPage';
 import { Send, AlertCircle } from 'lucide-react';
 import { NumPad } from '@/components/pos/NumPad';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -460,6 +461,7 @@ const Index = () => {
         )
       )}
       {activeView === 'closed' && <ClosedPage />}
+      {activeView === 'direct' && <DirectPage />}
     </div>
   );
 };
