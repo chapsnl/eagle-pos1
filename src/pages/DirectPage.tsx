@@ -81,10 +81,7 @@ export const DirectPage = () => {
   }, [numberInput]);
 
   const handleNumberButton = useCallback(() => {
-    if (items.length === 0) {
-      toast.error('Selecteer eerst producten');
-      return;
-    }
+    if (items.length === 0) return;
     setNumberInput('');
     setShowWarning(false);
     setShowNumberPopup(true);
@@ -190,10 +187,7 @@ export const DirectPage = () => {
   }, [items]);
 
   const handlePayButton = useCallback(() => {
-    if (items.length === 0) {
-      toast.error('Selecteer eerst producten');
-      return;
-    }
+    if (items.length === 0) return;
     setNumberInput('');
     setShowWarning(false);
     setShowNumberPopup(true);
