@@ -394,6 +394,13 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
           VERWIJDER NUMMER
         </button>
         <button
+          onClick={() => { setBulkDeleteOpen(true); setBulkDeleteStart(''); setBulkDeleteEnd(''); setBulkDeleteError(''); setBulkDeleteConfirmStep(false); setBulkDeleteActiveField('start'); }}
+          className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px] transition-all active:scale-[0.98]"
+          style={{ backgroundColor: '#ef4444', color: '#fff' }}
+        >
+          VERWIJDER REEKS
+        </button>
+        <button
           onClick={() => setCloseShiftStep(1)}
           className="flex-1 py-3 font-extrabold uppercase text-sm rounded-[6px] transition-all active:scale-[0.98]"
           style={{ backgroundColor: '#ef4444', color: '#fff' }}
