@@ -177,6 +177,28 @@ export const DirectPage = () => {
     }
   }, [numberInput, items, qc, createSession, addDrinkLogs, updateSession, deviceId]);
 
+  const handleNext = useCallback(() => {
+    if (items.length > 0) {
+      // Items present but no number assigned — force number popup
+      setNumberInput('');
+      setShowWarning(false);
+      setShowNumberPopup(true);
+      return;
+    }
+    setItems([]);
+    setRetourMode(false);
+  }, [items]);
+
+  const handlePayButton = useCallback(() => {
+    if (items.length === 0) {
+      toast.error('Selecteer eerst producten');
+      return;
+    }
+    setNumberInput('');
+    setShowWarning(false);
+    setShowNumberPopup(true);
+  }, [items]);
+
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
   const pointerHandlers = {
