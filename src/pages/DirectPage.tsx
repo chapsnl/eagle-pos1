@@ -169,9 +169,9 @@ export const DirectPage = () => {
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
   const pointerHandlers = {
-    onPointerDown: (e: React.PointerEvent) => { e.currentTarget.style.transform = 'scale(0.93)'; (e.currentTarget as HTMLElement).style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; },
-    onPointerUp: (e: React.PointerEvent) => { e.currentTarget.style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; },
-    onPointerLeave: (e: React.PointerEvent) => { e.currentTarget.style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; },
+    onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; },
+    onPointerUp: (e: React.PointerEvent<HTMLButtonElement>) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; },
+    onPointerLeave: (e: React.PointerEvent<HTMLButtonElement>) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; },
   };
 
   return (
