@@ -46,6 +46,8 @@ export const DirectPage = () => {
   const [numberInput, setNumberInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
+  const [retourMode, setRetourMode] = useState(false);
+  const [retourFlash, setRetourFlash] = useState<string | null>(null);
 
   const qc = useQueryClient();
   const createSession = useCreateSession();
@@ -56,12 +58,21 @@ export const DirectPage = () => {
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
 
   const addProduct = useCallback((product: DbProduct) => {
+    if (retourMode) {
+      const inItems = items.find((i) => i.product.id === product.id);
+      if (!inItems || inItems.quantity <= 0) return;
+      setRetourFlash(product.id);
+      setTimeout(() => setRetourFlash(null), 600);
+      setItems((prev) => prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity - 1 } : i).filter((i) => i.quantity !== 0));
+      setRetourMode(false);
+      return;
+    }
     setItems((prev) => {
       const existing = prev.find((i) => i.product.id === product.id);
       if (existing) return prev.map((i) => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
       return [{ product, quantity: 1 }, ...prev];
     });
-  }, []);
+  }, [retourMode, items]);
 
   const handleNumberKey = useCallback((key: string) => {
     if (key === 'DEL') { setNumberInput(''); return; }
@@ -166,6 +177,28 @@ export const DirectPage = () => {
     }
   }, [numberInput, items, qc, createSession, addDrinkLogs, updateSession, deviceId]);
 
+  const handleNext = useCallback(() => {
+    if (items.length > 0) {
+      // Items present but no number assigned — force number popup
+      setNumberInput('');
+      setShowWarning(false);
+      setShowNumberPopup(true);
+      return;
+    }
+    setItems([]);
+    setRetourMode(false);
+  }, [items]);
+
+  const handlePayButton = useCallback(() => {
+    if (items.length === 0) {
+      toast.error('Selecteer eerst producten');
+      return;
+    }
+    setNumberInput('');
+    setShowWarning(false);
+    setShowNumberPopup(true);
+  }, [items]);
+
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
   const pointerHandlers = {
@@ -175,9 +208,16 @@ export const DirectPage = () => {
   };
 
   return (
-    <div className="flex-1 flex overflow-hidden h-full relative">
+    <div className="flex-1 flex overflow-hidden h-full relative" style={{ ...(retourMode ? { border: '4px solid #ef4444', boxShadow: 'inset 0 0 30px rgba(239,68,68,0.15)' } : {}) }}>
+      {/* Retour mode banner */}
+      {retourMode && (
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 40, backgroundColor: '#ef4444', color: '#fff', textAlign: 'center', padding: '6px 0', fontSize: 'clamp(14px, 2vw, 22px)', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', animation: 'pulse 1.5s ease-in-out infinite' }}>
+          ⚠ RETOUR MODUS ACTIEF ⚠
+        </div>
+      )}
+
       {/* Left column - Order summary */}
-      <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden" style={{ width: '20%', backgroundColor: '#121212', borderRight: '1px solid #333' }}>
+      <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden" style={{ width: '20%', backgroundColor: retourMode ? '#1a0a0a' : '#121212', borderRight: `1px solid ${retourMode ? '#ef4444' : '#333'}`, transition: 'background-color 0.3s ease' }}>
         <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
           <span className="font-extrabold uppercase" style={{ color: '#00cc13', fontSize: 'clamp(14px, 2vw, 22px)', letterSpacing: '0.1em' }}>DIRECT</span>
         </div>
@@ -193,14 +233,6 @@ export const DirectPage = () => {
             <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1.2vw, 14px)' }}>Geen producten</div>
           )}
         </div>
-
-        {items.length > 0 && (
-          <div className="border-t px-2 py-2" style={{ borderColor: '#333' }}>
-            <div className="font-extrabold text-right" style={{ color: '#00cc13', fontSize: 'clamp(14px, 2vw, 22px)' }}>
-              €{total.toFixed(2)}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Right column - Product grid */}
@@ -228,10 +260,26 @@ export const DirectPage = () => {
                     </button>
                   );
                 }
-                // Row 5 col 0: NEXT button (resets items)
+                // Row 4 col 0: PAY button (opens number popup for pay)
+                if (ri === 4 && ci === 0) {
+                  return (
+                    <button key={ci} onClick={handlePayButton} style={{ flex: cell.span, backgroundColor: '#ef4444', color: '#fff' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75" {...pointerHandlers}>
+                      <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>PAY</span>
+                    </button>
+                  );
+                }
+                // Row 4 col 1: RETOUR button
+                if (ri === 4 && ci === 1) {
+                  return (
+                    <button key={ci} onClick={() => setRetourMode((m) => !m)} style={{ flex: cell.span, backgroundColor: retourMode ? '#ef4444' : '#7c3aed', color: '#fff', transition: 'background-color 0.2s ease' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75" {...pointerHandlers}>
+                      <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>RETOUR</span>
+                    </button>
+                  );
+                }
+                // Row 5 col 0: NEXT button
                 if (ri === 5 && ci === 0) {
                   return (
-                    <button key={ci} onClick={() => setItems([])} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75" {...pointerHandlers}>
+                    <button key={ci} onClick={handleNext} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75" {...pointerHandlers}>
                       <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>NEXT</span>
                     </button>
                   );
