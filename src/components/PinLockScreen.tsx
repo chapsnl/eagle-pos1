@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, Delete } from 'lucide-react';
 import { useStaffPin } from '@/hooks/useStaffPin';
-
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
+import { NumPad } from '@/components/pos/NumPad';
 
 interface PinLockScreenProps {
   onUnlock: () => void;
@@ -66,24 +64,7 @@ const PinLockScreen = ({ onUnlock }: PinLockScreenProps) => {
           </p>
         )}
 
-        {/* Numpad */}
-        <div className="grid grid-cols-3 gap-3 w-full">
-          {KEYS.map((key) => (
-            <button
-              key={key}
-              onClick={() => handleKey(key)}
-              className="h-16 w-full text-2xl font-extrabold uppercase flex items-center justify-center rounded-lg active:opacity-70"
-              style={{
-                backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
-                color: '#fff',
-                border: '1px solid #444',
-                boxShadow: key === 'DEL' ? '0 0 10px #ef444450' : '0 0 6px #00000060',
-              }}
-            >
-              {key === 'DEL' ? <X className="w-6 h-6" /> : key === 'BACK' ? <Delete className="w-6 h-6" /> : key}
-            </button>
-          ))}
-        </div>
+        <NumPad onKey={handleKey} />
       </div>
     </div>
   );
