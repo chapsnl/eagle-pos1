@@ -51,8 +51,8 @@ export const ProductGrid = ({ onAddProduct }: ProductGridProps) => {
     touchDeltaX.current = 0;
   }, [page]);
 
-  if (isLoading || !products) {
-    return <div className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</div>;
+  if (!products || products.length === 0) {
+    return <div className="flex-1" />;
   }
 
   const productMap = new Map(products.map((p) => [p.shorthand, p]));
