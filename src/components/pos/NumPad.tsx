@@ -8,13 +8,13 @@ interface NumPadProps {
 }
 
 export const NumPad = ({ onKey, disabled }: NumPadProps) => (
-  <div className="grid grid-cols-3 gap-2 flex-1 min-h-0 pb-2 relative z-10">
+  <div className="grid grid-cols-3 gap-3 w-full relative z-10">
     {KEYS.map((key) => (
       <button
         key={key}
         onClick={() => onKey(key)}
         disabled={disabled}
-        className="h-full min-h-[50px] w-full text-2xl font-extrabold uppercase flex items-center justify-center rounded-lg active:opacity-70 disabled:opacity-50"
+        className="h-16 w-full text-2xl font-extrabold uppercase flex items-center justify-center rounded-lg active:opacity-70 disabled:opacity-50"
         style={{
           backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
           color: '#fff',
@@ -22,7 +22,7 @@ export const NumPad = ({ onKey, disabled }: NumPadProps) => (
           boxShadow: key === 'DEL' ? '0 0 10px #ef444450' : '0 0 6px #00000060',
         }}
       >
-        {key === 'DEL' ? <X size={22} /> : key === 'BACK' ? <Delete size={22} /> : key}
+        {key === 'DEL' ? <X className="w-6 h-6" /> : key === 'BACK' ? <Delete className="w-6 h-6" /> : key}
       </button>
     ))}
   </div>

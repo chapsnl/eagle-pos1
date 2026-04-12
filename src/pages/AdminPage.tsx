@@ -7,7 +7,7 @@ import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUpdateStaffPin } from '@/hooks/useStaffPin';
-import { X, Delete } from 'lucide-react';
+
 
 
 const useClosedSessions = () =>
@@ -127,7 +127,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const [pinSaving, setPinSaving] = useState(false);
   const updateStaffPin = useUpdateStaffPin();
 
-  const PIN_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'DEL', '0', 'BACK'];
+  
 
   const handlePinChangeKey = useCallback((key: string) => {
     if (pinSaving) return;
@@ -247,9 +247,9 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
         <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
           <img src="/placeholder.svg" alt="" className="object-cover w-full h-full opacity-10" />
         </div>
-        <div className="w-full max-w-sm mx-auto h-full max-h-[70vh] flex flex-col justify-center px-4 relative z-10">
-          <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center pt-3 pb-2 shrink-0" style={{ color: '#00cc13' }}>ADMIN PIN</h2>
-          <div className="flex items-center justify-center gap-3 mb-6 h-14">
+        <div className="relative z-10 flex flex-col items-center w-full max-w-sm mx-auto px-6 gap-6">
+          <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center" style={{ color: '#00cc13' }}>ADMIN PIN</h2>
+          <div className="flex items-center justify-center gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
@@ -262,7 +262,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
             ))}
           </div>
           {pinError && (
-            <p className="text-sm mb-3 text-center" style={{ color: '#ef4444' }}>Onjuiste PIN</p>
+            <p className="text-sm text-center" style={{ color: '#ef4444' }}>Onjuiste PIN</p>
           )}
           <NumPad onKey={handleAdminKey} disabled={pinChecking} />
         </div>
@@ -983,25 +983,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                 <p className="text-sm text-center" style={{ color: '#ef4444' }}>{pinChangeError}</p>
               )}
 
-              {/* Numpad */}
-              <div className="grid grid-cols-3 gap-3 w-full">
-                {PIN_KEYS.map((key) => (
-                  <button
-                    key={key}
-                    onClick={() => handlePinChangeKey(key)}
-                    disabled={pinSaving}
-                    className="h-16 w-full text-2xl font-extrabold uppercase flex items-center justify-center rounded-lg active:opacity-70 disabled:opacity-50"
-                    style={{
-                      backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
-                      color: '#fff',
-                      border: '1px solid #444',
-                      boxShadow: key === 'DEL' ? '0 0 10px #ef444450' : '0 0 6px #00000060',
-                    }}
-                  >
-                    {key === 'DEL' ? <X className="w-6 h-6" /> : key === 'BACK' ? <Delete className="w-6 h-6" /> : key}
-                  </button>
-                ))}
-              </div>
+              <NumPad onKey={handlePinChangeKey} disabled={pinSaving} />
 
               {/* Cancel button */}
               <button
