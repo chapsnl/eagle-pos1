@@ -1,4 +1,6 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,7 +12,17 @@ import { Capacitor } from "@capacitor/core";
 import PinLockScreen from "@/components/PinLockScreen";
 import { useGlobalInactivityTimer } from "@/hooks/useGlobalInactivityTimer";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      gcTime: 1000 * 60 * 60 * 8, // 8 hours
+    },
+  },
+});
+
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+});
 
 /** Force local network permission prompt on iOS by pinging the printer */
 const triggerNetworkPermission = () => {
@@ -79,7 +91,7 @@ const App = () => {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider client={queryClient} persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 8 }}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -92,7 +104,7 @@ const App = () => {
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 };
 
