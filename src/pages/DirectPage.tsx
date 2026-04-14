@@ -94,31 +94,22 @@ export const DirectPage = () => {
     }
 
     setIsSubmitting(true);
-    try {
-      const wardrobeNum = numberInput;
+    const wardrobeNum = numberInput;
+    const currentItems = [...items];
+    const total = currentItems.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
-      // Check for existing active session
+    // Optimistic reset — UI returns instantly
+    setItems([]);
+    setShowNumberPopup(false);
+    setNumberInput('');
+
+    try {
+      // 1. Check cache first
       const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
       let session = cachedSessions?.find(s => s.wardrobe_number === wardrobeNum) ?? null;
 
-      if (!session) {
-        // Check closed sessions
-        const { data: closedSession } = await supabase
-          .from('sessions')
-          .select('id')
-          .eq('wardrobe_number', wardrobeNum)
-          .in('status', ['paid', 'archived'])
-          .limit(1)
-          .maybeSingle();
-        if (closedSession) {
-          toast.error(`Nummer ${wardrobeNum} is al afgerekend en gesloten.`);
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
       if (session) {
-        // Check lock
+        // Parallel: lock check (skip closed check — it's active in cache)
         const { data: fresh } = await supabase
           .from('sessions')
           .select('locked_by, locked_at')
@@ -130,13 +121,29 @@ export const DirectPage = () => {
           const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
           if (lockAge < 60000) {
             toast.error('Dit nummer is in gebruik door een andere medewerker.');
+            setItems(currentItems); // Restore items on error
             setIsSubmitting(false);
             return;
           }
         }
+      } else {
+        // Not in cache — check closed session
+        const { data: closedSession } = await supabase
+          .from('sessions')
+          .select('id')
+          .eq('wardrobe_number', wardrobeNum)
+          .in('status', ['paid', 'archived'])
+          .limit(1)
+          .maybeSingle();
+        if (closedSession) {
+          toast.error(`Nummer ${wardrobeNum} is al afgerekend en gesloten.`);
+          setItems(currentItems);
+          setIsSubmitting(false);
+          return;
+        }
       }
 
-      // Create or get session
+      // 2. Create or get session
       if (!session) {
         session = await createSession.mutateAsync({
           wardrobe_number: wardrobeNum,
@@ -144,11 +151,8 @@ export const DirectPage = () => {
         });
       }
 
-      // Lock, add drinks, update total
-      await supabase.from('sessions').update({ locked_by: deviceId, locked_at: new Date().toISOString() } as any).eq('id', session.id);
-
-      const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
-      const logs = items.flatMap((item) =>
+      // 3. Lock + insert logs + update total in parallel where possible
+      const logs = currentItems.flatMap((item) =>
         Array.from({ length: item.quantity }, () => ({
           session_id: session.id,
           product_id: item.product.id,
@@ -156,19 +160,21 @@ export const DirectPage = () => {
         }))
       );
 
-      await addDrinkLogs.mutateAsync(logs);
+      // Fire lock and insert simultaneously
+      const [, logsResult] = await Promise.all([
+        supabase.from('sessions').update({ locked_by: deviceId, locked_at: new Date().toISOString() } as any).eq('id', session.id),
+        addDrinkLogs.mutateAsync(logs),
+      ]);
+
+      // Update total and unlock simultaneously
       const newTotal = Number(session.total_amount ?? 0) + total;
-      await updateSession.mutateAsync({ id: session.id, total_amount: newTotal });
-      await supabase.from('sessions').update({ locked_by: null, locked_at: null } as any).eq('id', session.id);
-
-      // Silent reset — no toast to keep flow fast
-
-      // Reset
-      setItems([]);
-      setShowNumberPopup(false);
-      setNumberInput('');
+      await Promise.all([
+        updateSession.mutateAsync({ id: session.id, total_amount: newTotal }),
+        supabase.from('sessions').update({ locked_by: null, locked_at: null } as any).eq('id', session.id),
+      ]);
     } catch {
       toast.error('Opslaan mislukt — probeer opnieuw');
+      setItems(currentItems); // Restore items on error
     } finally {
       setIsSubmitting(false);
     }
