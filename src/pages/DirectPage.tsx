@@ -242,8 +242,9 @@ export const DirectPage = () => {
       setShowWarning(true);
       return;
     }
-    await submitOrder(numberInput, items);
-  }, [numberInput, items, submitOrder]);
+    await submitOrder(numberInput, items, payMode);
+    setPayMode(false);
+  }, [numberInput, items, submitOrder, payMode]);
 
   const handleNext = useCallback(() => {
     if (items.length > 0 && quickNumber.length > 0) {
