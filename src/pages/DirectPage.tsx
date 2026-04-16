@@ -301,7 +301,7 @@ export const DirectPage = () => {
           >
             <span style={{ fontSize: 'clamp(20px, 3.5vw, 38px)' }}>?</span>
             <span style={{ fontSize: 'clamp(10px, 1.5vw, 16px)', letterSpacing: '0.1em' }}>
-              {quickNumber.length > 0 ? quickNumber : 'NR'}
+              {quickNumber.length > 0 ? formatWardrobeNumber(quickNumber) : 'NR'}
             </span>
           </button>
         </div>
@@ -401,7 +401,7 @@ export const DirectPage = () => {
             <div className="flex items-center justify-center w-full">
               <div className="w-full" style={{ maxWidth: '280px' }}>
                 <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: `3px solid ${quickWarning ? '#ef4444' : '#00cc13'}`, boxShadow: quickWarning ? '0 0 12px #ef444480, 0 0 24px #ef444430' : '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
-                  {quickNumber || <span style={{ color: '#9ca3af' }}>—</span>}
+                  {quickNumber.length > 0 ? formatWardrobeNumber(quickNumber) : <span style={{ color: '#9ca3af' }}>—</span>}
                 </div>
                 {quickWarning && (
                   <p className="text-center font-bold mt-2" style={{ color: '#ef4444', fontSize: 'clamp(12px, 2vw, 16px)' }}>{quickNumber.length === 0 ? 'Voer een nummer in!' : 'Nummer bestaat niet!'}</p>
