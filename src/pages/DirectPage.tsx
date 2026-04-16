@@ -59,6 +59,22 @@ export const DirectPage = () => {
   const { pendingSessions } = useOfflineQueue();
   const [allPendingLogs, setAllPendingLogs] = useState<{ product_id: string; price_at_time: number; count: number }[]>([]);
 
+  // Aggregate all pending offline logs across all sessions
+  useEffect(() => {
+    if (pendingSessions.size === 0) { setAllPendingLogs([]); return; }
+    getPendingLogsBySession().then(map => {
+      const merged = new Map<string, { product_id: string; price_at_time: number; count: number }>();
+      for (const logs of map.values()) {
+        for (const log of logs) {
+          const existing = merged.get(log.product_id);
+          if (existing) existing.count += log.count;
+          else merged.set(log.product_id, { ...log });
+        }
+      }
+      setAllPendingLogs(Array.from(merged.values()));
+    });
+  }, [pendingSessions]);
+
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
 
   const addProduct = useCallback((product: DbProduct) => {
