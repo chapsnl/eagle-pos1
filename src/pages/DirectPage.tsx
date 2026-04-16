@@ -455,7 +455,7 @@ export const DirectPage = () => {
             <NumPad onKey={handleNumberKey} disabled={isSubmitting} />
             <div className="flex gap-3 w-full">
               <button
-                onClick={() => { setShowNumberPopup(false); setShowWarning(false); }}
+                onClick={() => { setShowNumberPopup(false); setShowWarning(false); setPayMode(false); }}
                 className="flex-1 py-4 font-extrabold uppercase text-lg"
                 style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: 6 }}
               >
