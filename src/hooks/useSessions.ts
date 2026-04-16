@@ -84,6 +84,21 @@ export const useUpdateSession = () => {
 export const useActiveSessions = () => {
   const qc = useQueryClient();
 
+  const query = useQuery({
+    queryKey: ['sessions', 'active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id, wardrobe_number, status, total_amount, created_at, locked_by, locked_at, is_event_numbered, nfc_uid')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    staleTime: Infinity,
+    refetchOnWindowFocus: true,
+  });
+
   useEffect(() => {
     const channel = supabase
       .channel('active-sessions-realtime')
@@ -119,10 +134,8 @@ export const useActiveSessions = () => {
     return () => { supabase.removeChannel(channel); };
   }, [qc]);
 
-  // Refetch active sessions when coming back online (after offline queue flush)
   useEffect(() => {
     const handleOnline = () => {
-      // Delay refetch to allow offline queue to flush first
       setTimeout(() => {
         qc.invalidateQueries({ queryKey: ['sessions', 'active'] });
       }, 3000);
@@ -131,20 +144,7 @@ export const useActiveSessions = () => {
     return () => window.removeEventListener('online', handleOnline);
   }, [qc]);
 
-  return useQuery({
-    queryKey: ['sessions', 'active'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sessions')
-        .select('id, wardrobe_number, status, total_amount, created_at, locked_by, locked_at, is_event_numbered, nfc_uid')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-    staleTime: Infinity,
-    refetchOnWindowFocus: true,
-  });
+  return query;
 };
 
 export const useSessionDetail = (sessionId: string | null) => {
