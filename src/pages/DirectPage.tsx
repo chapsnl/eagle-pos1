@@ -182,37 +182,39 @@ export const DirectPage = () => {
 
   const [quickWarning, setQuickWarning] = useState(false);
 
-  const handleQuickNumberKey = useCallback(async (key: string) => {
+  const handleQuickNumberKey = useCallback((key: string) => {
     if (key === 'DEL') { setQuickNumber(''); setQuickWarning(false); return; }
     if (key === 'BACK') { setQuickNumber(prev => prev.slice(0, -1)); setQuickWarning(false); return; }
     if (quickNumber.length < 3) {
-      const newNum = quickNumber + key;
-      setQuickNumber(newNum);
-      if (newNum.length === 3) {
-        // Check if session exists
-        const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
-        const exists = cachedSessions?.some(s => s.wardrobe_number === newNum);
-        if (!exists) {
-          // Also check DB
-          const { data } = await supabase
-            .from('sessions')
-            .select('id')
-            .eq('wardrobe_number', newNum)
-            .eq('status', 'active')
-            .limit(1)
-            .maybeSingle();
-          if (!data) {
-            setQuickWarning(true);
-            return;
-          }
-        }
-        setQuickWarning(false);
-        if (items.length > 0) {
-          submitOrder(newNum, items);
-        } else {
-          setShowQuickNumpad(false);
-        }
+      setQuickNumber(prev => prev + key);
+      setQuickWarning(false);
+    }
+  }, [quickNumber]);
+
+  const handleQuickConfirm = useCallback(async () => {
+    if (quickNumber.length === 0) { setQuickWarning(true); return; }
+    const num = quickNumber;
+    // Check cache first
+    const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
+    const exists = cachedSessions?.some(s => s.wardrobe_number === num);
+    if (!exists) {
+      const { data } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('wardrobe_number', num)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+      if (!data) {
+        setQuickWarning(true);
+        return;
       }
+    }
+    setQuickWarning(false);
+    if (items.length > 0) {
+      submitOrder(num, items);
+    } else {
+      setShowQuickNumpad(false);
     }
   }, [quickNumber, items, submitOrder, qc]);
 
@@ -238,7 +240,7 @@ export const DirectPage = () => {
   }, [numberInput, items, submitOrder]);
 
   const handleNext = useCallback(() => {
-    if (items.length > 0 && quickNumber.length === 3) {
+    if (items.length > 0 && quickNumber.length > 0) {
       // Number already set via quick entry → submit directly
       submitOrder(quickNumber, items);
       return;
@@ -290,8 +292,8 @@ export const DirectPage = () => {
             onClick={() => { setQuickNumber(''); setShowQuickNumpad(true); }}
             className="w-full font-extrabold uppercase flex flex-col items-center justify-center transition-all duration-150 active:brightness-75"
             style={{
-              backgroundColor: quickNumber.length === 3 ? '#00cc13' : 'transparent',
-              color: quickNumber.length === 3 ? '#fff' : '#00cc13',
+              backgroundColor: quickNumber.length > 0 ? '#00cc13' : 'transparent',
+              color: quickNumber.length > 0 ? '#fff' : '#00cc13',
               border: '2px dashed #00cc1360',
               borderRadius: 12,
               padding: 'clamp(8px, 1.2vh, 18px) 4px',
@@ -299,7 +301,7 @@ export const DirectPage = () => {
           >
             <span style={{ fontSize: 'clamp(20px, 3.5vw, 38px)' }}>?</span>
             <span style={{ fontSize: 'clamp(10px, 1.5vw, 16px)', letterSpacing: '0.1em' }}>
-              {quickNumber.length > 0 ? formatWardrobeNumber(quickNumber) : 'NR'}
+              {quickNumber.length > 0 ? quickNumber : 'NR'}
             </span>
           </button>
         </div>
@@ -399,21 +401,30 @@ export const DirectPage = () => {
             <div className="flex items-center justify-center w-full">
               <div className="w-full" style={{ maxWidth: '280px' }}>
                 <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: `3px solid ${quickWarning ? '#ef4444' : '#00cc13'}`, boxShadow: quickWarning ? '0 0 12px #ef444480, 0 0 24px #ef444430' : '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
-                  {formatWardrobeNumber(quickNumber) || <span style={{ color: '#9ca3af' }}>—</span>}
+                  {quickNumber || <span style={{ color: '#9ca3af' }}>—</span>}
                 </div>
                 {quickWarning && (
-                  <p className="text-center font-bold mt-2" style={{ color: '#ef4444', fontSize: 'clamp(12px, 2vw, 16px)' }}>Nummer bestaat niet!</p>
+                  <p className="text-center font-bold mt-2" style={{ color: '#ef4444', fontSize: 'clamp(12px, 2vw, 16px)' }}>{quickNumber.length === 0 ? 'Voer een nummer in!' : 'Nummer bestaat niet!'}</p>
                 )}
               </div>
             </div>
             <NumPad onKey={handleQuickNumberKey} />
-            <button
-              onClick={() => { setShowQuickNumpad(false); setQuickNumber(''); setQuickWarning(false); }}
-              className="w-full max-w-[200px] py-3 font-extrabold uppercase text-sm"
-              style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: 6 }}
-            >
-              CANCEL
-            </button>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => { setShowQuickNumpad(false); setQuickNumber(''); setQuickWarning(false); }}
+                className="flex-1 py-4 font-extrabold uppercase text-lg"
+                style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: 6 }}
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleQuickConfirm}
+                className="flex-1 py-4 font-extrabold uppercase text-lg"
+                style={{ backgroundColor: '#00cc13', color: '#fff', borderRadius: 6 }}
+              >
+                OK
+              </button>
+            </div>
           </div>
         </div>
       )}
