@@ -13,6 +13,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { broadcastOrder, clearOrder } from '@/lib/orderSync';
 import { getDeviceId } from '@/hooks/useDeviceId';
+import { useOfflineQueue } from '@/hooks/useOfflineQueue';
+import { getPendingLogsBySession } from '@/lib/offlineQueue';
 
 interface TestOrderItem {
   product: DbProduct;
@@ -360,13 +362,34 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     })();
   }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession, unlockSession, onNavigateToOpen]);
 
+  // Pending offline logs for this session
+  const { pendingSessions } = useOfflineQueue();
+  const [pendingLogs, setPendingLogs] = useState<{ product_id: string; price_at_time: number; count: number }[]>([]);
+
+  useEffect(() => {
+    if (!sessionId || !pendingSessions.has(sessionId)) { setPendingLogs([]); return; }
+    getPendingLogsBySession().then(map => {
+      setPendingLogs(map.get(sessionId!) ?? []);
+    });
+  }, [sessionId, pendingSessions]);
+
   const popupOrderLines: OrderLine[] = useMemo(() => {
-    return [...liveDbLogs].reverse().map((l) => ({
+    const dbLines: OrderLine[] = [...liveDbLogs].reverse().map((l) => ({
       name: l.product_name,
       qty: l.quantity,
       price: 0,
     }));
-  }, [liveDbLogs]);
+    const offlineLines: OrderLine[] = pendingLogs.map((l) => {
+      const product = products?.find(p => p.id === l.product_id);
+      return {
+        name: product?.full_name ?? 'Onbekend',
+        qty: l.count,
+        price: 0,
+        isPending: true,
+      };
+    });
+    return [...offlineLines, ...dbLines];
+  }, [liveDbLogs, pendingLogs, products]);
 
   const executePayVerwerk = useCallback(async () => {
     if (!sessionId) return;
