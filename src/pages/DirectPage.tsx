@@ -240,7 +240,7 @@ export const DirectPage = () => {
   }, [numberInput, items, submitOrder]);
 
   const handleNext = useCallback(() => {
-    if (items.length > 0 && quickNumber.length === 3) {
+    if (items.length > 0 && quickNumber.length > 0) {
       // Number already set via quick entry → submit directly
       submitOrder(quickNumber, items);
       return;
