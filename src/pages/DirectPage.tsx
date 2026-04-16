@@ -301,7 +301,7 @@ export const DirectPage = () => {
           >
             <span style={{ fontSize: 'clamp(20px, 3.5vw, 38px)' }}>?</span>
             <span style={{ fontSize: 'clamp(10px, 1.5vw, 16px)', letterSpacing: '0.1em' }}>
-              {quickNumber.length > 0 ? formatWardrobeNumber(quickNumber) : 'NR'}
+              {quickNumber.length > 0 ? quickNumber : 'NR'}
             </span>
           </button>
         </div>
