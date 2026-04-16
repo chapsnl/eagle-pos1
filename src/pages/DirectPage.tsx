@@ -260,6 +260,44 @@ export const DirectPage = () => {
           <span className="font-extrabold uppercase" style={{ color: '#00cc13', fontSize: 'clamp(14px, 2vw, 22px)', letterSpacing: '0.1em' }}>DIRECT</span>
         </div>
 
+        {/* Quick Number Entry Button */}
+        <button
+          onClick={() => setShowQuickNumpad(!showQuickNumpad)}
+          className="w-full font-extrabold uppercase flex items-center justify-center transition-all duration-150"
+          style={{
+            backgroundColor: quickNumber.length === 3 ? '#00cc13' : '#1a3a6a',
+            color: '#fff',
+            fontSize: 'clamp(16px, 2.5vw, 28px)',
+            padding: 'clamp(8px, 1.2vh, 16px) 4px',
+            borderBottom: '1px solid #333',
+            letterSpacing: '0.05em',
+          }}
+        >
+          {quickNumber.length > 0 ? formatWardrobeNumber(quickNumber) : 'NR'}
+        </button>
+
+        {/* Quick NumPad inline */}
+        {showQuickNumpad && (
+          <div className="grid grid-cols-3 gap-[1px] px-1 py-1" style={{ borderBottom: '1px solid #333' }}>
+            {['1','2','3','4','5','6','7','8','9','DEL','0','←'].map((key) => (
+              <button
+                key={key}
+                onClick={() => handleQuickNumberKey(key === '←' ? 'BACK' : key)}
+                className="font-extrabold flex items-center justify-center active:opacity-70"
+                style={{
+                  backgroundColor: key === 'DEL' ? '#ef4444' : '#2a2a2a',
+                  color: '#fff',
+                  fontSize: 'clamp(10px, 1.4vw, 16px)',
+                  padding: 'clamp(6px, 1vh, 12px) 0',
+                  borderRadius: 3,
+                }}
+              >
+                {key}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
           {items.length > 0 ? (
             items.map((item) => (
