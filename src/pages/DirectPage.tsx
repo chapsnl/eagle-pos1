@@ -190,9 +190,14 @@ export const DirectPage = () => {
     if (quickNumber.length < 3) {
       const newNum = quickNumber + key;
       setQuickNumber(newNum);
-      // If 3 digits entered AND items present → auto-submit
-      if (newNum.length === 3 && items.length > 0) {
-        submitOrder(newNum, items);
+      if (newNum.length === 3) {
+        if (items.length > 0) {
+          // Number + products ready → auto-submit
+          submitOrder(newNum, items);
+        } else {
+          // Number entered, no products yet → close popup, keep number
+          setShowQuickNumpad(false);
+        }
       }
     }
   }, [quickNumber, items, submitOrder]);
@@ -219,6 +224,11 @@ export const DirectPage = () => {
   }, [numberInput, items, submitOrder]);
 
   const handleNext = useCallback(() => {
+    if (items.length > 0 && quickNumber.length === 3) {
+      // Number already set via quick entry → submit directly
+      submitOrder(quickNumber, items);
+      return;
+    }
     if (items.length > 0) {
       setNumberInput('');
       setShowWarning(false);
@@ -228,7 +238,7 @@ export const DirectPage = () => {
     setItems([]);
     setQuickNumber('');
     setRetourMode(false);
-  }, [items]);
+  }, [items, quickNumber, submitOrder]);
 
   const handlePayButton = useCallback(() => {
     if (items.length === 0) return;
