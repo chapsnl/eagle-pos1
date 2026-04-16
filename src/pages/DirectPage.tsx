@@ -180,23 +180,41 @@ export const DirectPage = () => {
     setItems(newItems);
   }, [retourMode, items, quickNumber, submitOrder]);
 
-  const handleQuickNumberKey = useCallback((key: string) => {
-    if (key === 'DEL') { setQuickNumber(''); return; }
-    if (key === 'BACK') { setQuickNumber(prev => prev.slice(0, -1)); return; }
+  const [quickWarning, setQuickWarning] = useState(false);
+
+  const handleQuickNumberKey = useCallback(async (key: string) => {
+    if (key === 'DEL') { setQuickNumber(''); setQuickWarning(false); return; }
+    if (key === 'BACK') { setQuickNumber(prev => prev.slice(0, -1)); setQuickWarning(false); return; }
     if (quickNumber.length < 3) {
       const newNum = quickNumber + key;
       setQuickNumber(newNum);
       if (newNum.length === 3) {
+        // Check if session exists
+        const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
+        const exists = cachedSessions?.some(s => s.wardrobe_number === newNum);
+        if (!exists) {
+          // Also check DB
+          const { data } = await supabase
+            .from('sessions')
+            .select('id')
+            .eq('wardrobe_number', newNum)
+            .eq('status', 'active')
+            .limit(1)
+            .maybeSingle();
+          if (!data) {
+            setQuickWarning(true);
+            return;
+          }
+        }
+        setQuickWarning(false);
         if (items.length > 0) {
-          // Number + products ready → auto-submit
           submitOrder(newNum, items);
         } else {
-          // Number entered, no products yet → close popup, keep number
           setShowQuickNumpad(false);
         }
       }
     }
-  }, [quickNumber, items, submitOrder]);
+  }, [quickNumber, items, submitOrder, qc]);
 
   const handleNumberKey = useCallback((key: string) => {
     if (key === 'DEL') { setNumberInput(''); return; }
@@ -380,14 +398,17 @@ export const DirectPage = () => {
             <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
             <div className="flex items-center justify-center w-full">
               <div className="w-full" style={{ maxWidth: '280px' }}>
-                <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: '3px solid #00cc13', boxShadow: '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
+                <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: `3px solid ${quickWarning ? '#ef4444' : '#00cc13'}`, boxShadow: quickWarning ? '0 0 12px #ef444480, 0 0 24px #ef444430' : '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
                   {formatWardrobeNumber(quickNumber) || <span style={{ color: '#9ca3af' }}>—</span>}
                 </div>
+                {quickWarning && (
+                  <p className="text-center font-bold mt-2" style={{ color: '#ef4444', fontSize: 'clamp(12px, 2vw, 16px)' }}>Nummer bestaat niet!</p>
+                )}
               </div>
             </div>
             <NumPad onKey={handleQuickNumberKey} />
             <button
-              onClick={() => { setShowQuickNumpad(false); setQuickNumber(''); }}
+              onClick={() => { setShowQuickNumpad(false); setQuickNumber(''); setQuickWarning(false); }}
               className="w-full max-w-[200px] py-3 font-extrabold uppercase text-sm"
               style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: 6 }}
             >
