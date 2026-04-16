@@ -142,8 +142,13 @@ export const DirectPage = () => {
         ]);
 
         const newTotal = Number(session.total_amount ?? 0) + total;
+        const updateData: any = { id: session.id, total_amount: newTotal };
+        if (shouldPay) {
+          updateData.status = 'paid';
+          updateData.actual_paid_amount = newTotal;
+        }
         await Promise.all([
-          updateSession.mutateAsync({ id: session.id, total_amount: newTotal }),
+          updateSession.mutateAsync(updateData),
           supabase.from('sessions').update({ locked_by: null, locked_at: null } as any).eq('id', session.id),
         ]);
       }
