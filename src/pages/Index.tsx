@@ -207,9 +207,8 @@ const Index = () => {
     // Capture everything needed for the writes BEFORE clearing state
     const sessionId = barSessionId;
     const newTotal = barSessionTotal + total;
-    const logs = items.flatMap((item) =>
+    const logsData = items.flatMap((item) =>
       Array.from({ length: item.quantity }, () => ({
-        session_id: sessionId,
         product_id: item.product.id,
         price_at_time: item.product.price,
       }))
@@ -238,16 +237,24 @@ const Index = () => {
     lastLookupRef.current = null;
     clearOrder();
 
-    // Write to Supabase in background — staff can already serve next customer
-    (async () => {
-      try {
-        await addDrinkLogs.mutateAsync(logs);
-        await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
-        await unlockSession(sessionId);
-      } catch {
-        toast.error('Opslaan mislukt — probeer opnieuw');
-      }
-    })();
+    if (!isOnline()) {
+      // OFFLINE: queue all writes
+      await enqueue({ type: 'insert_drink_logs', payload: { session_id: sessionId, logs: logsData } });
+      await enqueue({ type: 'update_session', payload: { id: sessionId, total_amount: newTotal } });
+      await enqueue({ type: 'unlock_session', payload: { id: sessionId } });
+    } else {
+      // ONLINE: Write to Supabase in background
+      (async () => {
+        try {
+          const logs = logsData.map(l => ({ ...l, session_id: sessionId }));
+          await addDrinkLogs.mutateAsync(logs);
+          await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
+          await unlockSession(sessionId);
+        } catch {
+          toast.error('Opslaan mislukt — probeer opnieuw');
+        }
+      })();
+    }
   }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, unlockSession]);
 
   const handleBarPayVerwerk = useCallback(async () => {
