@@ -1,29 +1,28 @@
 import { useEffect, useState } from 'react';
-import { pendingCount, isOnline, scheduleFlush, getPendingSessionIds } from '@/lib/offlineQueue';
+import { pendingCount, isOnline, scheduleFlush } from '@/lib/offlineQueue';
 
 /**
  * Hook to monitor offline queue status.
- * Returns pending count, online status, and set of session IDs with pending writes.
+ * Returns pending count and online status for optional UI indicators.
  */
 export function useOfflineQueue() {
   const [pending, setPending] = useState(0);
   const [online, setOnline] = useState(isOnline());
-  const [pendingSessions, setPendingSessions] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const update = async () => {
+    const updatePending = async () => {
       setPending(await pendingCount());
-      setPendingSessions(await getPendingSessionIds());
     };
 
-    const handleOnline = () => { setOnline(true); update(); };
-    const handleOffline = () => { setOnline(false); update(); };
+    const handleOnline = () => { setOnline(true); updatePending(); };
+    const handleOffline = () => { setOnline(false); updatePending(); };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    const interval = setInterval(update, 3000);
-    update();
+    // Poll pending count every 3s
+    const interval = setInterval(updatePending, 3000);
+    updatePending();
 
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -32,5 +31,5 @@ export function useOfflineQueue() {
     };
   }, []);
 
-  return { pending, online, pendingSessions, flush: () => scheduleFlush(0) };
+  return { pending, online, flush: () => scheduleFlush(0) };
 }

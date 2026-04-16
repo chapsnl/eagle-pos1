@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
 import { NumPad } from '@/components/pos/NumPad';
@@ -6,8 +6,7 @@ import { useCreateSession, useAddDrinkLogs, useUpdateSession } from '@/hooks/use
 import { supabase } from '@/integrations/supabase/client';
 import { getDeviceId } from '@/hooks/useDeviceId';
 import { useQueryClient } from '@tanstack/react-query';
-import { enqueue, resolveSessionId, isOnline, getPendingLogsBySession } from '@/lib/offlineQueue';
-import { useOfflineQueue } from '@/hooks/useOfflineQueue';
+import { enqueue, resolveSessionId, isOnline } from '@/lib/offlineQueue';
 
 interface DirectOrderItem {
   product: DbProduct;
@@ -56,24 +55,6 @@ export const DirectPage = () => {
   const addDrinkLogs = useAddDrinkLogs();
   const updateSession = useUpdateSession();
   const deviceId = useRef(getDeviceId()).current;
-  const { pendingSessions } = useOfflineQueue();
-  const [allPendingLogs, setAllPendingLogs] = useState<{ product_id: string; price_at_time: number; count: number }[]>([]);
-
-  // Aggregate all pending offline logs across all sessions
-  useEffect(() => {
-    if (pendingSessions.size === 0) { setAllPendingLogs([]); return; }
-    getPendingLogsBySession().then(map => {
-      const merged = new Map<string, { product_id: string; price_at_time: number; count: number }>();
-      for (const logs of map.values()) {
-        for (const log of logs) {
-          const existing = merged.get(log.product_id);
-          if (existing) existing.count += log.count;
-          else merged.set(log.product_id, { ...log });
-        }
-      }
-      setAllPendingLogs(Array.from(merged.values()));
-    });
-  }, [pendingSessions]);
 
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
 
@@ -252,32 +233,13 @@ export const DirectPage = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
-          {items.length > 0 && (
+          {items.length > 0 ? (
             items.map((item) => (
               <div key={item.product.id} style={{ color: '#00cc13', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
                 {item.quantity} x {item.product.full_name}
               </div>
             ))
-          )}
-
-          {/* Wacht op sync section (pending offline items) */}
-          {allPendingLogs.length > 0 && (
-            <>
-              <div className="text-center py-1" style={{ borderBottom: '1px solid #b45309', marginTop: items.length > 0 ? '8px' : '0' }}>
-                <span className="font-extrabold uppercase" style={{ color: '#f59e0b', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>⏳ Wacht op sync</span>
-              </div>
-              {allPendingLogs.map((log) => {
-                const product = products?.find(p => p.id === log.product_id);
-                return (
-                  <div key={`pending-${log.product_id}`} style={{ color: '#f59e0b', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
-                    ⏳ {log.count} x {product?.full_name ?? 'Onbekend'}
-                  </div>
-                );
-              })}
-            </>
-          )}
-
-          {items.length === 0 && allPendingLogs.length === 0 && (
+          ) : (
             <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1.2vw, 14px)' }}>Geen producten</div>
           )}
         </div>

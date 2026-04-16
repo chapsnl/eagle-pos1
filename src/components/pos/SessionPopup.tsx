@@ -6,7 +6,6 @@ export interface OrderLine {
   name: string;
   qty: number;
   price: number;
-  isPending?: boolean;
 }
 
 export interface SessionPopupAction {
@@ -99,17 +98,16 @@ const SessionPopup = ({
                     key={idx}
                     className="flex items-center justify-between px-3 py-2 font-bold"
                     style={{
-                      backgroundColor: line.isPending ? '#3d2800' : '#1a1a1a',
+                      backgroundColor: '#1a1a1a',
                       borderRadius: '8px',
                       fontSize: showPrices ? 'clamp(0.75rem, 1.5vw, 0.95rem)' : 'clamp(0.9rem, 2vw, 1.3rem)',
-                      borderLeft: line.isPending ? '3px solid #f59e0b' : 'none',
                     }}
                   >
-                    <span style={{ color: line.isPending ? '#f59e0b' : '#e5e5e5' }}>
-                      {line.isPending && '⏳ '}{line.qty}× {line.name}
+                    <span style={{ color: '#e5e5e5' }}>
+                      {line.qty}× {line.name}
                     </span>
                     {showPrices && (
-                      <span style={{ color: line.isPending ? '#f59e0b' : '#888' }}>€{(line.qty * line.price).toFixed(2)}</span>
+                      <span style={{ color: '#888' }}>€{(line.qty * line.price).toFixed(2)}</span>
                     )}
                   </div>
                 ))}

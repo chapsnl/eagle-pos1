@@ -67,47 +67,6 @@ export function resolveSessionId(idOrTemp: string): string {
   return tempIdMap.get(idOrTemp) ?? idOrTemp;
 }
 
-/** Get all pending drink logs grouped by session ID */
-export async function getPendingLogsBySession(): Promise<Map<string, { product_id: string; price_at_time: number; count: number }[]>> {
-  const allKeys = await keys();
-  const queueKeys = allKeys.filter(k => String(k).startsWith(QUEUE_PREFIX)).map(String);
-  const result = new Map<string, { product_id: string; price_at_time: number; count: number }[]>();
-
-  for (const key of queueKeys) {
-    const entry = await get<QueueEntry>(key);
-    if (!entry || entry.action.type !== 'insert_drink_logs') continue;
-    const sid = entry.action.payload.session_id;
-    const logs = entry.action.payload.logs;
-    const existing = result.get(sid) ?? [];
-    for (const log of logs) {
-      const found = existing.find(e => e.product_id === log.product_id);
-      if (found) found.count++;
-      else existing.push({ product_id: log.product_id, price_at_time: log.price_at_time, count: 1 });
-    }
-    result.set(sid, existing);
-  }
-  return result;
-}
-
-/** Get set of session IDs that have any pending queue entries */
-export async function getPendingSessionIds(): Promise<Set<string>> {
-  const allKeys = await keys();
-  const queueKeys = allKeys.filter(k => String(k).startsWith(QUEUE_PREFIX)).map(String);
-  const ids = new Set<string>();
-
-  for (const key of queueKeys) {
-    const entry = await get<QueueEntry>(key);
-    if (!entry) continue;
-    const { action } = entry;
-    if (action.type === 'create_session') ids.add(action.payload.tempId);
-    else if (action.type === 'insert_drink_logs') ids.add(action.payload.session_id);
-    else if (action.type === 'update_session') ids.add(action.payload.id);
-    else if (action.type === 'lock_session') ids.add(action.payload.id);
-    else if (action.type === 'unlock_session') ids.add(action.payload.id);
-  }
-  return ids;
-}
-
 // ── Flush engine ───────────────────────────────────────────────────
 
 async function flush(): Promise<void> {
