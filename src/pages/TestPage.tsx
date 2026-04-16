@@ -13,6 +13,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { broadcastOrder, clearOrder } from '@/lib/orderSync';
 import { getDeviceId } from '@/hooks/useDeviceId';
+import { useOfflineQueue } from '@/hooks/useOfflineQueue';
+import { getPendingLogsBySession } from '@/lib/offlineQueue';
 
 interface TestOrderItem {
   product: DbProduct;
