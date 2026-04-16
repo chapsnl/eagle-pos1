@@ -1,45 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
+import { useClosedSessions } from '@/hooks/useClosedSessions';
 import { formatWardrobeNumber } from '@/lib/utils';
-
-const useClosedSessions = () => {
-  const qc = useQueryClient();
-
-  // Realtime: invalidate on drink_logs or sessions changes
-  useEffect(() => {
-    const channel = supabase
-      .channel('closed-sessions-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'drink_logs' },
-        () => { qc.invalidateQueries({ queryKey: ['closed-sessions'] }); }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'sessions' },
-        () => { qc.invalidateQueries({ queryKey: ['closed-sessions'] }); }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [qc]);
-
-  return useQuery({
-    queryKey: ['closed-sessions'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sessions')
-        .select('*, drink_logs(*, products(*))')
-        .in('status', ['paid', 'archived'])
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
-    staleTime: Infinity,
-    refetchOnWindowFocus: true,
-  });
-};
 
 const ClosedPage = () => {
   const { data: sessions, isLoading } = useClosedSessions();

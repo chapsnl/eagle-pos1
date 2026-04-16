@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { CLOSED_SESSIONS_QUERY_KEY } from './useClosedSessions';
 
 export const useCreateSession = () => {
   const qc = useQueryClient();
@@ -77,7 +78,11 @@ export const useUpdateSession = () => {
         .eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sessions'] }),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ['sessions'] });
+      qc.invalidateQueries({ queryKey: CLOSED_SESSIONS_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: ['session-detail', variables.id] });
+    },
   });
 };
 

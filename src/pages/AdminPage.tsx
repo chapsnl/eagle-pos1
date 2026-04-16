@@ -1,31 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useActiveSessions, useUpdateSession } from '@/hooks/useSessions';
+import { useClosedSessions } from '@/hooks/useClosedSessions';
 import { NumPad } from '@/components/pos/NumPad';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUpdateStaffPin } from '@/hooks/useStaffPin';
 import { formatWardrobeNumber } from '@/lib/utils';
-
-
-
-const useClosedSessions = () =>
-  useQuery({
-    queryKey: ['closed-sessions'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sessions')
-        .select('*, drink_logs(*, products(*))')
-        .in('status', ['paid', 'archived'])
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data ?? [];
-    },
-    staleTime: Infinity,
-    refetchOnWindowFocus: true,
-  });
 
 const sortByWardrobe = (list: any[]) =>
   [...list]
