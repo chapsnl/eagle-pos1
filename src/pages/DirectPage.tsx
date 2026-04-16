@@ -292,8 +292,8 @@ export const DirectPage = () => {
             onClick={() => { setQuickNumber(''); setShowQuickNumpad(true); }}
             className="w-full font-extrabold uppercase flex flex-col items-center justify-center transition-all duration-150 active:brightness-75"
             style={{
-              backgroundColor: quickNumber.length === 3 ? '#00cc13' : 'transparent',
-              color: quickNumber.length === 3 ? '#fff' : '#00cc13',
+              backgroundColor: quickNumber.length > 0 ? '#00cc13' : 'transparent',
+              color: quickNumber.length > 0 ? '#fff' : '#00cc13',
               border: '2px dashed #00cc1360',
               borderRadius: 12,
               padding: 'clamp(8px, 1.2vh, 18px) 4px',
