@@ -558,7 +558,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                     boxShadow: bulkActiveField === 'start' ? '0 0 12px #00cc1340' : 'none',
                   }}
                 >
-                  {bulkStart || <span style={{ color: '#555' }}>—</span>}
+                  {formatWardrobeNumber(bulkStart) || <span style={{ color: '#555' }}>—</span>}
                 </div>
               </button>
               <button
@@ -576,7 +576,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                     boxShadow: bulkActiveField === 'end' ? '0 0 12px #00cc1340' : 'none',
                   }}
                 >
-                  {bulkEnd || <span style={{ color: '#555' }}>—</span>}
+                  {formatWardrobeNumber(bulkEnd) || <span style={{ color: '#555' }}>—</span>}
                 </div>
               </button>
             </div>
@@ -675,7 +675,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                       boxShadow: '0 0 12px #00cc1340',
                     }}
                   >
-                    {deleteNumber || <span style={{ color: '#555' }}>—</span>}
+                    {formatWardrobeNumber(deleteNumber) || <span style={{ color: '#555' }}>—</span>}
                   </div>
                 </div>
                 {deleteError && (
@@ -796,7 +796,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                         boxShadow: bulkDeleteActiveField === 'start' ? '0 0 12px #00cc1340' : 'none',
                       }}
                     >
-                      {bulkDeleteStart || <span style={{ color: '#555' }}>—</span>}
+                      {formatWardrobeNumber(bulkDeleteStart) || <span style={{ color: '#555' }}>—</span>}
                     </div>
                   </button>
                   <button
@@ -814,7 +814,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                         boxShadow: bulkDeleteActiveField === 'end' ? '0 0 12px #00cc1340' : 'none',
                       }}
                     >
-                      {bulkDeleteEnd || <span style={{ color: '#555' }}>—</span>}
+                      {formatWardrobeNumber(bulkDeleteEnd) || <span style={{ color: '#555' }}>—</span>}
                     </div>
                   </button>
                 </div>
