@@ -1,4 +1,5 @@
 import { useActiveSessions } from '@/hooks/useSessions';
+import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 
 interface OpenPageProps {
   onNavigateToGuest?: (wardrobeNumber: string, sessionId: string, totalAmount: number) => void;
