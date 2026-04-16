@@ -327,8 +327,8 @@ export const DirectPage = () => {
             <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
             <div className="flex items-center justify-center w-full">
               <div className="w-full" style={{ maxWidth: '280px' }}>
-                <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: `3px solid ${showWarning ? '#ef4444' : '#00cc13'}`, boxShadow: showWarning ? '0 0 12px #ef444480, 0 0 24px #ef444430' : '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
-                  {numberInput || <span style={{ color: '#9ca3af' }}>—</span>}
+                 <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: `3px solid ${showWarning ? '#ef4444' : '#00cc13'}`, boxShadow: showWarning ? '0 0 12px #ef444480, 0 0 24px #ef444430' : '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
+                  {formatWardrobeNumber(numberInput) || <span style={{ color: '#9ca3af' }}>—</span>}
                 </div>
                 {showWarning && (
                   <p className="text-center font-bold mt-2" style={{ color: '#ef4444', fontSize: 'clamp(12px, 2vw, 16px)' }}>Voer een gastnummer in!</p>

@@ -107,7 +107,7 @@ const ClosedPage = () => {
                   boxShadow: '0 0 12px #7f1d1d80',
                 }}
               >
-                <span style={{ fontSize: 'clamp(0.9rem, 3vw, 2.5rem)', lineHeight: 1 }}>{session.wardrobe_number?.replace(/\D/g, '')}</span>
+                <span style={{ fontSize: 'clamp(0.9rem, 3vw, 2.5rem)', lineHeight: 1 }}>{formatWardrobeNumber(session.wardrobe_number)}</span>
               </button>
             ))}
           </div>
@@ -117,7 +117,7 @@ const ClosedPage = () => {
       <SessionPopup
         open={!!selectedSession}
         onClose={() => setSelectedSessionId(null)}
-        title={selectedSession?.wardrobe_number ?? ''}
+        title={formatWardrobeNumber(selectedSession?.wardrobe_number)}
         subtitle={`Status: ${selectedSession?.status ?? ''}`}
         orderLines={selectedSession ? getOrderLines(selectedSession) : []}
         showTotal={true}
