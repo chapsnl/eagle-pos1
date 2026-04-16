@@ -22,6 +22,7 @@ import { broadcastOrder, clearOrder, SyncOrderItem } from '@/lib/orderSync';
 import { supabase } from '@/integrations/supabase/client';
 import { getDeviceId } from '@/hooks/useDeviceId';
 import { enqueue, isOnline } from '@/lib/offlineQueue';
+import { formatWardrobeNumber } from '@/lib/utils';
 
 export interface DbOrderItem {
   product: DbProduct;
@@ -329,7 +330,7 @@ const Index = () => {
       open={showBarPayDialog}
       onClose={() => setShowBarPayDialog(false)}
       title="Bestelling"
-      subtitle={barNumber || ''}
+      subtitle={formatWardrobeNumber(barNumber)}
       orderLines={items.map((i) => ({ name: i.product.full_name, qty: i.quantity, price: 0 }))}
       showTotal={false}
       showItemCount
@@ -406,7 +407,7 @@ const Index = () => {
               <div className="flex items-center justify-center w-full">
                 <div className="w-full" style={{ maxWidth: '280px' }}>
                   <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: '3px solid #00cc13', boxShadow: '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
-                    {barNumber || <span style={{ color: '#9ca3af' }}>—</span>}
+                    {formatWardrobeNumber(barNumber) || <span style={{ color: '#9ca3af' }}>—</span>}
                   </div>
                 </div>
               </div>

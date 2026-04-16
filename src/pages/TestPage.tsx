@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { broadcastOrder, clearOrder } from '@/lib/orderSync';
+import { formatWardrobeNumber } from '@/lib/utils';
 import { getDeviceId } from '@/hooks/useDeviceId';
 
 interface TestOrderItem {
@@ -488,7 +489,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       open={showBonDialog}
       onClose={() => setShowBonDialog(false)}
       title="Bestelling"
-      subtitle={coatNumber || ''}
+      subtitle={formatWardrobeNumber(coatNumber)}
       orderLines={popupOrderLines}
       showTotal={false}
       showItemCount
@@ -504,7 +505,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       open={showPayDialog}
       onClose={() => setShowPayDialog(false)}
       title="Bestelling"
-      subtitle={coatNumber || ''}
+      subtitle={formatWardrobeNumber(coatNumber)}
       orderLines={popupOrderLines}
       showTotal={false}
       showItemCount
@@ -542,7 +543,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     <SessionPopup
       open={showClosedBlockDialog}
       onClose={handleClosedBlockDismiss}
-      title={`Nummer ${pendingWardrobe ?? ''} Geblokkeerd`}
+      title={`Nummer ${formatWardrobeNumber(pendingWardrobe)} Geblokkeerd`}
       subtitle="Dit nummer is al afgerekend en gesloten. Vraag een manager om deze te heropenen via het Admin paneel."
       subtitleSize="clamp(0.85rem, 2vw, 1.15rem)"
       orderLines={[]}
@@ -639,7 +640,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
           <div className="flex items-center justify-center w-full">
             <div className="w-full" style={{ maxWidth: '280px' }}>
               <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: '3px solid #00cc13', boxShadow: '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
-                {coatNumber || <span style={{ color: '#9ca3af' }}>—</span>}
+                {formatWardrobeNumber(coatNumber) || <span style={{ color: '#9ca3af' }}>—</span>}
               </div>
             </div>
           </div>
@@ -669,7 +670,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       <div className="flex flex-col h-full overflow-y-auto overflow-x-hidden" style={{ width: '20%', backgroundColor: retourMode ? '#1a0a0a' : '#121212', borderRight: `1px solid ${retourMode ? '#ef4444' : '#333'}`, transition: 'background-color 0.3s ease' }}>
         <div className="text-center py-3 border-b" style={{ borderColor: '#333' }}>
           <span className="font-extrabold" style={{ color: '#00ff00', fontSize: 'clamp(32px, 6vw, 56px)' }}>
-            {coatNumber || ''}
+            {formatWardrobeNumber(coatNumber) || ''}
           </span>
         </div>
 
