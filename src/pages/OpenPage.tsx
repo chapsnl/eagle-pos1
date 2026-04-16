@@ -1,4 +1,5 @@
 import { useActiveSessions } from '@/hooks/useSessions';
+import { formatWardrobeNumber } from '@/lib/utils';
 
 interface OpenPageProps {
   onNavigateToGuest?: (wardrobeNumber: string, sessionId: string, totalAmount: number) => void;
@@ -63,7 +64,7 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
                     boxShadow: hasItems ? '0 0 12px #00cc1380' : 'none',
                   }}
                 >
-                  <span style={{ fontSize: 'clamp(0.9rem, 3vw, 2.5rem)', lineHeight: 1 }}>{num}</span>
+                  <span style={{ fontSize: 'clamp(0.9rem, 3vw, 2.5rem)', lineHeight: 1 }}>{formatWardrobeNumber(session.wardrobe_number)}</span>
                 </button>
               );
             })}
