@@ -261,24 +261,24 @@ export const DirectPage = () => {
         </div>
 
         {/* Quick Number Entry Button */}
-        <button
-          onClick={() => { setQuickNumber(''); setShowQuickNumpad(true); }}
-          className="w-full font-extrabold uppercase flex flex-col items-center justify-center transition-all duration-150"
-          style={{
-            backgroundColor: quickNumber.length === 3 ? '#00cc13' : 'transparent',
-            color: quickNumber.length === 3 ? '#fff' : '#00cc13',
-            fontSize: 'clamp(16px, 2.5vw, 28px)',
-            padding: 'clamp(10px, 1.5vh, 20px) 4px',
-            border: '2px dashed #00cc1380',
-            borderLeft: 'none',
-            borderRight: 'none',
-          }}
-        >
-          <span style={{ fontSize: 'clamp(24px, 4vw, 44px)' }}>?</span>
-          <span style={{ fontSize: 'clamp(12px, 1.8vw, 20px)', letterSpacing: '0.1em' }}>
-            {quickNumber.length > 0 ? formatWardrobeNumber(quickNumber) : 'NR'}
-          </span>
-        </button>
+        <div className="flex items-center justify-center" style={{ padding: 'clamp(6px, 1vh, 14px) clamp(4px, 0.5vw, 10px)' }}>
+          <button
+            onClick={() => { setQuickNumber(''); setShowQuickNumpad(true); }}
+            className="w-full font-extrabold uppercase flex flex-col items-center justify-center transition-all duration-150 active:brightness-75"
+            style={{
+              backgroundColor: quickNumber.length === 3 ? '#00cc13' : 'transparent',
+              color: quickNumber.length === 3 ? '#fff' : '#00cc13',
+              border: '2px dashed #00cc1360',
+              borderRadius: 12,
+              padding: 'clamp(8px, 1.2vh, 18px) 4px',
+            }}
+          >
+            <span style={{ fontSize: 'clamp(20px, 3.5vw, 38px)' }}>?</span>
+            <span style={{ fontSize: 'clamp(10px, 1.5vw, 16px)', letterSpacing: '0.1em' }}>
+              {quickNumber.length > 0 ? formatWardrobeNumber(quickNumber) : 'NR'}
+            </span>
+          </button>
+        </div>
 
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
           {items.length > 0 ? (
