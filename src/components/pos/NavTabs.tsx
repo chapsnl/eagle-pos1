@@ -1,4 +1,5 @@
 import { AppView } from '@/types/pos';
+import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 
 interface NavTabsProps {
   activeView: AppView;
@@ -16,8 +17,10 @@ const tabs: { view: AppView; label: string }[] = [
 ];
 
 export const NavTabs = ({ activeView, onViewChange, itemCount = 0 }: NavTabsProps) => {
+  const { pending, online } = useOfflineQueue();
+
   return (
-    <div className="flex items-center w-full">
+    <div className="flex items-center w-full relative">
       {tabs.map(({ view, label }) => (
         <button
           key={view}
@@ -35,6 +38,26 @@ export const NavTabs = ({ activeView, onViewChange, itemCount = 0 }: NavTabsProp
           {label}
         </button>
       ))}
+      {!online && (
+        <div
+          style={{
+            position: 'absolute',
+            right: 8,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            backgroundColor: '#ef4444',
+            color: '#fff',
+            fontSize: '10px',
+            fontWeight: 800,
+            padding: '2px 8px',
+            borderRadius: 4,
+            animation: 'pulse 2s ease-in-out infinite',
+            zIndex: 10,
+          }}
+        >
+          OFFLINE{pending > 0 ? ` (${pending})` : ''}
+        </div>
+      )}
     </div>
   );
 };
