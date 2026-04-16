@@ -7,6 +7,7 @@ import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useUpdateStaffPin } from '@/hooks/useStaffPin';
+import { formatWardrobeNumber } from '@/lib/utils';
 
 
 
@@ -321,7 +322,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                       }}
                     >
                       <span style={{ fontSize: 'clamp(1rem, 3vw, 2rem)', lineHeight: 1 }}>
-                        {s.wardrobe_number?.replace(/\D/g, '')}
+                        {formatWardrobeNumber(s.wardrobe_number)}
                       </span>
                     </button>
                   );
@@ -360,7 +361,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                     }}
                   >
                     <span style={{ fontSize: 'clamp(1rem, 3vw, 2rem)', lineHeight: 1 }}>
-                      {s.wardrobe_number?.replace(/\D/g, '')}
+                      {formatWardrobeNumber(s.wardrobe_number)}
                     </span>
                   </button>
                 ))}
@@ -413,7 +414,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
       <SessionPopup
         open={!!selectedSession}
         onClose={() => setSelectedSession(null)}
-        title={selectedSession?.wardrobe_number ?? ''}
+        title={formatWardrobeNumber(selectedSession?.wardrobe_number)}
         subtitle={selectedType === 'active' ? 'Actieve sessie' : `Status: ${selectedSession?.status ?? ''}`}
         orderLines={selectedSession ? getOrderLines(selectedSession) : []}
         showTotal={true}
@@ -497,7 +498,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               Sessie Heropenen
             </DialogTitle>
             <p className="font-bold" style={{ color: '#888', fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)' }}>
-              Hoe wil je sessie {reopenSession?.wardrobe_number?.replace(/\D/g, '') ?? ''} heropenen?
+              Hoe wil je sessie {formatWardrobeNumber(reopenSession?.wardrobe_number)} heropenen?
             </p>
           </DialogHeader>
           <div className="flex flex-col gap-3 mt-2">
@@ -610,7 +611,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                     .in('wardrobe_number', rangeNumbers);
                   if (checkErr) throw checkErr;
                   if (existing && existing.length > 0) {
-                    const nums = existing.map(s => s.wardrobe_number).join(', ');
+                    const nums = existing.map(s => formatWardrobeNumber(s.wardrobe_number)).join(', ');
                     setBulkError(`Let op: Nummer(s) ${nums} bestaan al. Doe eerst een 'Close Shift' of kies een andere reeks.`);
                     setBulkLoading(false);
                     return;
@@ -708,7 +709,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
             ) : (
               <>
                 <p className="text-center font-bold text-lg" style={{ color: '#fff' }}>
-                  Weet je het zeker? Nummer <span style={{ color: '#ef4444' }}>{deleteNumber}</span> wordt definitief verwijderd.
+                  Weet je het zeker? Nummer <span style={{ color: '#ef4444' }}>{formatWardrobeNumber(deleteNumber)}</span> wordt definitief verwijderd.
                 </p>
                 {deleteError && (
                   <p className="text-sm text-center font-bold" style={{ color: '#ef4444' }}>{deleteError}</p>
@@ -734,7 +735,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                         .eq('status', 'active')
                         .maybeSingle();
                       if (findErr) throw findErr;
-                      if (!session) { setDeleteError(`Geen actieve sessie met nummer ${num}`); setDeleteLoading(false); return; }
+                      if (!session) { setDeleteError(`Geen actieve sessie met nummer ${formatWardrobeNumber(num)}`); setDeleteLoading(false); return; }
                       await supabase.from('drink_logs').delete().eq('session_id', session.id);
                       const { error: delErr } = await supabase.from('sessions').delete().eq('id', session.id);
                       if (delErr) throw delErr;
@@ -744,7 +745,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                       setDeleteConfirmStep(false);
                       setDeleteNumber('');
                       const { toast } = await import('sonner');
-                      toast.success(`Nummer ${num} succesvol verwijderd`);
+                      toast.success(`Nummer ${formatWardrobeNumber(num)} succesvol verwijderd`);
                     } catch (err: any) {
                       setDeleteError(err.message ?? 'Er ging iets mis');
                     } finally {
@@ -884,7 +885,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
             ) : (
               <>
                 <p className="text-center font-bold text-lg" style={{ color: '#fff' }}>
-                  Weet je het zeker? Nummers <span style={{ color: '#ef4444' }}>{bulkDeleteStart}</span> t/m <span style={{ color: '#ef4444' }}>{bulkDeleteEnd}</span> worden definitief verwijderd.
+                  Weet je het zeker? Nummers <span style={{ color: '#ef4444' }}>{formatWardrobeNumber(bulkDeleteStart)}</span> t/m <span style={{ color: '#ef4444' }}>{formatWardrobeNumber(bulkDeleteEnd)}</span> worden definitief verwijderd.
                 </p>
                 {bulkDeleteError && (
                   <p className="text-sm text-center font-bold" style={{ color: '#ef4444' }}>{bulkDeleteError}</p>
@@ -928,7 +929,7 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
                       setBulkDeleteOpen(false);
                       setBulkDeleteConfirmStep(false);
                       const { toast } = await import('sonner');
-                      toast.success(`Nummers ${bulkDeleteStart} t/m ${bulkDeleteEnd} verwijderd (${sessions.length} sessies)`);
+                      toast.success(`Nummers ${formatWardrobeNumber(bulkDeleteStart)} t/m ${formatWardrobeNumber(bulkDeleteEnd)} verwijderd (${sessions.length} sessies)`);
                     } catch (err: any) {
                       setBulkDeleteError(err.message ?? 'Er ging iets mis');
                     } finally {
