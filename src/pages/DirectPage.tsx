@@ -367,7 +367,31 @@ export const DirectPage = () => {
         )}
       </div>
 
-      {/* Number entry popup overlay */}
+      {/* Quick NR popup with dimmed background */}
+      {showQuickNumpad && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+          <div className="flex flex-col items-center w-full max-w-sm mx-auto px-6 gap-6">
+            <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center" style={{ color: '#00cc13' }}>GAST NUMMER</h2>
+            <div className="flex items-center justify-center w-full">
+              <div className="w-full" style={{ maxWidth: '280px' }}>
+                <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: '3px solid #00cc13', boxShadow: '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
+                  {formatWardrobeNumber(quickNumber) || <span style={{ color: '#9ca3af' }}>—</span>}
+                </div>
+              </div>
+            </div>
+            <NumPad onKey={handleQuickNumberKey} />
+            <button
+              onClick={() => { setShowQuickNumpad(false); setQuickNumber(''); }}
+              className="w-full max-w-[200px] py-3 font-extrabold uppercase text-sm"
+              style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: 6 }}
+            >
+              CANCEL
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Number entry popup overlay (from NUMBER grid button) */}
       {showNumberPopup && (
         <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
           <div className="flex flex-col items-center w-full max-w-sm mx-auto px-6 gap-6">
