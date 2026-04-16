@@ -64,7 +64,7 @@ export const DirectPage = () => {
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
 
   // Extracted submit logic for reuse
-  const submitOrder = useCallback(async (wardrobeNum: string, orderItems: DirectOrderItem[]) => {
+  const submitOrder = useCallback(async (wardrobeNum: string, orderItems: DirectOrderItem[], shouldPay = false) => {
     if (submitLockRef.current) return;
     submitLockRef.current = true;
     setIsSubmitting(true);
