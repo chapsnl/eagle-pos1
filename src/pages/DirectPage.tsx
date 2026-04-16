@@ -401,21 +401,30 @@ export const DirectPage = () => {
             <div className="flex items-center justify-center w-full">
               <div className="w-full" style={{ maxWidth: '280px' }}>
                 <div className="w-full font-extrabold text-center cursor-pointer flex items-center justify-center" style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: `3px solid ${quickWarning ? '#ef4444' : '#00cc13'}`, boxShadow: quickWarning ? '0 0 12px #ef444480, 0 0 24px #ef444430' : '0 0 12px #00cc1380, 0 0 24px #00cc1330', borderRadius: '12px' }}>
-                  {formatWardrobeNumber(quickNumber) || <span style={{ color: '#9ca3af' }}>—</span>}
+                  {quickNumber || <span style={{ color: '#9ca3af' }}>—</span>}
                 </div>
                 {quickWarning && (
-                  <p className="text-center font-bold mt-2" style={{ color: '#ef4444', fontSize: 'clamp(12px, 2vw, 16px)' }}>Nummer bestaat niet!</p>
+                  <p className="text-center font-bold mt-2" style={{ color: '#ef4444', fontSize: 'clamp(12px, 2vw, 16px)' }}>{quickNumber.length === 0 ? 'Voer een nummer in!' : 'Nummer bestaat niet!'}</p>
                 )}
               </div>
             </div>
             <NumPad onKey={handleQuickNumberKey} />
-            <button
-              onClick={() => { setShowQuickNumpad(false); setQuickNumber(''); setQuickWarning(false); }}
-              className="w-full max-w-[200px] py-3 font-extrabold uppercase text-sm"
-              style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: 6 }}
-            >
-              CANCEL
-            </button>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => { setShowQuickNumpad(false); setQuickNumber(''); setQuickWarning(false); }}
+                className="flex-1 py-4 font-extrabold uppercase text-lg"
+                style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: 6 }}
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleQuickConfirm}
+                className="flex-1 py-4 font-extrabold uppercase text-lg"
+                style={{ backgroundColor: '#00cc13', color: '#fff', borderRadius: 6 }}
+              >
+                OK
+              </button>
+            </div>
           </div>
         </div>
       )}
