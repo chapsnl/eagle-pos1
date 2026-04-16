@@ -21,6 +21,7 @@ import { SessionPopup } from '@/components/pos/SessionPopup';
 import { broadcastOrder, clearOrder, SyncOrderItem } from '@/lib/orderSync';
 import { supabase } from '@/integrations/supabase/client';
 import { getDeviceId } from '@/hooks/useDeviceId';
+import { enqueue, isOnline } from '@/lib/offlineQueue';
 
 export interface DbOrderItem {
   product: DbProduct;
