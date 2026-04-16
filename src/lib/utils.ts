@@ -4,3 +4,9 @@ import { twMerge } from "tailwind-merge";
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+export function formatWardrobeNumber(wardrobeNumber: string | null | undefined): string {
+  const num = (wardrobeNumber ?? '').replace(/\D/g, '');
+  if (!num) return '';
+  return num.padStart(3, '0');
+}

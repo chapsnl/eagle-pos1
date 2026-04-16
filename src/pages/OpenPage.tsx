@@ -1,4 +1,5 @@
 import { useActiveSessions } from '@/hooks/useSessions';
+import { formatWardrobeNumber } from '@/lib/utils';
 
 interface OpenPageProps {
   onNavigateToGuest?: (wardrobeNumber: string, sessionId: string, totalAmount: number) => void;

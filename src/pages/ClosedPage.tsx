@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
+import { formatWardrobeNumber } from '@/lib/utils';
 
 const useClosedSessions = () => {
   const qc = useQueryClient();

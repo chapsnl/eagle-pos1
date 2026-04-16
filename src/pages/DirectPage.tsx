@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getDeviceId } from '@/hooks/useDeviceId';
 import { useQueryClient } from '@tanstack/react-query';
 import { enqueue, resolveSessionId, isOnline } from '@/lib/offlineQueue';
+import { formatWardrobeNumber } from '@/lib/utils';
 
 interface DirectOrderItem {
   product: DbProduct;
