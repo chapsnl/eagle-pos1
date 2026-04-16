@@ -52,20 +52,24 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
             {sortedSessions.map((session) => {
               const num = (session.wardrobe_number ?? '').replace(/\D/g, '');
               const hasItems = Number(session.total_amount ?? 0) > 0;
+              const hasPending = pendingSessions.has(session.id);
               return (
                 <button
                   key={session.id}
                   onClick={() => handleClick(session)}
-                  className="flex items-center justify-center font-extrabold uppercase transition-all active:scale-95 aspect-square"
+                  className="flex items-center justify-center font-extrabold uppercase transition-all active:scale-95 aspect-square relative"
                   style={{
-                    backgroundColor: hasItems ? '#00cc13' : '#1a5c1a',
+                    backgroundColor: hasPending ? '#b45309' : hasItems ? '#00cc13' : '#1a5c1a',
                     borderRadius: '12px',
                     padding: '4px',
-                    color: hasItems ? '#fff' : '#88aa88',
-                    boxShadow: hasItems ? '0 0 12px #00cc1380' : 'none',
+                    color: '#fff',
+                    boxShadow: hasPending ? '0 0 12px #f59e0b80' : hasItems ? '0 0 12px #00cc1380' : 'none',
                   }}
                 >
                   <span style={{ fontSize: 'clamp(0.9rem, 3vw, 2.5rem)', lineHeight: 1 }}>{num}</span>
+                  {hasPending && (
+                    <span className="absolute top-1 right-1" style={{ fontSize: 'clamp(8px, 1.2vw, 14px)' }}>⏳</span>
+                  )}
                 </button>
               );
             })}
