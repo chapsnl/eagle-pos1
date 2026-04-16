@@ -48,6 +48,7 @@ export const DirectPage = () => {
   const [numberInput, setNumberInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
+  const [payMode, setPayMode] = useState(false);
   const [retourMode, setRetourMode] = useState(false);
   const [retourFlash, setRetourFlash] = useState<string | null>(null);
   const [quickNumber, setQuickNumber] = useState('');
@@ -63,7 +64,7 @@ export const DirectPage = () => {
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
 
   // Extracted submit logic for reuse
-  const submitOrder = useCallback(async (wardrobeNum: string, orderItems: DirectOrderItem[]) => {
+  const submitOrder = useCallback(async (wardrobeNum: string, orderItems: DirectOrderItem[], shouldPay = false) => {
     if (submitLockRef.current) return;
     submitLockRef.current = true;
     setIsSubmitting(true);
@@ -141,8 +142,13 @@ export const DirectPage = () => {
         ]);
 
         const newTotal = Number(session.total_amount ?? 0) + total;
+        const updateData: any = { id: session.id, total_amount: newTotal };
+        if (shouldPay) {
+          updateData.status = 'paid';
+          updateData.actual_paid_amount = newTotal;
+        }
         await Promise.all([
-          updateSession.mutateAsync({ id: session.id, total_amount: newTotal }),
+          updateSession.mutateAsync(updateData),
           supabase.from('sessions').update({ locked_by: null, locked_at: null } as any).eq('id', session.id),
         ]);
       }
@@ -236,8 +242,9 @@ export const DirectPage = () => {
       setShowWarning(true);
       return;
     }
-    await submitOrder(numberInput, items);
-  }, [numberInput, items, submitOrder]);
+    await submitOrder(numberInput, items, payMode);
+    setPayMode(false);
+  }, [numberInput, items, submitOrder, payMode]);
 
   const handleNext = useCallback(() => {
     if (items.length > 0 && quickNumber.length > 0) {
@@ -258,6 +265,7 @@ export const DirectPage = () => {
 
   const handlePayButton = useCallback(() => {
     if (items.length === 0) return;
+    setPayMode(true);
     setNumberInput('');
     setShowWarning(false);
     setShowNumberPopup(true);
@@ -447,7 +455,7 @@ export const DirectPage = () => {
             <NumPad onKey={handleNumberKey} disabled={isSubmitting} />
             <div className="flex gap-3 w-full">
               <button
-                onClick={() => { setShowNumberPopup(false); setShowWarning(false); }}
+                onClick={() => { setShowNumberPopup(false); setShowWarning(false); setPayMode(false); }}
                 className="flex-1 py-4 font-extrabold uppercase text-lg"
                 style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: 6 }}
               >
