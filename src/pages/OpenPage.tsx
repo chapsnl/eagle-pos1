@@ -7,6 +7,7 @@ interface OpenPageProps {
 
 const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
   const { data: sessions, isLoading } = useActiveSessions();
+  const { pendingSessions } = useOfflineQueue();
 
   const sortedSessions = (sessions ?? [])
     .filter((s) => s.wardrobe_number)
