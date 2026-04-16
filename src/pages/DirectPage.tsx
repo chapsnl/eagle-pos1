@@ -48,6 +48,7 @@ export const DirectPage = () => {
   const [numberInput, setNumberInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
+  const [payMode, setPayMode] = useState(false);
   const [retourMode, setRetourMode] = useState(false);
   const [retourFlash, setRetourFlash] = useState<string | null>(null);
   const [quickNumber, setQuickNumber] = useState('');
