@@ -56,6 +56,8 @@ export const DirectPage = () => {
   const addDrinkLogs = useAddDrinkLogs();
   const updateSession = useUpdateSession();
   const deviceId = useRef(getDeviceId()).current;
+  const { pendingSessions } = useOfflineQueue();
+  const [allPendingLogs, setAllPendingLogs] = useState<{ product_id: string; price_at_time: number; count: number }[]>([]);
 
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
 
