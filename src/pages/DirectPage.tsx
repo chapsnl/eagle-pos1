@@ -175,11 +175,7 @@ export const DirectPage = () => {
       newItems = [{ product, quantity: 1 }, ...items];
     }
 
-    // If quickNumber is 3 digits → auto-submit with new items
-    if (quickNumber.length === 3) {
-      submitOrder(quickNumber, newItems);
-      return;
-    }
+    // No auto-submit: wait for NEXT button
 
     setItems(newItems);
   }, [retourMode, items, quickNumber, submitOrder]);
