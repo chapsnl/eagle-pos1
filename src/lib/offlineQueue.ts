@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 export type QueueAction =
   | { type: 'create_session'; payload: { tempId: string; wardrobe_number: string; is_event_numbered?: boolean; nfc_uid?: string } }
   | { type: 'insert_drink_logs'; payload: { session_id: string; logs: { product_id: string; price_at_time: number }[] } }
-  | { type: 'update_session'; payload: { id: string; total_amount?: number; status?: string; actual_paid_amount?: number } }
+  | { type: 'update_session'; payload: { id: string; total_amount?: number; status?: 'active' | 'paid' | 'incident' | 'archived'; actual_paid_amount?: number } }
   | { type: 'lock_session'; payload: { id: string; locked_by: string } }
   | { type: 'unlock_session'; payload: { id: string } };
 
