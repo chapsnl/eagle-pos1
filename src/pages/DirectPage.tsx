@@ -265,6 +265,7 @@ export const DirectPage = () => {
 
   const handlePayButton = useCallback(() => {
     if (items.length === 0) return;
+    setPayMode(true);
     setNumberInput('');
     setShowWarning(false);
     setShowNumberPopup(true);
