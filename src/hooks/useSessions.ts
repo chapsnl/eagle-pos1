@@ -119,6 +119,18 @@ export const useActiveSessions = () => {
     return () => { supabase.removeChannel(channel); };
   }, [qc]);
 
+  // Refetch active sessions when coming back online (after offline queue flush)
+  useEffect(() => {
+    const handleOnline = () => {
+      // Delay refetch to allow offline queue to flush first
+      setTimeout(() => {
+        qc.invalidateQueries({ queryKey: ['sessions', 'active'] });
+      }, 3000);
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [qc]);
+
   return useQuery({
     queryKey: ['sessions', 'active'],
     queryFn: async () => {

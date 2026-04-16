@@ -226,8 +226,8 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
     try {
       const { error } = await supabase.functions.invoke('close-shift');
       if (error) throw error;
-      qc.invalidateQueries({ queryKey: ['active-sessions'] });
-      qc.invalidateQueries({ queryKey: ['closed-sessions'] });
+      // Wipe ALL cached data (sessions, products, drink_logs, etc.)
+      qc.clear();
       setCloseShiftResult('Shift afgesloten en data gewist!');
     } catch (err: any) {
       setCloseShiftResult(`Fout: ${err.message}`);
