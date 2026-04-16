@@ -184,6 +184,19 @@ export const DirectPage = () => {
     setItems(newItems);
   }, [retourMode, items, quickNumber, submitOrder]);
 
+  const handleQuickNumberKey = useCallback((key: string) => {
+    if (key === 'DEL') { setQuickNumber(''); return; }
+    if (key === 'BACK') { setQuickNumber(prev => prev.slice(0, -1)); return; }
+    if (quickNumber.length < 3) {
+      const newNum = quickNumber + key;
+      setQuickNumber(newNum);
+      // If 3 digits entered AND items present → auto-submit
+      if (newNum.length === 3 && items.length > 0) {
+        submitOrder(newNum, items);
+      }
+    }
+  }, [quickNumber, items, submitOrder]);
+
   const handleNumberKey = useCallback((key: string) => {
     if (key === 'DEL') { setNumberInput(''); return; }
     if (key === 'BACK') { setNumberInput(prev => prev.slice(0, -1)); return; }
