@@ -6,6 +6,7 @@ import { useCreateSession, useAddDrinkLogs, useUpdateSession } from '@/hooks/use
 import { supabase } from '@/integrations/supabase/client';
 import { getDeviceId } from '@/hooks/useDeviceId';
 import { useQueryClient } from '@tanstack/react-query';
+import { enqueue, resolveSessionId, isOnline } from '@/lib/offlineQueue';
 
 interface DirectOrderItem {
   product: DbProduct;
