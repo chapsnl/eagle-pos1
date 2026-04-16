@@ -1,5 +1,4 @@
 import { useActiveSessions } from '@/hooks/useSessions';
-import { formatWardrobeNumber } from '@/lib/utils';
 
 interface OpenPageProps {
   onNavigateToGuest?: (wardrobeNumber: string, sessionId: string, totalAmount: number) => void;
@@ -49,7 +48,7 @@ const OpenPage = ({ onNavigateToGuest }: OpenPageProps) => {
         >
           <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-2">
             {sortedSessions.map((session) => {
-              const num = formatWardrobeNumber(session.wardrobe_number);
+              const num = (session.wardrobe_number ?? '').replace(/\D/g, '');
               const hasItems = Number(session.total_amount ?? 0) > 0;
               return (
                 <button
