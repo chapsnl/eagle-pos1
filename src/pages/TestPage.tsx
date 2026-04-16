@@ -714,10 +714,27 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
             </>
           )}
 
+          {/* Wacht op sync section (pending offline items) */}
+          {pendingLogs.length > 0 && (
+            <>
+              <div className="text-center py-1" style={{ borderBottom: '1px solid #b45309', marginTop: items.length > 0 ? '8px' : '0' }}>
+                <span className="font-extrabold uppercase" style={{ color: '#f59e0b', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>⏳ Wacht op sync</span>
+              </div>
+              {pendingLogs.map((log) => {
+                const product = products?.find(p => p.id === log.product_id);
+                return (
+                  <div key={`pending-${log.product_id}`} style={{ color: '#f59e0b', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
+                    ⏳ {log.count} x {product?.full_name ?? 'Onbekend'}
+                  </div>
+                );
+              })}
+            </>
+          )}
+
           {/* Reeds Besteld section */}
           {liveDbLogs.length > 0 && (
             <>
-              <div className="text-center py-1" style={{ borderBottom: '1px solid #333', marginTop: items.length > 0 ? '8px' : '0' }}>
+              <div className="text-center py-1" style={{ borderBottom: '1px solid #333', marginTop: (items.length > 0 || pendingLogs.length > 0) ? '8px' : '0' }}>
                 <span className="font-extrabold uppercase" style={{ color: '#888', fontSize: 'clamp(9px, 1.4vw, 14px)', letterSpacing: '0.1em' }}>Reeds Besteld</span>
               </div>
               {liveDbLogs.map((item) => (
@@ -729,7 +746,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
             </>
           )}
 
-          {items.length === 0 && liveDbLogs.length === 0 && (
+          {items.length === 0 && liveDbLogs.length === 0 && pendingLogs.length === 0 && (
             <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1.2vw, 14px)' }}>Geen producten</div>
           )}
         </div>
