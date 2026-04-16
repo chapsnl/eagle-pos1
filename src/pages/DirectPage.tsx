@@ -182,37 +182,39 @@ export const DirectPage = () => {
 
   const [quickWarning, setQuickWarning] = useState(false);
 
-  const handleQuickNumberKey = useCallback(async (key: string) => {
+  const handleQuickNumberKey = useCallback((key: string) => {
     if (key === 'DEL') { setQuickNumber(''); setQuickWarning(false); return; }
     if (key === 'BACK') { setQuickNumber(prev => prev.slice(0, -1)); setQuickWarning(false); return; }
     if (quickNumber.length < 3) {
-      const newNum = quickNumber + key;
-      setQuickNumber(newNum);
-      if (newNum.length === 3) {
-        // Check if session exists
-        const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
-        const exists = cachedSessions?.some(s => s.wardrobe_number === newNum);
-        if (!exists) {
-          // Also check DB
-          const { data } = await supabase
-            .from('sessions')
-            .select('id')
-            .eq('wardrobe_number', newNum)
-            .eq('status', 'active')
-            .limit(1)
-            .maybeSingle();
-          if (!data) {
-            setQuickWarning(true);
-            return;
-          }
-        }
-        setQuickWarning(false);
-        if (items.length > 0) {
-          submitOrder(newNum, items);
-        } else {
-          setShowQuickNumpad(false);
-        }
+      setQuickNumber(prev => prev + key);
+      setQuickWarning(false);
+    }
+  }, [quickNumber]);
+
+  const handleQuickConfirm = useCallback(async () => {
+    if (quickNumber.length === 0) { setQuickWarning(true); return; }
+    const num = quickNumber;
+    // Check cache first
+    const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
+    const exists = cachedSessions?.some(s => s.wardrobe_number === num);
+    if (!exists) {
+      const { data } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('wardrobe_number', num)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+      if (!data) {
+        setQuickWarning(true);
+        return;
       }
+    }
+    setQuickWarning(false);
+    if (items.length > 0) {
+      submitOrder(num, items);
+    } else {
+      setShowQuickNumpad(false);
     }
   }, [quickNumber, items, submitOrder, qc]);
 
