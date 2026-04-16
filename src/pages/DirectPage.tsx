@@ -215,112 +215,18 @@ export const DirectPage = () => {
       setShowWarning(true);
       return;
     }
-
-    setIsSubmitting(true);
-    const wardrobeNum = numberInput;
-    const currentItems = [...items];
-    const total = currentItems.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
-
-    // Optimistic reset — UI returns instantly
-    setItems([]);
-    setShowNumberPopup(false);
-    setNumberInput('');
-
-    try {
-      // Build logs data
-      const logsData = currentItems.flatMap((item) =>
-        Array.from({ length: item.quantity }, () => ({
-          product_id: item.product.id,
-          price_at_time: item.product.price,
-        }))
-      );
-
-      if (!isOnline()) {
-        // OFFLINE PATH: queue everything locally
-        const tempId = crypto.randomUUID();
-        await enqueue({ type: 'create_session', payload: { tempId, wardrobe_number: wardrobeNum, is_event_numbered: true } });
-        await enqueue({ type: 'lock_session', payload: { id: tempId, locked_by: deviceId } });
-        await enqueue({ type: 'insert_drink_logs', payload: { session_id: tempId, logs: logsData } });
-        await enqueue({ type: 'update_session', payload: { id: tempId, total_amount: total } });
-        await enqueue({ type: 'unlock_session', payload: { id: tempId } });
-      } else {
-        // ONLINE PATH: use existing optimized flow
-        // 1. Check cache first
-        const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
-        let session = cachedSessions?.find(s => s.wardrobe_number === wardrobeNum) ?? null;
-
-        if (session) {
-          const { data: fresh } = await supabase
-            .from('sessions')
-            .select('locked_by, locked_at')
-            .eq('id', session.id)
-            .single();
-          const lockedBy = fresh?.locked_by;
-          const lockedAt = fresh?.locked_at;
-          if (lockedBy && lockedBy !== deviceId) {
-            const lockAge = lockedAt ? Date.now() - new Date(lockedAt).getTime() : Infinity;
-            if (lockAge < 60000) {
-              toast.error('Dit nummer is in gebruik door een andere medewerker.');
-              setItems(currentItems);
-              setIsSubmitting(false);
-              return;
-            }
-          }
-        } else {
-          const { data: closedSession } = await supabase
-            .from('sessions')
-            .select('id')
-            .eq('wardrobe_number', wardrobeNum)
-            .in('status', ['paid', 'archived'])
-            .limit(1)
-            .maybeSingle();
-          if (closedSession) {
-            toast.error(`Nummer ${wardrobeNum} is al afgerekend en gesloten.`);
-            setItems(currentItems);
-            setIsSubmitting(false);
-            return;
-          }
-        }
-
-        // 2. Create or get session
-        if (!session) {
-          session = await createSession.mutateAsync({
-            wardrobe_number: wardrobeNum,
-            is_event_numbered: true,
-          });
-        }
-
-        // 3. Lock + insert logs + update total in parallel
-        const logs = logsData.map(l => ({ ...l, session_id: session.id }));
-
-        const [, ] = await Promise.all([
-          supabase.from('sessions').update({ locked_by: deviceId, locked_at: new Date().toISOString() } as any).eq('id', session.id),
-          addDrinkLogs.mutateAsync(logs),
-        ]);
-
-        const newTotal = Number(session.total_amount ?? 0) + total;
-        await Promise.all([
-          updateSession.mutateAsync({ id: session.id, total_amount: newTotal }),
-          supabase.from('sessions').update({ locked_by: null, locked_at: null } as any).eq('id', session.id),
-        ]);
-      }
-    } catch {
-      toast.error('Opslaan mislukt — probeer opnieuw');
-      setItems(currentItems); // Restore items on error
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [numberInput, items, qc, createSession, addDrinkLogs, updateSession, deviceId]);
+    await submitOrder(numberInput, items);
+  }, [numberInput, items, submitOrder]);
 
   const handleNext = useCallback(() => {
     if (items.length > 0) {
-      // Items present but no number assigned — force number popup
       setNumberInput('');
       setShowWarning(false);
       setShowNumberPopup(true);
       return;
     }
     setItems([]);
+    setQuickNumber('');
     setRetourMode(false);
   }, [items]);
 
