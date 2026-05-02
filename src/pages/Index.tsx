@@ -258,29 +258,10 @@ const Index = () => {
     }
   }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, unlockSession]);
 
-  const printReceipt = async (wardrobeNumber: string) => {
-    try {
-      console.log('Printing receipt for:', wardrobeNumber);
-      await fetch('/print', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wardrobe_number: wardrobeNumber }),
-      });
-    } catch {
-      console.warn('Bon printen mislukt');
-    }
-  };
-
   const handleBarPayVerwerk = useCallback(async () => {
     if (!barSessionId) return;
-    const wardrobeSnapshot = barNumber;
     setShowBarPayDialog(false);
     try {
-      await fetch('/print', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({wardrobe_number: barNumber})
-      }).catch(() => {});
       if (items.length > 0) {
         const logs = items.flatMap((item) =>
           Array.from({ length: item.quantity }, () => ({
@@ -299,11 +280,6 @@ const Index = () => {
         await updateSession.mutateAsync({ id: barSessionId, status: 'paid' });
       }
       await unlockSession(barSessionId);
-      fetch('/print', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wardrobe_number: wardrobeSnapshot }),
-      }).catch(() => {});
       clearOrder();
       setItems([]);
       setBarNumber('');
@@ -315,7 +291,7 @@ const Index = () => {
     } catch {
       showFeedback('error');
     }
-  }, [barSessionId, barNumber, items, barSessionTotal, total, addDrinkLogs, updateSession, showFeedback, unlockSession]);
+  }, [barSessionId, items, barSessionTotal, total, addDrinkLogs, updateSession, showFeedback, unlockSession]);
 
   const handleBarNext = useCallback(() => {
     const sid = barSessionId;
