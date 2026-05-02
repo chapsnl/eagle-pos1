@@ -260,6 +260,7 @@ const Index = () => {
 
   const printReceipt = async (wardrobeNumber: string) => {
     try {
+      console.log('Printing receipt for:', wardrobeNumber);
       await fetch('/print', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -293,6 +294,7 @@ const Index = () => {
       }
       await unlockSession(barSessionId);
       const wardrobeForPrint = barNumber;
+      console.log('wardrobeForPrint:', wardrobeForPrint);
       printReceipt(wardrobeForPrint);
       clearOrder();
       setItems([]);
