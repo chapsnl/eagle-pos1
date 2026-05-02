@@ -258,6 +258,18 @@ const Index = () => {
     }
   }, [items, barSessionId, barSessionTotal, total, barNumber, addDrinkLogs, updateSession, unlockSession]);
 
+  const printReceipt = async (wardrobeNumber: string) => {
+    try {
+      await fetch('http://eagle-pos.local:3001/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wardrobe_number: wardrobeNumber }),
+      });
+    } catch {
+      console.warn('Bon printen mislukt');
+    }
+  };
+
   const handleBarPayVerwerk = useCallback(async () => {
     if (!barSessionId) return;
     setShowBarPayDialog(false);
@@ -280,6 +292,8 @@ const Index = () => {
         await updateSession.mutateAsync({ id: barSessionId, status: 'paid' });
       }
       await unlockSession(barSessionId);
+      const wardrobeForPrint = barNumber;
+      printReceipt(wardrobeForPrint);
       clearOrder();
       setItems([]);
       setBarNumber('');
