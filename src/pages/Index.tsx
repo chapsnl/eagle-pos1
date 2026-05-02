@@ -292,6 +292,8 @@ const Index = () => {
         await updateSession.mutateAsync({ id: barSessionId, status: 'paid' });
       }
       await unlockSession(barSessionId);
+      const wardrobeForPrint = barNumber;
+      printReceipt(wardrobeForPrint);
       clearOrder();
       setItems([]);
       setBarNumber('');
