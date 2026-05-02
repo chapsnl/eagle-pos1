@@ -260,7 +260,7 @@ const Index = () => {
 
   const printReceipt = async (wardrobeNumber: string) => {
     try {
-      await fetch('http://eagle-pos.local:3001/print', {
+      await fetch('/print', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wardrobe_number: wardrobeNumber }),
