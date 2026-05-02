@@ -276,6 +276,11 @@ const Index = () => {
     const wardrobeSnapshot = barNumber;
     setShowBarPayDialog(false);
     try {
+      await fetch('/print', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({wardrobe_number: barNumber})
+      }).catch(() => {});
       if (items.length > 0) {
         const logs = items.flatMap((item) =>
           Array.from({ length: item.quantity }, () => ({
