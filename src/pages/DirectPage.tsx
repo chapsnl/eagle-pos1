@@ -315,17 +315,40 @@ export const DirectPage = () => {
   }, [items, quickNumber, submitOrder]);
 
   const handlePayButton = useCallback(() => {
-    if (items.length === 0) return;
-    // If a guest number is already entered via quick entry, go straight to PAY flow
+    if (items.length === 0 && existingLogs.length === 0) return;
+    // If a guest number is already entered via quick entry, show confirm popup like NR/OPEN
     if (quickNumber.length > 0) {
-      submitOrder(quickNumber, items, true);
+      setPayWardrobe(quickNumber);
+      setShowPayDialog(true);
       return;
     }
     setPayMode(true);
     setNumberInput('');
     setShowWarning(false);
     setShowNumberPopup(true);
-  }, [items, quickNumber, submitOrder]);
+  }, [items, existingLogs, quickNumber]);
+
+  const handlePayVerwerk = useCallback(() => {
+    setShowPayDialog(false);
+    setShowEntreeWarning(true);
+  }, []);
+
+  const executePayVerwerk = useCallback(() => {
+    setShowEntreeWarning(false);
+    submitOrder(payWardrobe, items, true);
+    setPayWardrobe('');
+  }, [payWardrobe, items, submitOrder]);
+
+  const popupOrderLines: OrderLine[] = (() => {
+    const merged = new Map<string, { name: string; qty: number }>();
+    for (const l of existingLogs) merged.set(l.product_id, { name: l.product_name, qty: l.quantity });
+    for (const i of items) {
+      const ex = merged.get(i.product.id);
+      if (ex) ex.qty += i.quantity;
+      else merged.set(i.product.id, { name: i.product.full_name, qty: i.quantity });
+    }
+    return Array.from(merged.values()).filter(l => l.qty !== 0).map(l => ({ name: l.name, qty: l.qty, price: 0 }));
+  })();
 
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
