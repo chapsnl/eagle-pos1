@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useActiveSessions, useUpdateSession } from '@/hooks/useSessions';
+import { useActiveSessions, useUpdateSession, useSessionDetail } from '@/hooks/useSessions';
 import { useClosedSessions } from '@/hooks/useClosedSessions';
 import { NumPad } from '@/components/pos/NumPad';
 import { useQueryClient } from '@tanstack/react-query';
@@ -35,6 +35,48 @@ const getOrderLines = (session: any): OrderLine[] => {
 interface AdminPageProps {
   onNavigateToGuest?: (wardrobeNumber: string, sessionId: string, totalAmount: number) => void;
 }
+
+interface AdminSessionPopupProps {
+  session: any | null;
+  type: 'active' | 'closed';
+  onClose: () => void;
+  onEdit: () => void;
+  onReopen: () => void;
+}
+
+const AdminSessionPopup = ({ session, type, onClose, onEdit, onReopen }: AdminSessionPopupProps) => {
+  // Live-fetch drink_logs for active sessions so producten zichtbaar zijn
+  const { data: detail } = useSessionDetail(type === 'active' && session ? session.id : null);
+  const sourceSession = (type === 'active' ? detail : session) ?? session;
+  const orderLines = sourceSession ? getOrderLines(sourceSession) : [];
+  const total = orderLines.reduce((sum, l) => sum + l.qty * l.price, 0);
+
+  return (
+    <SessionPopup
+      open={!!session}
+      onClose={onClose}
+      title={formatWardrobeNumber(session?.wardrobe_number)}
+      subtitle={type === 'active' ? 'Actieve sessie' : `Status: ${session?.status ?? ''}`}
+      orderLines={orderLines}
+      showTotal={true}
+      showPrices={false}
+      showItemCount={true}
+      totalAmount={total}
+      actions={
+        type === 'active'
+          ? [
+              { label: 'CANCEL', onClick: onClose, variant: 'cancel' as const },
+              { label: 'BEWERK', onClick: onEdit, variant: 'confirm' as const },
+            ]
+          : [
+              { label: 'CANCEL', onClick: onClose, variant: 'cancel' as const },
+              { label: 'HEROPEN', onClick: onReopen, variant: 'confirm' as const },
+            ]
+      }
+    />
+  );
+};
+
 
 export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -394,32 +436,18 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
       </div>
 
       {/* Session Detail Popup */}
-      <SessionPopup
-        open={!!selectedSession}
+      <AdminSessionPopup
+        session={selectedSession}
+        type={selectedType}
         onClose={() => setSelectedSession(null)}
-        title={formatWardrobeNumber(selectedSession?.wardrobe_number)}
-        subtitle={selectedType === 'active' ? 'Actieve sessie' : `Status: ${selectedSession?.status ?? ''}`}
-        orderLines={selectedSession ? getOrderLines(selectedSession) : []}
-        showTotal={true}
-        showPrices={true}
-        totalAmount={selectedSession ? getOrderLines(selectedSession).reduce((sum, l) => sum + l.qty * l.price, 0) : 0}
-        actions={
-          selectedType === 'active'
-            ? [
-                { label: 'CANCEL', onClick: () => setSelectedSession(null), variant: 'cancel' as const },
-                { label: 'BEWERK', onClick: () => {
-                    if (selectedSession && onNavigateToGuest) {
-                      const s = selectedSession;
-                      setSelectedSession(null);
-                      onNavigateToGuest(s.wardrobe_number ?? '', s.id, Number(s.total_amount ?? 0));
-                    }
-                  }, variant: 'confirm' as const },
-              ]
-            : [
-                { label: 'CANCEL', onClick: () => setSelectedSession(null), variant: 'cancel' as const },
-                { label: 'HEROPEN', onClick: () => { setReopenSession(selectedSession); setSelectedSession(null); }, variant: 'confirm' as const },
-              ]
-        }
+        onEdit={() => {
+          if (selectedSession && onNavigateToGuest) {
+            const s = selectedSession;
+            setSelectedSession(null);
+            onNavigateToGuest(s.wardrobe_number ?? '', s.id, Number(s.total_amount ?? 0));
+          }
+        }}
+        onReopen={() => { setReopenSession(selectedSession); setSelectedSession(null); }}
       />
 
       {/* Close Shift Step 1: Show total + confirm */}
