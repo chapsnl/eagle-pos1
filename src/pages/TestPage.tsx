@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useInactivityTimer } from '@/hooks/useInactivityTimer';
 import { toast } from 'sonner';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
+import { ProductGrid } from '@/components/pos/ProductGrid';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
 import { Send, AlertCircle } from 'lucide-react';
