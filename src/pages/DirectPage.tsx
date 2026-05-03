@@ -63,6 +63,53 @@ export const DirectPage = () => {
 
   const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
 
+  // Existing logs for the currently entered quickNumber (so we can show what's already booked)
+  const [existingLogs, setExistingLogs] = useState<{ product_id: string; product_name: string; quantity: number }[]>([]);
+
+  useEffect(() => {
+    if (quickNumber.length < 3) { setExistingLogs([]); return; }
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const loadFor = async (wardrobeNum: string) => {
+      const { data: session } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('wardrobe_number', wardrobeNum)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!session) { setExistingLogs([]); return; }
+
+      const fetchLogs = async () => {
+        const { data } = await supabase
+          .from('drink_logs')
+          .select('product_id, products(full_name)')
+          .eq('session_id', session.id);
+        if (cancelled || !data) return;
+        const map = new Map<string, { product_id: string; product_name: string; quantity: number }>();
+        for (const log of data) {
+          const name = (log.products as any)?.full_name ?? 'Unknown';
+          const pid = log.product_id;
+          const existing = map.get(pid);
+          if (existing) existing.quantity++;
+          else map.set(pid, { product_id: pid, product_name: name, quantity: 1 });
+        }
+        setExistingLogs(Array.from(map.values()));
+      };
+
+      await fetchLogs();
+      channel = supabase
+        .channel(`direct_drink_logs_${session.id}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'drink_logs', filter: `session_id=eq.${session.id}` }, fetchLogs)
+        .subscribe();
+    };
+
+    loadFor(quickNumber);
+    return () => { cancelled = true; if (channel) supabase.removeChannel(channel); };
+  }, [quickNumber]);
+
   // Extracted submit logic for reuse
   const submitOrder = useCallback(async (wardrobeNum: string, orderItems: DirectOrderItem[], shouldPay = false) => {
     if (submitLockRef.current) return;
