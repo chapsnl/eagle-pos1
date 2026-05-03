@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
+import { ProductGrid } from '@/components/pos/ProductGrid';
 import { NumPad } from '@/components/pos/NumPad';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
 import { useCreateSession, useAddDrinkLogs, useUpdateSession } from '@/hooks/useSessions';
