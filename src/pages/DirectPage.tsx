@@ -44,7 +44,6 @@ const gridLayout: { code: string; span: number; hideLabel?: boolean; label?: str
 ];
 
 export const DirectPage = () => {
-  const { data: products, isLoading: productsLoading } = useProducts();
   const [items, setItems] = useState<DirectOrderItem[]>([]);
   const [showNumberPopup, setShowNumberPopup] = useState(false);
   const [numberInput, setNumberInput] = useState('');
