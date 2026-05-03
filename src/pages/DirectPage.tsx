@@ -570,6 +570,33 @@ export const DirectPage = () => {
           </div>
         </div>
       )}
+
+      <SessionPopup
+        open={showPayDialog}
+        onClose={() => setShowPayDialog(false)}
+        title="Bestelling"
+        subtitle={formatWardrobeNumber(payWardrobe)}
+        orderLines={popupOrderLines}
+        showTotal={false}
+        showItemCount
+        actions={[
+          { label: 'CANCEL', onClick: () => setShowPayDialog(false), variant: 'cancel' as const },
+          { label: 'VERWERK', onClick: handlePayVerwerk, variant: 'confirm' as const },
+        ]}
+      />
+
+      <SessionPopup
+        open={showEntreeWarning}
+        onClose={() => setShowEntreeWarning(false)}
+        title="Let op"
+        subtitle="Weet je zeker dat je niets bent vergeten?"
+        orderLines={[]}
+        showTotal={false}
+        actions={[
+          { label: 'TERUG', onClick: () => setShowEntreeWarning(false), variant: 'cancel' as const },
+          { label: 'VERDER', onClick: executePayVerwerk, variant: 'confirm' as const },
+        ]}
+      />
     </div>
   );
 };
