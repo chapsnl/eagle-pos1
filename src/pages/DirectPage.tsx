@@ -275,6 +275,14 @@ export const DirectPage = () => {
     }
   }, [quickNumber, items, submitOrder, qc]);
 
+  // Auto-confirm when 3 digits entered in quick popup
+  useEffect(() => {
+    if (!showQuickNumpad) return;
+    if (quickNumber.length !== 3) return;
+    const t = window.setTimeout(() => { handleQuickConfirm(); }, 150);
+    return () => window.clearTimeout(t);
+  }, [quickNumber, showQuickNumpad, handleQuickConfirm]);
+
   const handleNumberKey = useCallback((key: string) => {
     if (key === 'DEL') { setNumberInput(''); return; }
     if (key === 'BACK') { setNumberInput(prev => prev.slice(0, -1)); return; }
