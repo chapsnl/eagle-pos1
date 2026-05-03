@@ -54,6 +54,9 @@ export const DirectPage = () => {
   const [retourFlash, setRetourFlash] = useState<string | null>(null);
   const [quickNumber, setQuickNumber] = useState('');
   const [showQuickNumpad, setShowQuickNumpad] = useState(false);
+  const [showPayDialog, setShowPayDialog] = useState(false);
+  const [showEntreeWarning, setShowEntreeWarning] = useState(false);
+  const [payWardrobe, setPayWardrobe] = useState('');
   const submitLockRef = useRef(false);
 
   const qc = useQueryClient();
