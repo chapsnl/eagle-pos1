@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useActiveSessions, useUpdateSession } from '@/hooks/useSessions';
+import { useActiveSessions, useUpdateSession, useSessionDetail } from '@/hooks/useSessions';
 import { useClosedSessions } from '@/hooks/useClosedSessions';
 import { NumPad } from '@/components/pos/NumPad';
 import { useQueryClient } from '@tanstack/react-query';
