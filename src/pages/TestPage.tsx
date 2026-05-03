@@ -362,12 +362,20 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   }, [items, sessionId, sessionTotal, total, addDrinkLogs, updateSession, unlockSession, onNavigateToOpen]);
 
   const popupOrderLines: OrderLine[] = useMemo(() => {
-    return [...liveDbLogs].reverse().map((l) => ({
-      name: l.product_name,
-      qty: l.quantity,
-      price: 0,
-    }));
-  }, [liveDbLogs]);
+    // Merge already-booked DB items with new local items so PAY popup shows the latest selections
+    const merged = new Map<string, { name: string; qty: number }>();
+    for (const l of liveDbLogs) {
+      merged.set(l.product_id, { name: l.product_name, qty: l.quantity });
+    }
+    for (const i of items) {
+      const existing = merged.get(i.product.id);
+      if (existing) existing.qty += i.quantity;
+      else merged.set(i.product.id, { name: i.product.full_name, qty: i.quantity });
+    }
+    return Array.from(merged.values())
+      .filter((l) => l.qty !== 0)
+      .map((l) => ({ name: l.name, qty: l.qty, price: 0 }));
+  }, [liveDbLogs, items]);
 
   const executePayVerwerk = useCallback(async () => {
     if (!sessionId) return;
