@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo, forwardRef, useImper
 import { useQueryClient } from '@tanstack/react-query';
 import { useInactivityTimer } from '@/hooks/useInactivityTimer';
 import { toast } from 'sonner';
-import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
+import { DbProduct } from '@/hooks/useProducts';
 import { ProductGrid } from '@/components/pos/ProductGrid';
 import { FeedbackType } from '@/types/pos';
 import { FeedbackOverlay } from '@/components/pos/FeedbackOverlay';
@@ -21,32 +21,6 @@ interface TestOrderItem {
   quantity: number;
 }
 
-const gridLayout: { code: string; span: number; hideLabel?: boolean; label?: string }[][] = [
-  [
-    { code: '1', span: 1 }, { code: '6', span: 1 }, { code: 'SHO', span: 1 }, { code: 'BAIL', span: 1 },
-    { code: 'JAME', span: 2 }, { code: 'ABSO', span: 2 }, { code: 'HEIN', span: 2 },
-  ],
-  [
-    { code: '20', span: 1 }, { code: '18', span: 1 }, { code: 'TTOP', span: 1 }, { code: 'MALI', span: 1 },
-    { code: 'JACD', span: 2 }, { code: 'BOMB', span: 2 }, { code: 'GROL', span: 2 },
-  ],
-  [
-    { code: '7', span: 1 }, { code: '12.5', span: 1 }, { code: 'AMAR', span: 1 }, { code: 'TEQU', span: 1 },
-    { code: 'JIMB', span: 2 }, { code: 'APPC', span: 2 }, { code: 'COAF', span: 2 },
-  ],
-  [
-    { code: 'ENTR', span: 1, label: '8' }, { code: '10', span: 1 }, { code: 'TSHI', span: 1 }, { code: 'SAMB', span: 1 },
-    { code: 'BSPI', span: 2 }, { code: 'WHIB', span: 2 }, { code: 'HE0%', span: 2 },
-  ],
-  [
-    { code: 'ENTR', span: 1, hideLabel: true }, { code: '10', span: 1, hideLabel: true }, { code: 'JAEG', span: 1 }, { code: 'LICO', span: 1 },
-    { code: 'BACA', span: 2 }, { code: 'JENE', span: 2 }, { code: 'JUIC', span: 2 },
-  ],
-  [
-    { code: 'ENTR', span: 1, hideLabel: true }, { code: '10', span: 1, hideLabel: true }, { code: 'SEXT', span: 1 }, { code: 'STFF', span: 1 },
-    { code: 'REDB', span: 2 }, { code: 'WINE', span: 2 }, { code: 'SOFT', span: 2 },
-  ],
-];
 
 
 
@@ -91,7 +65,6 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const [showClosedBlockDialog, setShowClosedBlockDialog] = useState(false);
   const lastCoatLookupRef = useRef<string | null>(null);
-  const { data: products, isLoading: productsLoading } = useProducts();
   const qc = useQueryClient();
   const updateSession = useUpdateSession();
   const addDrinkLogs = useAddDrinkLogs();
@@ -99,7 +72,6 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
 
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
   const existingTotal = existingLogs.reduce((sum, l) => sum + l.unit_price * l.quantity, 0);
-  const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
   const deviceId = useRef(getDeviceId()).current;
 
   // Lock a session for this device

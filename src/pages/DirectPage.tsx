@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
-import { DbProduct, useProducts, getTextColor } from '@/hooks/useProducts';
+import { DbProduct } from '@/hooks/useProducts';
 import { ProductGrid } from '@/components/pos/ProductGrid';
 import { NumPad } from '@/components/pos/NumPad';
 import { SessionPopup, OrderLine } from '@/components/pos/SessionPopup';
@@ -16,35 +16,8 @@ interface DirectOrderItem {
   quantity: number;
 }
 
-const gridLayout: { code: string; span: number; hideLabel?: boolean; label?: string }[][] = [
-  [
-    { code: '1', span: 1 }, { code: '6', span: 1 }, { code: 'SHO', span: 1 }, { code: 'BAIL', span: 1 },
-    { code: 'JAME', span: 2 }, { code: 'ABSO', span: 2 }, { code: 'HEIN', span: 2 },
-  ],
-  [
-    { code: '20', span: 1 }, { code: '18', span: 1 }, { code: 'TTOP', span: 1 }, { code: 'MALI', span: 1 },
-    { code: 'JACD', span: 2 }, { code: 'BOMB', span: 2 }, { code: 'GROL', span: 2 },
-  ],
-  [
-    { code: '7', span: 1 }, { code: '12.5', span: 1 }, { code: 'AMAR', span: 1 }, { code: 'TEQU', span: 1 },
-    { code: 'JIMB', span: 2 }, { code: 'APPC', span: 2 }, { code: 'COAF', span: 2 },
-  ],
-  [
-    { code: 'ENTR', span: 1, label: '8' }, { code: '10', span: 1 }, { code: 'TSHI', span: 1 }, { code: 'SAMB', span: 1 },
-    { code: 'BSPI', span: 2 }, { code: 'WHIB', span: 2 }, { code: 'HE0%', span: 2 },
-  ],
-  [
-    { code: 'ENTR', span: 1, hideLabel: true }, { code: '10', span: 1, hideLabel: true }, { code: 'JAEG', span: 1 }, { code: 'LICO', span: 1 },
-    { code: 'BACA', span: 2 }, { code: 'JENE', span: 2 }, { code: 'JUIC', span: 2 },
-  ],
-  [
-    { code: 'ENTR', span: 1, hideLabel: true }, { code: '10', span: 1, hideLabel: true }, { code: 'SEXT', span: 1 }, { code: 'STFF', span: 1 },
-    { code: 'REDB', span: 2 }, { code: 'WINE', span: 2 }, { code: 'SOFT', span: 2 },
-  ],
-];
 
 export const DirectPage = () => {
-  const { data: products, isLoading: productsLoading } = useProducts();
   const [items, setItems] = useState<DirectOrderItem[]>([]);
   const [showNumberPopup, setShowNumberPopup] = useState(false);
   const [numberInput, setNumberInput] = useState('');
@@ -66,7 +39,7 @@ export const DirectPage = () => {
   const updateSession = useUpdateSession();
   const deviceId = useRef(getDeviceId()).current;
 
-  const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
+  
 
   // Existing logs for the currently entered quickNumber (so we can show what's already booked)
   const [existingLogs, setExistingLogs] = useState<{ product_id: string; product_name: string; quantity: number }[]>([]);
@@ -361,11 +334,6 @@ export const DirectPage = () => {
 
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
-  const pointerHandlers = {
-    onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => { e.currentTarget.style.transform = 'scale(0.93)'; e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)'; },
-    onPointerUp: (e: React.PointerEvent<HTMLButtonElement>) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; },
-    onPointerLeave: (e: React.PointerEvent<HTMLButtonElement>) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none'; },
-  };
 
   return (
     <div className="flex-1 flex overflow-hidden h-full relative" style={{ ...(retourMode ? { border: '4px solid #ef4444', boxShadow: 'inset 0 0 30px rgba(239,68,68,0.15)' } : {}) }}>
