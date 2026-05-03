@@ -7,7 +7,6 @@ import { OpenPage } from './OpenPage';
 import { ClosedPage } from './ClosedPage';
 import { TestPage, TestPageHandle } from './TestPage';
 import { DirectPage } from './DirectPage';
-import { useCreateSession, useAddDrinkLogs, useUpdateSession, useFindActiveSessionByWardrobe } from '@/hooks/useSessions';
 import { supabase } from '@/integrations/supabase/client';
 import { getDeviceId } from '@/hooks/useDeviceId';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -23,12 +22,6 @@ const Index = () => {
   const openTestPageRef = useRef<TestPageHandle>(null);
   const deviceId = useRef(getDeviceId()).current;
 
-  // Imports kept (rule 5 carve-out covers this refactor) — used by OPEN inline lock acquisition
-  // and re-exported availability for AdminPage navigation.
-  void useCreateSession;
-  void useAddDrinkLogs;
-  void useUpdateSession;
-  void useFindActiveSessionByWardrobe;
 
   const lockSession = useCallback(async (sid: string) => {
     await supabase.from('sessions').update({ locked_by: deviceId, locked_at: new Date().toISOString() } as any).eq('id', sid);
