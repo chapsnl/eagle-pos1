@@ -1,126 +1,188 @@
-import { useState, useRef, useCallback } from 'react';
 import { useProducts, getTextColor, DbProduct } from '@/hooks/useProducts';
 
-// Wide columns (span-2 items) - 3 columns per row
-const wideLayout: { code: string; hideLabel?: boolean }[][] = [
-  [{ code: 'JAME' }, { code: 'ABSO' }, { code: 'HEIN' }],
-  [{ code: 'JACD' }, { code: 'BOMB' }, { code: 'GROL' }],
-  [{ code: 'JIMB' }, { code: 'APPC' }, { code: 'COAF' }],
-  [{ code: 'BSPI' }, { code: 'WHIB' }, { code: 'HE0%' }],
-  [{ code: 'BACA' }, { code: 'JENE' }, { code: 'JUIC' }],
-  [{ code: 'REDB' }, { code: 'WINE' }, { code: 'SOFT' }],
+/**
+ * Unified 6x7 product grid used by both NR (TestPage) and DIRECT (DirectPage).
+ *
+ * Layout = 6 rows × 7 columns of flex (4 narrow span-1 + 3 wide span-2).
+ *
+ * Action slots (overrides on specific cells):
+ *   - row 3, col 0 → Entree button (label "8") — calls onEntree
+ *   - row 4, col 0 → PAY button — calls onPay
+ *   - row 4, col 1 → RETOUR toggle — calls onToggleRetour, highlights when retourMode
+ *   - row 5, col 0 → NEXT button — calls onNext
+ *   - row 5, col 1 → blind cell
+ *
+ * All other cells map to a product via shorthand.
+ */
+
+const gridLayout: { code: string; span: number; hideLabel?: boolean; label?: string }[][] = [
+  [
+    { code: '1', span: 1 }, { code: '6', span: 1 }, { code: 'SHO', span: 1 }, { code: 'BAIL', span: 1 },
+    { code: 'JAME', span: 2 }, { code: 'ABSO', span: 2 }, { code: 'HEIN', span: 2 },
+  ],
+  [
+    { code: '20', span: 1 }, { code: '18', span: 1 }, { code: 'TTOP', span: 1 }, { code: 'MALI', span: 1 },
+    { code: 'JACD', span: 2 }, { code: 'BOMB', span: 2 }, { code: 'GROL', span: 2 },
+  ],
+  [
+    { code: '7', span: 1 }, { code: '12.5', span: 1 }, { code: 'AMAR', span: 1 }, { code: 'TEQU', span: 1 },
+    { code: 'JIMB', span: 2 }, { code: 'APPC', span: 2 }, { code: 'COAF', span: 2 },
+  ],
+  [
+    { code: 'ENTR', span: 1, label: '8' }, { code: '10', span: 1 }, { code: 'TSHI', span: 1 }, { code: 'SAMB', span: 1 },
+    { code: 'BSPI', span: 2 }, { code: 'WHIB', span: 2 }, { code: 'HE0%', span: 2 },
+  ],
+  [
+    { code: 'ENTR', span: 1, hideLabel: true }, { code: '10', span: 1, hideLabel: true }, { code: 'JAEG', span: 1 }, { code: 'LICO', span: 1 },
+    { code: 'BACA', span: 2 }, { code: 'JENE', span: 2 }, { code: 'JUIC', span: 2 },
+  ],
+  [
+    { code: 'ENTR', span: 1, hideLabel: true }, { code: '10', span: 1, hideLabel: true }, { code: 'SEXT', span: 1 }, { code: 'STFF', span: 1 },
+    { code: 'REDB', span: 2 }, { code: 'WINE', span: 2 }, { code: 'SOFT', span: 2 },
+  ],
 ];
 
-// Narrow columns (span-1 items) - 4 columns per row
-const narrowLayout: { code: string; hideLabel?: boolean }[][] = [
-  [{ code: '1' }, { code: '6' }, { code: 'SHO' }, { code: 'BAIL' }],
-  [{ code: '20' }, { code: '18' }, { code: 'TTOP' }, { code: 'MALI' }],
-  [{ code: '7' }, { code: '12.5' }, { code: 'AMAR' }, { code: 'TEQU' }],
-  [{ code: '8' }, { code: '10' }, { code: 'TSHI' }, { code: 'SAMB' }],
-  [{ code: '8', hideLabel: true }, { code: '10', hideLabel: true }, { code: 'JAEG' }, { code: 'LICO' }],
-  [{ code: '8', hideLabel: true }, { code: '10', hideLabel: true }, { code: 'SEXT' }, { code: 'STFF' }],
-];
+const pointerHandlers = {
+  onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.transform = 'scale(0.93)';
+    e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)';
+  },
+  onPointerUp: (e: React.PointerEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.transform = 'scale(1)';
+    e.currentTarget.style.boxShadow = 'none';
+  },
+  onPointerLeave: (e: React.PointerEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.transform = 'scale(1)';
+    e.currentTarget.style.boxShadow = 'none';
+  },
+};
 
 interface ProductGridProps {
   onAddProduct: (product: DbProduct) => void;
+  onEntree?: (product: DbProduct) => void;
+  onPay?: () => void;
+  onToggleRetour?: () => void;
+  onNext?: () => void;
+  retourMode?: boolean;
 }
 
-export const ProductGrid = ({ onAddProduct }: ProductGridProps) => {
+export const ProductGrid = ({
+  onAddProduct,
+  onEntree,
+  onPay,
+  onToggleRetour,
+  onNext,
+  retourMode = false,
+}: ProductGridProps) => {
   const { data: products, isLoading } = useProducts();
-  const [page, setPage] = useState(0);
-  const touchStartX = useRef<number | null>(null);
-  const touchDeltaX = useRef(0);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchDeltaX.current = 0;
-  }, []);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (touchStartX.current === null) return;
-    touchDeltaX.current = e.touches[0].clientX - touchStartX.current;
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    if (Math.abs(touchDeltaX.current) > 50) {
-      if (touchDeltaX.current < 0) setPage((p) => Math.min(p + 1, 1));
-      if (touchDeltaX.current > 0) setPage((p) => Math.max(p - 1, 0));
-    }
-    touchStartX.current = null;
-    touchDeltaX.current = 0;
-  }, [page]);
-
-  if (!products || products.length === 0) {
-    return <div className="flex-1" />;
-  }
-
-  const productMap = new Map(products.map((p) => [p.shorthand, p]));
-
-  const renderGrid = (layout: { code: string; hideLabel?: boolean }[][]) => (
-    <div className="h-full flex flex-col gap-[1px]" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
-      {layout.map((row, ri) => (
-        <div key={ri} className="flex-1 flex gap-[1px]" style={{ minHeight: 0 }}>
-          {row.map((cell, ci) => {
-            const product = productMap.get(cell.code);
-            if (!product) return <div key={ci} className="flex-1" />;
-            const textColor = getTextColor(product.category_color);
-            return (
-              <button
-                key={ci}
-                onClick={() => onAddProduct(product)}
-                className="pos-btn flex-1 flex items-center justify-center active:brightness-[0.6] p-1 min-w-0 transition-all duration-75"
-                style={{
-                  backgroundColor: product.category_color,
-                  color: textColor,
-                }}
-                onPointerDown={(e) => {
-                  e.currentTarget.style.transform = 'scale(0.93)';
-                  e.currentTarget.style.boxShadow = 'inset 0 0 0 3px rgba(0,0,0,0.5)';
-                }}
-                onPointerUp={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-                onPointerLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                <span
-                  className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line"
-                  style={{ fontSize: layout === wideLayout ? 'clamp(1.01rem, 3.2vw, 2.61rem)' : 'clamp(0.63rem, 1.85vw, 1.43rem)' }}
-                >
-                  {cell.hideLabel ? '' : product.full_name}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ))}
-    </div>
-  );
+  const smallFont = 'clamp(0.48rem, 1.62vw, 1.24rem)';
+  const wideFont = 'clamp(0.96rem, 3.04vw, 2.48rem)';
 
   return (
-    <div
-      ref={containerRef}
-      className="flex-1 overflow-hidden relative"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      <div
-        className="flex h-full transition-transform duration-300 ease-out"
-        style={{ transform: `translateX(-${page * 100}%)` }}
-      >
-        <div className="w-full h-full shrink-0">{renderGrid(wideLayout)}</div>
-        <div className="w-full h-full shrink-0">{renderGrid(narrowLayout)}</div>
-      </div>
-      {/* Page indicator */}
-      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1.5">
-        <div className={`w-2 h-2 rounded-full transition-colors ${page === 0 ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-        <div className={`w-2 h-2 rounded-full transition-colors ${page === 1 ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
-      </div>
+    <div className="flex-1 flex flex-col overflow-hidden gap-[1px]" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
+      {isLoading ? (
+        gridLayout.map((row, ri) => (
+          <div key={ri} className="flex-1 flex gap-[1px]" style={{ minHeight: 0 }}>
+            {row.map((cell, ci) => (
+              <div key={ci} className="animate-pulse" style={{ flex: cell.span, backgroundColor: '#2a2a2a' }} />
+            ))}
+          </div>
+        ))
+      ) : (
+        gridLayout.map((row, ri) => (
+          <div key={ri} className="flex-1 flex gap-[1px]" style={{ minHeight: 0 }}>
+            {row.map((cell, ci) => {
+              // Entree button (row 3 col 0)
+              if (ri === 3 && ci === 0) {
+                const entrProduct = productMap.get('ENTR');
+                const entBg = entrProduct?.category_color || '#e4e2e2';
+                const entTextColor = entrProduct ? getTextColor(entrProduct.category_color) : '#000';
+                return (
+                  <button
+                    key={ci}
+                    onClick={() => { if (entrProduct) (onEntree ?? onAddProduct)(entrProduct); }}
+                    style={{ flex: cell.span, backgroundColor: entBg, color: entTextColor }}
+                    className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75"
+                    {...pointerHandlers}
+                  >
+                    <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: smallFont }}>8</span>
+                  </button>
+                );
+              }
+              // PAY (row 4 col 0)
+              if (ri === 4 && ci === 0) {
+                return (
+                  <button
+                    key={ci}
+                    onClick={onPay}
+                    style={{ flex: cell.span, backgroundColor: '#ef4444', color: '#fff' }}
+                    className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75"
+                    {...pointerHandlers}
+                  >
+                    <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: smallFont }}>PAY</span>
+                  </button>
+                );
+              }
+              // RETOUR (row 4 col 1)
+              if (ri === 4 && ci === 1) {
+                return (
+                  <button
+                    key={ci}
+                    onClick={onToggleRetour}
+                    style={{ flex: cell.span, backgroundColor: retourMode ? '#ef4444' : '#7c3aed', color: '#fff', transition: 'background-color 0.2s ease' }}
+                    className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75"
+                    {...pointerHandlers}
+                  >
+                    <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: smallFont }}>RETOUR</span>
+                  </button>
+                );
+              }
+              // NEXT (row 5 col 0)
+              if (ri === 5 && ci === 0) {
+                return (
+                  <button
+                    key={ci}
+                    onClick={onNext}
+                    style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }}
+                    className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75"
+                    {...pointerHandlers}
+                  >
+                    <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: smallFont }}>NEXT</span>
+                  </button>
+                );
+              }
+              // Blind cell (row 5 col 1)
+              if (ri === 5 && ci === 1) {
+                return (
+                  <div key={ci} style={{ flex: cell.span, backgroundColor: '#2a2a2a' }} className="flex items-center justify-center p-1 min-w-0" />
+                );
+              }
+              // Regular product cells
+              const product = productMap.get(cell.code);
+              if (!product) return <div key={ci} style={{ flex: cell.span }} />;
+              const textColor = getTextColor(product.category_color);
+              return (
+                <button
+                  key={ci}
+                  onClick={() => onAddProduct(product)}
+                  style={{ flex: cell.span, backgroundColor: product.category_color, color: textColor }}
+                  className="pos-btn flex items-center justify-center active:brightness-[0.6] p-1 min-w-0 transition-all duration-75"
+                  {...pointerHandlers}
+                >
+                  <span
+                    className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line"
+                    style={{ fontSize: cell.span === 2 ? wideFont : smallFont }}
+                  >
+                    {cell.hideLabel ? '' : (cell.label || product.full_name)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ))
+      )}
     </div>
   );
 };
