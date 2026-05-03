@@ -407,31 +407,6 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
         }}
         onReopen={() => { setReopenSession(selectedSession); setSelectedSession(null); }}
       />
-      {/* legacy popup removed below */}
-      <SessionPopup
-        open={false}
-        onClose={() => {}}
-        title=""
-        orderLines={[]}
-        totalAmount={0}
-        actions={
-          selectedType === 'active'
-            ? [
-                { label: 'CANCEL', onClick: () => setSelectedSession(null), variant: 'cancel' as const },
-                { label: 'BEWERK', onClick: () => {
-                    if (selectedSession && onNavigateToGuest) {
-                      const s = selectedSession;
-                      setSelectedSession(null);
-                      onNavigateToGuest(s.wardrobe_number ?? '', s.id, Number(s.total_amount ?? 0));
-                    }
-                  }, variant: 'confirm' as const },
-              ]
-            : [
-                { label: 'CANCEL', onClick: () => setSelectedSession(null), variant: 'cancel' as const },
-                { label: 'HEROPEN', onClick: () => { setReopenSession(selectedSession); setSelectedSession(null); }, variant: 'confirm' as const },
-              ]
-        }
-      />
 
       {/* Close Shift Step 1: Show total + confirm */}
       <SessionPopup
