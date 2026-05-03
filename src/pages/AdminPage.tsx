@@ -394,15 +394,26 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
       </div>
 
       {/* Session Detail Popup */}
-      <SessionPopup
-        open={!!selectedSession}
+      <AdminSessionPopup
+        session={selectedSession}
+        type={selectedType}
         onClose={() => setSelectedSession(null)}
-        title={formatWardrobeNumber(selectedSession?.wardrobe_number)}
-        subtitle={selectedType === 'active' ? 'Actieve sessie' : `Status: ${selectedSession?.status ?? ''}`}
-        orderLines={selectedSession ? getOrderLines(selectedSession) : []}
-        showTotal={true}
-        showPrices={true}
-        totalAmount={selectedSession ? getOrderLines(selectedSession).reduce((sum, l) => sum + l.qty * l.price, 0) : 0}
+        onEdit={() => {
+          if (selectedSession && onNavigateToGuest) {
+            const s = selectedSession;
+            setSelectedSession(null);
+            onNavigateToGuest(s.wardrobe_number ?? '', s.id, Number(s.total_amount ?? 0));
+          }
+        }}
+        onReopen={() => { setReopenSession(selectedSession); setSelectedSession(null); }}
+      />
+      {/* legacy popup removed below */}
+      <SessionPopup
+        open={false}
+        onClose={() => {}}
+        title=""
+        orderLines={[]}
+        totalAmount={0}
         actions={
           selectedType === 'active'
             ? [
