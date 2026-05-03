@@ -65,7 +65,7 @@ export const DirectPage = () => {
   const updateSession = useUpdateSession();
   const deviceId = useRef(getDeviceId()).current;
 
-  const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
+  
 
   // Existing logs for the currently entered quickNumber (so we can show what's already booked)
   const [existingLogs, setExistingLogs] = useState<{ product_id: string; product_name: string; quantity: number }[]>([]);
