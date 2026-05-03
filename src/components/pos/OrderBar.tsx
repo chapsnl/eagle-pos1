@@ -1,5 +1,10 @@
-import { DbOrderItem } from '@/pages/Index';
+import { DbProduct } from '@/hooks/useProducts';
 import { X } from 'lucide-react';
+
+interface DbOrderItem {
+  product: DbProduct;
+  quantity: number;
+}
 
 interface OrderBarProps {
   items: DbOrderItem[];
