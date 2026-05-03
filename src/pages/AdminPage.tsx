@@ -36,6 +36,48 @@ interface AdminPageProps {
   onNavigateToGuest?: (wardrobeNumber: string, sessionId: string, totalAmount: number) => void;
 }
 
+interface AdminSessionPopupProps {
+  session: any | null;
+  type: 'active' | 'closed';
+  onClose: () => void;
+  onEdit: () => void;
+  onReopen: () => void;
+}
+
+const AdminSessionPopup = ({ session, type, onClose, onEdit, onReopen }: AdminSessionPopupProps) => {
+  // Live-fetch drink_logs for active sessions so producten zichtbaar zijn
+  const { data: detail } = useSessionDetail(type === 'active' && session ? session.id : null);
+  const sourceSession = (type === 'active' ? detail : session) ?? session;
+  const orderLines = sourceSession ? getOrderLines(sourceSession) : [];
+  const total = orderLines.reduce((sum, l) => sum + l.qty * l.price, 0);
+
+  return (
+    <SessionPopup
+      open={!!session}
+      onClose={onClose}
+      title={formatWardrobeNumber(session?.wardrobe_number)}
+      subtitle={type === 'active' ? 'Actieve sessie' : `Status: ${session?.status ?? ''}`}
+      orderLines={orderLines}
+      showTotal={true}
+      showPrices={false}
+      showItemCount={true}
+      totalAmount={total}
+      actions={
+        type === 'active'
+          ? [
+              { label: 'CANCEL', onClick: onClose, variant: 'cancel' as const },
+              { label: 'BEWERK', onClick: onEdit, variant: 'confirm' as const },
+            ]
+          : [
+              { label: 'CANCEL', onClick: onClose, variant: 'cancel' as const },
+              { label: 'HEROPEN', onClick: onReopen, variant: 'confirm' as const },
+            ]
+      }
+    />
+  );
+};
+
+
 export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminPin, setAdminPin] = useState('');
