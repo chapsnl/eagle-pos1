@@ -312,11 +312,16 @@ export const DirectPage = () => {
 
   const handlePayButton = useCallback(() => {
     if (items.length === 0) return;
+    // If a guest number is already entered via quick entry, go straight to PAY flow
+    if (quickNumber.length > 0) {
+      submitOrder(quickNumber, items, true);
+      return;
+    }
     setPayMode(true);
     setNumberInput('');
     setShowWarning(false);
     setShowNumberPopup(true);
-  }, [items]);
+  }, [items, quickNumber, submitOrder]);
 
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
