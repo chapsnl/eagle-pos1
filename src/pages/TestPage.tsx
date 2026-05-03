@@ -91,7 +91,6 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const [showClosedBlockDialog, setShowClosedBlockDialog] = useState(false);
   const lastCoatLookupRef = useRef<string | null>(null);
-  const { data: products, isLoading: productsLoading } = useProducts();
   const qc = useQueryClient();
   const updateSession = useUpdateSession();
   const addDrinkLogs = useAddDrinkLogs();
@@ -99,7 +98,6 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
 
   const total = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
   const existingTotal = existingLogs.reduce((sum, l) => sum + l.unit_price * l.quantity, 0);
-  const productMap = new Map((products ?? []).map((p) => [p.shorthand, p]));
   const deviceId = useRef(getDeviceId()).current;
 
   // Lock a session for this device
