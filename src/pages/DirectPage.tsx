@@ -362,23 +362,18 @@ export const DirectPage = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 py-1" style={{ minHeight: 0 }}>
-          {existingLogs.length > 0 && (
-            existingLogs.map((log) => (
-              <div key={`existing-${log.product_id}`} style={{ color: '#e5e5e5', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 400 }}>
-                {log.quantity} x {log.product_name}
-              </div>
-            ))
-          )}
-          {items.length > 0 ? (
-            items.map((item) => (
-              <div key={item.product.id} style={{ color: '#00cc13', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
-                {item.quantity} x {item.product.full_name}
-              </div>
-            ))
-          ) : (
-            existingLogs.length === 0 && (
-              <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1.2vw, 14px)' }}>Geen producten</div>
-            )
+          {items.length > 0 && items.map((item) => (
+            <div key={item.product.id} style={{ color: '#00cc13', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 800 }}>
+              {item.quantity} x {item.product.full_name}
+            </div>
+          ))}
+          {existingLogs.length > 0 && existingLogs.map((log) => (
+            <div key={`existing-${log.product_id}`} style={{ color: '#e5e5e5', fontSize: 'clamp(11px, 1.8vw, 25px)', padding: 'clamp(3px, 0.5vh, 8px) 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left', fontWeight: 400 }}>
+              {log.quantity} x {log.product_name}
+            </div>
+          ))}
+          {items.length === 0 && existingLogs.length === 0 && (
+            <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1.2vw, 14px)' }}>Geen producten</div>
           )}
         </div>
       </div>
