@@ -481,12 +481,10 @@ export const DirectPage = () => {
                     </button>
                   );
                 }
-                // Row 5 col 1: NUMBER button (light green)
+                // Row 5 col 1: blind cell (uniform with NR/OPEN)
                 if (ri === 5 && ci === 1) {
                   return (
-                    <button key={ci} onClick={handleNumberButton} style={{ flex: cell.span, backgroundColor: '#00cc13', color: '#fff' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75" {...pointerHandlers}>
-                      <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>NUMBER</span>
-                    </button>
+                    <div key={ci} style={{ flex: cell.span, backgroundColor: '#2a2a2a' }} className="flex items-center justify-center p-1 min-w-0" />
                   );
                 }
                 // Regular product buttons
