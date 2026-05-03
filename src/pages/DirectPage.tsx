@@ -433,75 +433,14 @@ export const DirectPage = () => {
       </div>
 
       {/* Right column - Product grid */}
-      <div className="flex-1 flex flex-col overflow-hidden gap-[1px]" style={{ width: '80%', backgroundColor: 'rgba(0,0,0,0.3)' }}>
-        {productsLoading ? (
-          gridLayout.map((row, ri) => (
-            <div key={ri} className="flex-1 flex gap-[1px]" style={{ minHeight: 0 }}>
-              {row.map((cell, ci) => (
-                <div key={ci} className="animate-pulse" style={{ flex: cell.span, backgroundColor: '#2a2a2a' }} />
-              ))}
-            </div>
-          ))
-        ) : (
-          gridLayout.map((row, ri) => (
-            <div key={ri} className="flex-1 flex gap-[1px]" style={{ minHeight: 0 }}>
-              {row.map((cell, ci) => {
-                // Row 3 col 0: Entree button with label "8"
-                if (ri === 3 && ci === 0) {
-                  const entrProduct = productMap.get('ENTR');
-                  const entBg = entrProduct?.category_color || '#e4e2e2';
-                  const entTextColor = entrProduct ? getTextColor(entrProduct.category_color) : '#000';
-                  return (
-                    <button key={ci} onClick={() => { if (entrProduct) addProduct(entrProduct); }} style={{ flex: cell.span, backgroundColor: entBg, color: entTextColor }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75" {...pointerHandlers}>
-                      <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>8</span>
-                    </button>
-                  );
-                }
-                // Row 4 col 0: PAY button (opens number popup for pay)
-                if (ri === 4 && ci === 0) {
-                  return (
-                    <button key={ci} onClick={handlePayButton} style={{ flex: cell.span, backgroundColor: '#ef4444', color: '#fff' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75" {...pointerHandlers}>
-                      <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>PAY</span>
-                    </button>
-                  );
-                }
-                // Row 4 col 1: RETOUR button
-                if (ri === 4 && ci === 1) {
-                  return (
-                    <button key={ci} onClick={() => setRetourMode((m) => !m)} style={{ flex: cell.span, backgroundColor: retourMode ? '#ef4444' : '#7c3aed', color: '#fff', transition: 'background-color 0.2s ease' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75" {...pointerHandlers}>
-                      <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>RETOUR</span>
-                    </button>
-                  );
-                }
-                // Row 5 col 0: NEXT button
-                if (ri === 5 && ci === 0) {
-                  return (
-                    <button key={ci} onClick={handleNext} style={{ flex: cell.span, backgroundColor: '#1a3a6a', color: '#fff' }} className="pos-btn flex items-center justify-center p-1 min-w-0 transition-all duration-75" {...pointerHandlers}>
-                      <span className="font-extrabold leading-[1.05] text-center uppercase" style={{ fontSize: 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>NEXT</span>
-                    </button>
-                  );
-                }
-                // Row 5 col 1: blind cell (uniform with NR/OPEN)
-                if (ri === 5 && ci === 1) {
-                  return (
-                    <div key={ci} style={{ flex: cell.span, backgroundColor: '#2a2a2a' }} className="flex items-center justify-center p-1 min-w-0" />
-                  );
-                }
-                // Regular product buttons
-                const product = productMap.get(cell.code);
-                if (!product) return <div key={ci} style={{ flex: cell.span }} />;
-                const textColor = getTextColor(product.category_color);
-                return (
-                  <button key={ci} onClick={() => addProduct(product)} style={{ flex: cell.span, backgroundColor: product.category_color, color: textColor }} className="pos-btn flex items-center justify-center active:brightness-[0.6] p-1 min-w-0 transition-all duration-75" {...pointerHandlers}>
-                    <span className="font-extrabold leading-[1.05] text-center uppercase whitespace-pre-line" style={{ fontSize: cell.span === 2 ? 'clamp(0.96rem, 3.04vw, 2.48rem)' : 'clamp(0.48rem, 1.62vw, 1.24rem)' }}>
-                      {cell.hideLabel ? '' : (cell.label || product.full_name)}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          ))
-        )}
+      <div className="flex flex-col overflow-hidden" style={{ width: '80%' }}>
+        <ProductGrid
+          onAddProduct={addProduct}
+          onPay={handlePayButton}
+          onToggleRetour={() => setRetourMode((m) => !m)}
+          onNext={handleNext}
+          retourMode={retourMode}
+        />
       </div>
 
       {/* Quick NR popup with dimmed background */}
