@@ -24,7 +24,7 @@ export const NavTabs = ({ activeView, onViewChange, itemCount = 0 }: NavTabsProp
         <button
           key={view}
           onClick={() => onViewChange(view)}
-          className={`flex-1 py-3.5 text-[clamp(12px,2.5vw,16px)] font-extrabold uppercase tracking-wide relative justify-center items-center text-center w-full${view === 'bar' ? ' flex md:hidden xl:flex' : ''}`}
+          className="flex-1 py-3.5 text-[clamp(12px,2.5vw,16px)] font-extrabold uppercase tracking-wide relative justify-center items-center text-center w-full"
           style={activeView === view ? {
             backgroundColor: '#00cc13',
             color: '#ffffff',
