@@ -561,6 +561,112 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     </Dialog>
   );
 
+  const handleTransferKey = useCallback((key: string) => {
+    setTransferWarning(null);
+    if (key === 'DEL') { setTransferNumber(''); return; }
+    if (key === 'BACK') { setTransferNumber(prev => prev.slice(0, -1)); return; }
+    if (transferNumber.length < 3) setTransferNumber(prev => prev + key);
+  }, [transferNumber]);
+
+  const handleOpenTransfer = useCallback(async () => {
+    if (!sessionId) return;
+    if (items.length > 0) {
+      const positiveItems = items.filter(i => i.quantity > 0);
+      const negativeItems = items.filter(i => i.quantity < 0);
+      const logs = positiveItems.flatMap(item =>
+        Array.from({ length: item.quantity }, () => ({
+          session_id: sessionId,
+          product_id: item.product.id,
+          price_at_time: item.product.price,
+        }))
+      );
+      try {
+        if (logs.length > 0) await addDrinkLogs.mutateAsync(logs);
+        for (const item of negativeItems) {
+          const deleteCount = Math.abs(item.quantity);
+          for (let i = 0; i < deleteCount; i++) {
+            const { data: logToDelete } = await supabase
+              .from('drink_logs').select('id')
+              .eq('session_id', sessionId)
+              .eq('product_id', item.product.id)
+              .limit(1).maybeSingle();
+            if (logToDelete) await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
+          }
+        }
+        const newTotal = Math.max(0, sessionTotal + total);
+        await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
+        setItems([]);
+        setSessionTotal(newTotal);
+      } catch {
+        toast.error('Opslaan mislukt voor transfer');
+        return;
+      }
+    }
+    setTransferNumber('');
+    setTransferWarning(null);
+    setShowTransferNumpad(true);
+  }, [sessionId, items, sessionTotal, total, addDrinkLogs, updateSession]);
+
+  const handleTransferConfirmOpen = useCallback(async () => {
+    const newNum = transferNumber.trim();
+    if (newNum.length === 0) { setTransferWarning('Voer een nieuw nummer in!'); return; }
+    if (newNum === coatNumber) { setTransferWarning('Dit is al het huidige nummer!'); return; }
+    const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
+    const existsInActive = cachedSessions?.some(s => s.wardrobe_number === newNum);
+    if (existsInActive) { setTransferWarning(`Nummer ${formatWardrobeNumber(newNum)} is al in gebruik!`); return; }
+    const { data: closedSession } = await supabase
+      .from('sessions').select('id')
+      .eq('wardrobe_number', newNum)
+      .in('status', ['paid', 'archived'])
+      .limit(1).maybeSingle();
+    if (closedSession) { setTransferWarning(`Nummer ${formatWardrobeNumber(newNum)} is al afgesloten in deze shift!`); return; }
+    setShowTransferNumpad(false);
+    setShowTransferConfirm(true);
+  }, [transferNumber, coatNumber, qc]);
+
+  const executeTransfer = useCallback(async () => {
+    if (!sessionId) return;
+    const newNum = transferNumber.trim();
+    setTransferLoading(true);
+    try {
+      await supabase.from('sessions').update({ wardrobe_number: newNum } as any).eq('id', sessionId);
+      qc.invalidateQueries({ queryKey: ['sessions'] });
+      qc.invalidateQueries({ queryKey: ['active-sessions'] });
+      setShowTransferConfirm(false);
+      setTransferNumber('');
+      setCoatNumber(newNum);
+      lastCoatLookupRef.current = newNum;
+      toast.success(`Nummer overgedragen naar ${formatWardrobeNumber(newNum)}`);
+    } catch (err: any) {
+      toast.error(`Transfer mislukt: ${err.message}`);
+    } finally {
+      setTransferLoading(false);
+    }
+  }, [sessionId, transferNumber, qc]);
+
+  const handleTransferCancel = useCallback(() => {
+    setShowTransferNumpad(false);
+    setShowTransferConfirm(false);
+    setTransferNumber('');
+    setTransferWarning(null);
+    setTransferLoading(false);
+  }, []);
+
+  const transferConfirmDialog = (
+    <SessionPopup
+      open={showTransferConfirm}
+      onClose={handleTransferCancel}
+      title="TRANSFER NR"
+      subtitle={`Nummer ${formatWardrobeNumber(coatNumber)} overdragen naar ${formatWardrobeNumber(transferNumber)}. Weet je het zeker?`}
+      subtitleSize="clamp(0.85rem, 2vw, 1.15rem)"
+      orderLines={[]}
+      showTotal={false}
+      actions={[
+        { label: 'NEE', onClick: handleTransferCancel, variant: 'cancel' as const },
+        { label: transferLoading ? 'BEZIG...' : 'JA', onClick: executeTransfer, variant: 'confirm' as const },
+      ]}
+    />
+  );
 
   const addAndBook = useCallback(async (product: DbProduct) => {
     if (!sessionId) return;
