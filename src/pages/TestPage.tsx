@@ -636,7 +636,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       setTransferNumber('');
       setCoatNumber(newNum);
       lastCoatLookupRef.current = newNum;
-      toast.success(`Nummer overgedragen naar ${formatWardrobeNumber(newNum)}`);
+      
     } catch (err: any) {
       toast.error(`Transfer mislukt: ${err.message}`);
     } finally {
