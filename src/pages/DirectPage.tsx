@@ -615,6 +615,49 @@ export const DirectPage = () => {
           { label: 'VERDER', onClick: executePayVerwerk, variant: 'confirm' as const },
         ]}
       />
+
+      {/* Transfer numpad overlay */}
+      {showTransferNumpad && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
+          <div className="flex flex-col items-center w-full max-w-sm mx-auto px-6 gap-6">
+            <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center" style={{ color: '#ef4444' }}>TRANSFER NR</h2>
+            <p className="text-sm font-bold uppercase text-center" style={{ color: '#888' }}>
+              Huidig: <span style={{ color: '#fff' }}>{formatWardrobeNumber(transferSourceNumber)}</span>{' → '}Nieuw nummer:
+            </p>
+            <div className="flex items-center justify-center w-full">
+              <div className="w-full" style={{ maxWidth: '280px' }}>
+                <div
+                  className="w-full font-extrabold text-center flex items-center justify-center"
+                  style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: '3px solid #ef4444', boxShadow: '0 0 12px #ef444480, 0 0 24px #ef444430', borderRadius: '12px' }}
+                >
+                  {transferNumber.length > 0 ? formatWardrobeNumber(transferNumber) : <span style={{ color: '#9ca3af' }}>—</span>}
+                </div>
+                {transferWarning && (
+                  <p className="text-center font-bold mt-2" style={{ color: '#ef4444', fontSize: 'clamp(12px, 2vw, 16px)' }}>{transferWarning}</p>
+                )}
+              </div>
+            </div>
+            <NumPad onKey={handleTransferKey} />
+            <div className="flex gap-3 w-full">
+              <button onClick={handleTransferCancel} className="flex-1 py-4 font-extrabold uppercase text-lg" style={{ backgroundColor: '#333', color: '#fff', borderRadius: 6 }}>CANCEL</button>
+              <button onClick={handleTransferConfirmOpen} className="flex-1 py-4 font-extrabold uppercase text-lg" style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: 6, boxShadow: '0 0 12px #ef444480' }}>OK</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <SessionPopup
+        open={showTransferConfirm}
+        onClose={handleTransferCancel}
+        title="TRANSFER NR"
+        subtitle={`Nummer ${formatWardrobeNumber(transferSourceNumber)} overdragen naar ${formatWardrobeNumber(transferNumber)}. Weet je het zeker?`}
+        orderLines={[]}
+        showTotal={false}
+        actions={[
+          { label: 'NEE', onClick: handleTransferCancel, variant: 'cancel' as const },
+          { label: transferLoading ? 'BEZIG...' : 'JA', onClick: executeTransfer, variant: 'confirm' as const },
+        ]}
+      />
     </div>
   );
 };
