@@ -171,7 +171,8 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       const cached = cachedSessions?.find(s => s.wardrobe_number === wardrobeNum) ?? null;
 
       if (!cached) {
-        await autoCreateAndOpen(wardrobeNum);
+        setPendingNewWardrobe(wardrobeNum);
+        setShowNewNumberConfirm(true);
         return;
       }
 
