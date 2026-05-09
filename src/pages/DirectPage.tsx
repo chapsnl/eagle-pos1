@@ -31,6 +31,12 @@ export const DirectPage = () => {
   const [showPayDialog, setShowPayDialog] = useState(false);
   const [showEntreeWarning, setShowEntreeWarning] = useState(false);
   const [payWardrobe, setPayWardrobe] = useState('');
+  const [showTransferNumpad, setShowTransferNumpad] = useState(false);
+  const [transferNumber, setTransferNumber] = useState('');
+  const [transferWarning, setTransferWarning] = useState<string | null>(null);
+  const [showTransferConfirm, setShowTransferConfirm] = useState(false);
+  const [transferLoading, setTransferLoading] = useState(false);
+  const [transferSourceNumber, setTransferSourceNumber] = useState('');
   const submitLockRef = useRef(false);
 
   const qc = useQueryClient();
