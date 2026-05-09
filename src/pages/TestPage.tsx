@@ -750,6 +750,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       {bonDialog}
       {payDialog}
       {entreeWarningDialog}
+      {transferConfirmDialog}
 
       {/* Retour mode banner */}
       {retourMode && (
