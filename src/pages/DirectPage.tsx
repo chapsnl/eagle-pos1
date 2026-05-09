@@ -327,6 +327,83 @@ export const DirectPage = () => {
     setPayWardrobe('');
   }, [payWardrobe, items, submitOrder]);
 
+  const handleTransferKey = useCallback((key: string) => {
+    setTransferWarning(null);
+    if (key === 'DEL') { setTransferNumber(''); return; }
+    if (key === 'BACK') { setTransferNumber(prev => prev.slice(0, -1)); return; }
+    if (transferNumber.length < 3) setTransferNumber(prev => prev + key);
+  }, [transferNumber]);
+
+  const handleOpenTransfer = useCallback(async () => {
+    if (quickNumber.length === 0) return;
+    const currentNum = quickNumber;
+    setTransferSourceNumber(currentNum);
+    if (items.length > 0) {
+      await submitOrder(currentNum, items, false);
+    }
+    setTransferNumber('');
+    setTransferWarning(null);
+    setShowTransferNumpad(true);
+  }, [quickNumber, items, submitOrder]);
+
+  const handleTransferConfirmOpen = useCallback(async () => {
+    const newNum = transferNumber.trim();
+    if (newNum.length === 0) { setTransferWarning('Voer een nieuw nummer in!'); return; }
+    if (newNum === transferSourceNumber) { setTransferWarning('Dit is al het huidige nummer!'); return; }
+    const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
+    const existsInActive = cachedSessions?.some(s => s.wardrobe_number === newNum);
+    if (existsInActive) { setTransferWarning(`Nummer ${formatWardrobeNumber(newNum)} is al in gebruik!`); return; }
+    const { data: closedSession } = await supabase
+      .from('sessions').select('id')
+      .eq('wardrobe_number', newNum)
+      .in('status', ['paid', 'archived'])
+      .limit(1).maybeSingle();
+    if (closedSession) { setTransferWarning(`Nummer ${formatWardrobeNumber(newNum)} is al afgesloten in deze shift!`); return; }
+    setShowTransferNumpad(false);
+    setShowTransferConfirm(true);
+  }, [transferNumber, transferSourceNumber, qc]);
+
+  const executeTransfer = useCallback(async () => {
+    const oldNum = transferSourceNumber;
+    const newNum = transferNumber.trim();
+    setTransferLoading(true);
+    try {
+      const { data: session } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('wardrobe_number', oldNum)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+      if (!session) {
+        toast.error('Sessie niet gevonden — probeer opnieuw');
+        setTransferLoading(false);
+        return;
+      }
+      await supabase.from('sessions').update({ wardrobe_number: newNum } as any).eq('id', session.id);
+      qc.invalidateQueries({ queryKey: ['sessions'] });
+      qc.invalidateQueries({ queryKey: ['active-sessions'] });
+      setShowTransferConfirm(false);
+      setTransferNumber('');
+      setTransferSourceNumber('');
+      setQuickNumber(newNum);
+      setExistingLogs([]);
+    } catch (err: any) {
+      toast.error(`Transfer mislukt: ${err.message}`);
+    } finally {
+      setTransferLoading(false);
+    }
+  }, [transferSourceNumber, transferNumber, qc]);
+
+  const handleTransferCancel = useCallback(() => {
+    setShowTransferNumpad(false);
+    setShowTransferConfirm(false);
+    setTransferNumber('');
+    setTransferWarning(null);
+    setTransferLoading(false);
+    setTransferSourceNumber('');
+  }, []);
+
   const popupOrderLines: OrderLine[] = (() => {
     const merged = new Map<string, { name: string; qty: number }>();
     for (const l of existingLogs) merged.set(l.product_id, { name: l.product_name, qty: l.quantity });
