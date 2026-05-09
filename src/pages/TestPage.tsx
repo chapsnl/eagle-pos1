@@ -805,6 +805,24 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
           )}
         </div>
 
+        <div className="px-2 py-2" style={{ borderTop: '1px solid #333' }}>
+          <button
+            onClick={handleOpenTransfer}
+            className="w-full font-extrabold uppercase transition-all active:scale-[0.97]"
+            style={{
+              backgroundColor: '#ef4444',
+              color: '#fff',
+              borderRadius: 8,
+              padding: 'clamp(8px, 1.2vh, 14px) 4px',
+              fontSize: 'clamp(10px, 1.4vw, 14px)',
+              letterSpacing: '0.08em',
+              boxShadow: '0 0 10px #ef444460',
+            }}
+          >
+            TRANSFER NR
+          </button>
+        </div>
+
       </div>
 
       {/* Right column - Product grid */}
