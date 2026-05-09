@@ -543,6 +543,37 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     />
   );
 
+  const handleNewNumberCancel = useCallback(() => {
+    setShowNewNumberConfirm(false);
+    setPendingNewWardrobe(null);
+    setCoatNumber('');
+    setActiveField('coat');
+    lastCoatLookupRef.current = null;
+  }, []);
+
+  const handleNewNumberConfirm = useCallback(async () => {
+    const num = pendingNewWardrobe;
+    setShowNewNumberConfirm(false);
+    setPendingNewWardrobe(null);
+    if (num) await autoCreateAndOpen(num);
+  }, [pendingNewWardrobe, autoCreateAndOpen]);
+
+  const newNumberConfirmDialog = (
+    <SessionPopup
+      open={showNewNumberConfirm}
+      onClose={handleNewNumberCancel}
+      title="NIEUW NUMMER"
+      subtitle={`Nieuwe gast aanmaken voor nummer ${formatWardrobeNumber(pendingNewWardrobe)}?`}
+      subtitleSize="clamp(0.85rem, 2vw, 1.15rem)"
+      orderLines={[]}
+      showTotal={false}
+      actions={[
+        { label: 'NEE', onClick: handleNewNumberCancel, variant: 'cancel' as const },
+        { label: 'JA', onClick: handleNewNumberConfirm, variant: 'confirm' as const },
+      ]}
+    />
+  );
+
   const handleLockedDismiss = useCallback(() => {
     setShowLockedWarning(false);
     setCoatNumber('');
