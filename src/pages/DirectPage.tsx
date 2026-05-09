@@ -31,6 +31,12 @@ export const DirectPage = () => {
   const [showPayDialog, setShowPayDialog] = useState(false);
   const [showEntreeWarning, setShowEntreeWarning] = useState(false);
   const [payWardrobe, setPayWardrobe] = useState('');
+  const [showTransferNumpad, setShowTransferNumpad] = useState(false);
+  const [transferNumber, setTransferNumber] = useState('');
+  const [transferWarning, setTransferWarning] = useState<string | null>(null);
+  const [showTransferConfirm, setShowTransferConfirm] = useState(false);
+  const [transferLoading, setTransferLoading] = useState(false);
+  const [transferSourceNumber, setTransferSourceNumber] = useState('');
   const submitLockRef = useRef(false);
 
   const qc = useQueryClient();
@@ -321,6 +327,83 @@ export const DirectPage = () => {
     setPayWardrobe('');
   }, [payWardrobe, items, submitOrder]);
 
+  const handleTransferKey = useCallback((key: string) => {
+    setTransferWarning(null);
+    if (key === 'DEL') { setTransferNumber(''); return; }
+    if (key === 'BACK') { setTransferNumber(prev => prev.slice(0, -1)); return; }
+    if (transferNumber.length < 3) setTransferNumber(prev => prev + key);
+  }, [transferNumber]);
+
+  const handleOpenTransfer = useCallback(async () => {
+    if (quickNumber.length === 0) return;
+    const currentNum = quickNumber;
+    setTransferSourceNumber(currentNum);
+    if (items.length > 0) {
+      await submitOrder(currentNum, items, false);
+    }
+    setTransferNumber('');
+    setTransferWarning(null);
+    setShowTransferNumpad(true);
+  }, [quickNumber, items, submitOrder]);
+
+  const handleTransferConfirmOpen = useCallback(async () => {
+    const newNum = transferNumber.trim();
+    if (newNum.length === 0) { setTransferWarning('Voer een nieuw nummer in!'); return; }
+    if (newNum === transferSourceNumber) { setTransferWarning('Dit is al het huidige nummer!'); return; }
+    const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
+    const existsInActive = cachedSessions?.some(s => s.wardrobe_number === newNum);
+    if (existsInActive) { setTransferWarning(`Nummer ${formatWardrobeNumber(newNum)} is al in gebruik!`); return; }
+    const { data: closedSession } = await supabase
+      .from('sessions').select('id')
+      .eq('wardrobe_number', newNum)
+      .in('status', ['paid', 'archived'])
+      .limit(1).maybeSingle();
+    if (closedSession) { setTransferWarning(`Nummer ${formatWardrobeNumber(newNum)} is al afgesloten in deze shift!`); return; }
+    setShowTransferNumpad(false);
+    setShowTransferConfirm(true);
+  }, [transferNumber, transferSourceNumber, qc]);
+
+  const executeTransfer = useCallback(async () => {
+    const oldNum = transferSourceNumber;
+    const newNum = transferNumber.trim();
+    setTransferLoading(true);
+    try {
+      const { data: session } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('wardrobe_number', oldNum)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+      if (!session) {
+        toast.error('Sessie niet gevonden — probeer opnieuw');
+        setTransferLoading(false);
+        return;
+      }
+      await supabase.from('sessions').update({ wardrobe_number: newNum } as any).eq('id', session.id);
+      qc.invalidateQueries({ queryKey: ['sessions'] });
+      qc.invalidateQueries({ queryKey: ['active-sessions'] });
+      setShowTransferConfirm(false);
+      setTransferNumber('');
+      setTransferSourceNumber('');
+      setQuickNumber(newNum);
+      setExistingLogs([]);
+    } catch (err: any) {
+      toast.error(`Transfer mislukt: ${err.message}`);
+    } finally {
+      setTransferLoading(false);
+    }
+  }, [transferSourceNumber, transferNumber, qc]);
+
+  const handleTransferCancel = useCallback(() => {
+    setShowTransferNumpad(false);
+    setShowTransferConfirm(false);
+    setTransferNumber('');
+    setTransferWarning(null);
+    setTransferLoading(false);
+    setTransferSourceNumber('');
+  }, []);
+
   const popupOrderLines: OrderLine[] = (() => {
     const merged = new Map<string, { name: string; qty: number }>();
     for (const l of existingLogs) merged.set(l.product_id, { name: l.product_name, qty: l.quantity });
@@ -399,6 +482,27 @@ export const DirectPage = () => {
             <div className="text-center py-4" style={{ color: '#555', fontSize: 'clamp(10px, 1.2vw, 14px)' }}>Geen producten</div>
           )}
         </div>
+
+        {/* Transfer NR button */}
+        {quickNumber.length > 0 && (
+          <div className="px-2 py-2" style={{ borderTop: '1px solid #333' }}>
+            <button
+              onClick={handleOpenTransfer}
+              className="w-full font-extrabold uppercase transition-all active:scale-[0.97]"
+              style={{
+                backgroundColor: '#ef4444',
+                color: '#fff',
+                borderRadius: 8,
+                padding: 'clamp(8px, 1.2vh, 14px) 4px',
+                fontSize: 'clamp(10px, 1.4vw, 14px)',
+                letterSpacing: '0.08em',
+                boxShadow: '0 0 10px #ef444460',
+              }}
+            >
+              TRANSFER NR
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Right column - Product grid */}
@@ -509,6 +613,49 @@ export const DirectPage = () => {
         actions={[
           { label: 'TERUG', onClick: () => setShowEntreeWarning(false), variant: 'cancel' as const },
           { label: 'VERDER', onClick: executePayVerwerk, variant: 'confirm' as const },
+        ]}
+      />
+
+      {/* Transfer numpad overlay */}
+      {showTransferNumpad && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
+          <div className="flex flex-col items-center w-full max-w-sm mx-auto px-6 gap-6">
+            <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center" style={{ color: '#ef4444' }}>TRANSFER NR</h2>
+            <p className="text-sm font-bold uppercase text-center" style={{ color: '#888' }}>
+              Huidig: <span style={{ color: '#fff' }}>{formatWardrobeNumber(transferSourceNumber)}</span>{' → '}Nieuw nummer:
+            </p>
+            <div className="flex items-center justify-center w-full">
+              <div className="w-full" style={{ maxWidth: '280px' }}>
+                <div
+                  className="w-full font-extrabold text-center flex items-center justify-center"
+                  style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: '3px solid #ef4444', boxShadow: '0 0 12px #ef444480, 0 0 24px #ef444430', borderRadius: '12px' }}
+                >
+                  {transferNumber.length > 0 ? formatWardrobeNumber(transferNumber) : <span style={{ color: '#9ca3af' }}>—</span>}
+                </div>
+                {transferWarning && (
+                  <p className="text-center font-bold mt-2" style={{ color: '#ef4444', fontSize: 'clamp(12px, 2vw, 16px)' }}>{transferWarning}</p>
+                )}
+              </div>
+            </div>
+            <NumPad onKey={handleTransferKey} />
+            <div className="flex gap-3 w-full">
+              <button onClick={handleTransferCancel} className="flex-1 py-4 font-extrabold uppercase text-lg" style={{ backgroundColor: '#333', color: '#fff', borderRadius: 6 }}>CANCEL</button>
+              <button onClick={handleTransferConfirmOpen} className="flex-1 py-4 font-extrabold uppercase text-lg" style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: 6, boxShadow: '0 0 12px #ef444480' }}>OK</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <SessionPopup
+        open={showTransferConfirm}
+        onClose={handleTransferCancel}
+        title="TRANSFER NR"
+        subtitle={`Nummer ${formatWardrobeNumber(transferSourceNumber)} overdragen naar ${formatWardrobeNumber(transferNumber)}. Weet je het zeker?`}
+        orderLines={[]}
+        showTotal={false}
+        actions={[
+          { label: 'NEE', onClick: handleTransferCancel, variant: 'cancel' as const },
+          { label: transferLoading ? 'BEZIG...' : 'JA', onClick: executeTransfer, variant: 'confirm' as const },
         ]}
       />
     </div>
