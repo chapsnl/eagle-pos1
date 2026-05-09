@@ -64,6 +64,8 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   const [showLockedWarning, setShowLockedWarning] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const [showClosedBlockDialog, setShowClosedBlockDialog] = useState(false);
+  const [showNewNumberConfirm, setShowNewNumberConfirm] = useState(false);
+  const [pendingNewWardrobe, setPendingNewWardrobe] = useState<string | null>(null);
   const [showTransferNumpad, setShowTransferNumpad] = useState(false);
   const [transferNumber, setTransferNumber] = useState('');
   const [transferWarning, setTransferWarning] = useState<string | null>(null);
@@ -169,7 +171,8 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       const cached = cachedSessions?.find(s => s.wardrobe_number === wardrobeNum) ?? null;
 
       if (!cached) {
-        await autoCreateAndOpen(wardrobeNum);
+        setPendingNewWardrobe(wardrobeNum);
+        setShowNewNumberConfirm(true);
         return;
       }
 
@@ -467,7 +470,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
 
   // 20s inactivity timer: reset to input when idle in products phase
   // Pause timer when any popup/dialog is open
-  const anyPopupOpen = showLockedWarning || showClosedBlockDialog || showBonDialog || showPayDialog || showEntreeWarning || showTransferNumpad || showTransferConfirm;
+  const anyPopupOpen = showLockedWarning || showClosedBlockDialog || showBonDialog || showPayDialog || showEntreeWarning || showTransferNumpad || showTransferConfirm || showNewNumberConfirm;
   useInactivityTimer(phase === 'products' && !anyPopupOpen, resetToInput);
 
   const bonDialog = (
@@ -536,6 +539,37 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       showTotal={false}
       actions={[
         { label: 'BEGREPEN', onClick: handleClosedBlockDismiss, variant: 'confirm' as const },
+      ]}
+    />
+  );
+
+  const handleNewNumberCancel = useCallback(() => {
+    setShowNewNumberConfirm(false);
+    setPendingNewWardrobe(null);
+    setCoatNumber('');
+    setActiveField('coat');
+    lastCoatLookupRef.current = null;
+  }, []);
+
+  const handleNewNumberConfirm = useCallback(async () => {
+    const num = pendingNewWardrobe;
+    setShowNewNumberConfirm(false);
+    setPendingNewWardrobe(null);
+    if (num) await autoCreateAndOpen(num);
+  }, [pendingNewWardrobe, autoCreateAndOpen]);
+
+  const newNumberConfirmDialog = (
+    <SessionPopup
+      open={showNewNumberConfirm}
+      onClose={handleNewNumberCancel}
+      title="NIEUW NUMMER"
+      subtitle={`Nieuwe gast aanmaken voor nummer ${formatWardrobeNumber(pendingNewWardrobe)}?`}
+      subtitleSize="clamp(0.85rem, 2vw, 1.15rem)"
+      orderLines={[]}
+      showTotal={false}
+      actions={[
+        { label: 'NEE', onClick: handleNewNumberCancel, variant: 'cancel' as const },
+        { label: 'JA', onClick: handleNewNumberConfirm, variant: 'confirm' as const },
       ]}
     />
   );
@@ -722,6 +756,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
         </div>
         <FeedbackOverlay type={feedback} />
         {closedBlockDialog}
+        {newNumberConfirmDialog}
         {lockedWarningDialog}
         {bonDialog}
         {payDialog}
