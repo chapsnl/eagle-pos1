@@ -64,6 +64,11 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   const [showLockedWarning, setShowLockedWarning] = useState(false);
   const [pendingWardrobe, setPendingWardrobe] = useState<string | null>(null);
   const [showClosedBlockDialog, setShowClosedBlockDialog] = useState(false);
+  const [showTransferNumpad, setShowTransferNumpad] = useState(false);
+  const [transferNumber, setTransferNumber] = useState('');
+  const [transferWarning, setTransferWarning] = useState<string | null>(null);
+  const [showTransferConfirm, setShowTransferConfirm] = useState(false);
+  const [transferLoading, setTransferLoading] = useState(false);
   const lastCoatLookupRef = useRef<string | null>(null);
   const qc = useQueryClient();
   const updateSession = useUpdateSession();
@@ -462,7 +467,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
 
   // 20s inactivity timer: reset to input when idle in products phase
   // Pause timer when any popup/dialog is open
-  const anyPopupOpen = showLockedWarning || showClosedBlockDialog || showBonDialog || showPayDialog || showEntreeWarning;
+  const anyPopupOpen = showLockedWarning || showClosedBlockDialog || showBonDialog || showPayDialog || showEntreeWarning || showTransferNumpad || showTransferConfirm;
   useInactivityTimer(phase === 'products' && !anyPopupOpen, resetToInput);
 
   const bonDialog = (
@@ -556,6 +561,112 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
     </Dialog>
   );
 
+  const handleTransferKey = useCallback((key: string) => {
+    setTransferWarning(null);
+    if (key === 'DEL') { setTransferNumber(''); return; }
+    if (key === 'BACK') { setTransferNumber(prev => prev.slice(0, -1)); return; }
+    if (transferNumber.length < 3) setTransferNumber(prev => prev + key);
+  }, [transferNumber]);
+
+  const handleOpenTransfer = useCallback(async () => {
+    if (!sessionId) return;
+    if (items.length > 0) {
+      const positiveItems = items.filter(i => i.quantity > 0);
+      const negativeItems = items.filter(i => i.quantity < 0);
+      const logs = positiveItems.flatMap(item =>
+        Array.from({ length: item.quantity }, () => ({
+          session_id: sessionId,
+          product_id: item.product.id,
+          price_at_time: item.product.price,
+        }))
+      );
+      try {
+        if (logs.length > 0) await addDrinkLogs.mutateAsync(logs);
+        for (const item of negativeItems) {
+          const deleteCount = Math.abs(item.quantity);
+          for (let i = 0; i < deleteCount; i++) {
+            const { data: logToDelete } = await supabase
+              .from('drink_logs').select('id')
+              .eq('session_id', sessionId)
+              .eq('product_id', item.product.id)
+              .limit(1).maybeSingle();
+            if (logToDelete) await supabase.from('drink_logs').delete().eq('id', logToDelete.id);
+          }
+        }
+        const newTotal = Math.max(0, sessionTotal + total);
+        await updateSession.mutateAsync({ id: sessionId, total_amount: newTotal });
+        setItems([]);
+        setSessionTotal(newTotal);
+      } catch {
+        toast.error('Opslaan mislukt voor transfer');
+        return;
+      }
+    }
+    setTransferNumber('');
+    setTransferWarning(null);
+    setShowTransferNumpad(true);
+  }, [sessionId, items, sessionTotal, total, addDrinkLogs, updateSession]);
+
+  const handleTransferConfirmOpen = useCallback(async () => {
+    const newNum = transferNumber.trim();
+    if (newNum.length === 0) { setTransferWarning('Voer een nieuw nummer in!'); return; }
+    if (newNum === coatNumber) { setTransferWarning('Dit is al het huidige nummer!'); return; }
+    const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
+    const existsInActive = cachedSessions?.some(s => s.wardrobe_number === newNum);
+    if (existsInActive) { setTransferWarning(`Nummer ${formatWardrobeNumber(newNum)} is al in gebruik!`); return; }
+    const { data: closedSession } = await supabase
+      .from('sessions').select('id')
+      .eq('wardrobe_number', newNum)
+      .in('status', ['paid', 'archived'])
+      .limit(1).maybeSingle();
+    if (closedSession) { setTransferWarning(`Nummer ${formatWardrobeNumber(newNum)} is al afgesloten in deze shift!`); return; }
+    setShowTransferNumpad(false);
+    setShowTransferConfirm(true);
+  }, [transferNumber, coatNumber, qc]);
+
+  const executeTransfer = useCallback(async () => {
+    if (!sessionId) return;
+    const newNum = transferNumber.trim();
+    setTransferLoading(true);
+    try {
+      await supabase.from('sessions').update({ wardrobe_number: newNum } as any).eq('id', sessionId);
+      qc.invalidateQueries({ queryKey: ['sessions'] });
+      qc.invalidateQueries({ queryKey: ['active-sessions'] });
+      setShowTransferConfirm(false);
+      setTransferNumber('');
+      setCoatNumber(newNum);
+      lastCoatLookupRef.current = newNum;
+      toast.success(`Nummer overgedragen naar ${formatWardrobeNumber(newNum)}`);
+    } catch (err: any) {
+      toast.error(`Transfer mislukt: ${err.message}`);
+    } finally {
+      setTransferLoading(false);
+    }
+  }, [sessionId, transferNumber, qc]);
+
+  const handleTransferCancel = useCallback(() => {
+    setShowTransferNumpad(false);
+    setShowTransferConfirm(false);
+    setTransferNumber('');
+    setTransferWarning(null);
+    setTransferLoading(false);
+  }, []);
+
+  const transferConfirmDialog = (
+    <SessionPopup
+      open={showTransferConfirm}
+      onClose={handleTransferCancel}
+      title="TRANSFER NR"
+      subtitle={`Nummer ${formatWardrobeNumber(coatNumber)} overdragen naar ${formatWardrobeNumber(transferNumber)}. Weet je het zeker?`}
+      subtitleSize="clamp(0.85rem, 2vw, 1.15rem)"
+      orderLines={[]}
+      showTotal={false}
+      actions={[
+        { label: 'NEE', onClick: handleTransferCancel, variant: 'cancel' as const },
+        { label: transferLoading ? 'BEZIG...' : 'JA', onClick: executeTransfer, variant: 'confirm' as const },
+      ]}
+    />
+  );
 
   const addAndBook = useCallback(async (product: DbProduct) => {
     if (!sessionId) return;
@@ -639,6 +750,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       {bonDialog}
       {payDialog}
       {entreeWarningDialog}
+      {transferConfirmDialog}
 
       {/* Retour mode banner */}
       {retourMode && (
@@ -693,6 +805,24 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
           )}
         </div>
 
+        <div className="px-2 py-2" style={{ borderTop: '1px solid #333' }}>
+          <button
+            onClick={handleOpenTransfer}
+            className="w-full font-extrabold uppercase transition-all active:scale-[0.97]"
+            style={{
+              backgroundColor: '#ef4444',
+              color: '#fff',
+              borderRadius: 8,
+              padding: 'clamp(8px, 1.2vh, 14px) 4px',
+              fontSize: 'clamp(10px, 1.4vw, 14px)',
+              letterSpacing: '0.08em',
+              boxShadow: '0 0 10px #ef444460',
+            }}
+          >
+            TRANSFER NR
+          </button>
+        </div>
+
       </div>
 
       {/* Right column - Product grid */}
@@ -705,6 +835,35 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
           retourMode={retourMode}
         />
       </div>
+
+      {showTransferNumpad && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.75)' }}>
+          <div className="flex flex-col items-center w-full max-w-sm mx-auto px-6 gap-6">
+            <h2 className="text-2xl font-extrabold uppercase tracking-[0.2em] text-center" style={{ color: '#ef4444' }}>TRANSFER NR</h2>
+            <p className="text-sm font-bold uppercase text-center" style={{ color: '#888' }}>
+              Huidig: <span style={{ color: '#fff' }}>{formatWardrobeNumber(coatNumber)}</span>{' → '}Nieuw nummer:
+            </p>
+            <div className="flex items-center justify-center w-full">
+              <div className="w-full" style={{ maxWidth: '280px' }}>
+                <div
+                  className="w-full font-extrabold text-center flex items-center justify-center"
+                  style={{ backgroundColor: '#d1d5db', color: '#111', fontSize: 'clamp(48px, 10vw, 80px)', padding: 'clamp(12px, 2vh, 24px) 16px', border: '3px solid #ef4444', boxShadow: '0 0 12px #ef444480, 0 0 24px #ef444430', borderRadius: '12px' }}
+                >
+                  {transferNumber.length > 0 ? formatWardrobeNumber(transferNumber) : <span style={{ color: '#9ca3af' }}>—</span>}
+                </div>
+                {transferWarning && (
+                  <p className="text-center font-bold mt-2" style={{ color: '#ef4444', fontSize: 'clamp(12px, 2vw, 16px)' }}>{transferWarning}</p>
+                )}
+              </div>
+            </div>
+            <NumPad onKey={handleTransferKey} />
+            <div className="flex gap-3 w-full">
+              <button onClick={handleTransferCancel} className="flex-1 py-4 font-extrabold uppercase text-lg" style={{ backgroundColor: '#333', color: '#fff', borderRadius: 6 }}>CANCEL</button>
+              <button onClick={handleTransferConfirmOpen} className="flex-1 py-4 font-extrabold uppercase text-lg" style={{ backgroundColor: '#ef4444', color: '#fff', borderRadius: 6, boxShadow: '0 0 12px #ef444480' }}>OK</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
