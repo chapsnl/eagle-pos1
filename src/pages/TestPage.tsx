@@ -756,6 +756,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
         </div>
         <FeedbackOverlay type={feedback} />
         {closedBlockDialog}
+        {newNumberConfirmDialog}
         {lockedWarningDialog}
         {bonDialog}
         {payDialog}
