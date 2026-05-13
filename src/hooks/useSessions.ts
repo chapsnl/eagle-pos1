@@ -105,8 +105,9 @@ export const useActiveSessions = () => {
   });
 
   useEffect(() => {
+    const channelName = 'active-sessions-realtime-' + Math.random().toString(36).slice(2, 8);
     const channel = supabase
-      .channel('active-sessions-realtime')
+      .channel(channelName)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sessions' }, (payload) => {
         qc.setQueryData(['sessions', 'active'], (old: any[] | undefined) => {
           if (!old) return old;
@@ -135,7 +136,13 @@ export const useActiveSessions = () => {
           qc.invalidateQueries({ queryKey: ['session-detail', sessionId] });
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          setTimeout(() => {
+            qc.invalidateQueries({ queryKey: ['sessions', 'active'] });
+          }, 3000);
+        }
+      });
     return () => { supabase.removeChannel(channel); };
   }, [qc]);
 
