@@ -521,13 +521,6 @@ export const AdminPage = ({ onNavigateToGuest }: AdminPageProps) => {
               BEHOUD BESTELLINGEN
             </button>
             <button
-              onClick={() => reopenSession && handleReopenEmpty(reopenSession)}
-              className="w-full py-3 font-extrabold uppercase text-sm"
-              style={{ backgroundColor: '#00cc13', color: '#fff', boxShadow: '0 0 12px #00cc1380', borderRadius: 6 }}
-            >
-              BEGIN LEEG
-            </button>
-            <button
               onClick={() => setReopenSession(null)}
               className="w-full py-3 font-extrabold uppercase text-sm"
               style={{ backgroundColor: '#ef4444', color: '#fff', boxShadow: '0 0 12px #ef444480', borderRadius: 6 }}
