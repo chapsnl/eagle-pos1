@@ -149,6 +149,20 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
         lastCoatLookupRef.current = null;
         return;
       }
+      // Check for paid session with same wardrobe number
+      const { data: paidSession } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('wardrobe_number', wardrobeNum)
+        .eq('status', 'paid')
+        .limit(1)
+        .maybeSingle();
+      if (paidSession) {
+        toast.error(`Nummer ${wardrobeNum} is al betaald — doe eerst een close shift`);
+        setCoatNumber('');
+        lastCoatLookupRef.current = null;
+        return;
+      }
       const session = await createSession.mutateAsync({
         wardrobe_number: wardrobeNum,
         is_event_numbered: true,
