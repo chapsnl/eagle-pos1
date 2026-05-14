@@ -286,6 +286,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   }, [initialGuestNumber, initialSessionData, onGuestNumberConsumed]);
 
   const handleNumKey = (key: string) => {
+    setDuplicateWarning(false);
     if (key === 'DEL') {
       setCoatNumber('');
       setActiveField('coat');
