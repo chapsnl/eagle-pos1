@@ -56,6 +56,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   const [phase, setPhase] = useState<Phase>(initialSessionData ? 'products' : 'input');
   const [activeField, setActiveField] = useState<'coat' | null>('coat');
   const [coatNumber, setCoatNumber] = useState('');
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
   const [items, setItems] = useState<TestOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
