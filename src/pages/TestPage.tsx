@@ -56,6 +56,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   const [phase, setPhase] = useState<Phase>(initialSessionData ? 'products' : 'input');
   const [activeField, setActiveField] = useState<'coat' | null>('coat');
   const [coatNumber, setCoatNumber] = useState('');
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
   const [items, setItems] = useState<TestOrderItem[]>([]);
   const [feedback, setFeedback] = useState<FeedbackType>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -144,7 +145,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       // Check cache first instead of network
       const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
       if (cachedSessions?.some(s => s.wardrobe_number === wardrobeNum)) {
-        toast.error(`Gast ${wardrobeNum} bestaat al als actieve klant!`);
+        setDuplicateWarning(true);
         setCoatNumber('');
         lastCoatLookupRef.current = null;
         return;
@@ -163,7 +164,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
           if (old.some(s => s.id === activeExisting.id)) return old;
           return [...old, { id: activeExisting.id, wardrobe_number: wardrobeNum, status: 'active' }];
         });
-        toast.error(`Gast ${wardrobeNum} bestaat al als actieve klant!`);
+        setDuplicateWarning(true);
         setCoatNumber('');
         lastCoatLookupRef.current = null;
         return;
@@ -285,6 +286,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
   }, [initialGuestNumber, initialSessionData, onGuestNumberConsumed]);
 
   const handleNumKey = (key: string) => {
+    setDuplicateWarning(false);
     if (key === 'DEL') {
       setCoatNumber('');
       setActiveField('coat');
@@ -796,6 +798,9 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
                 {formatWardrobeNumber(coatNumber) || <span style={{ color: '#9ca3af' }}>—</span>}
               </div>
             </div>
+          </div>
+          <div className="w-full text-center font-extrabold uppercase tracking-widest" style={{ minHeight: '1.5em', fontSize: 'clamp(14px, 2vw, 18px)', color: '#ef4444', visibility: duplicateWarning ? 'visible' : 'hidden' }}>
+            NUMMER BESTAAT AL
           </div>
           <NumPad onKey={handleNumKey} />
         </div>
