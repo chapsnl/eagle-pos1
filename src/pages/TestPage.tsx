@@ -164,7 +164,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
           if (old.some(s => s.id === activeExisting.id)) return old;
           return [...old, { id: activeExisting.id, wardrobe_number: wardrobeNum, status: 'active' }];
         });
-        toast.error(`Gast ${wardrobeNum} bestaat al als actieve klant!`);
+        setDuplicateWarning(true);
         setCoatNumber('');
         lastCoatLookupRef.current = null;
         return;
