@@ -799,6 +799,9 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
               </div>
             </div>
           </div>
+          <div className="w-full text-center font-extrabold uppercase tracking-widest" style={{ minHeight: '1.5em', fontSize: 'clamp(14px, 2vw, 18px)', color: '#ef4444', visibility: duplicateWarning ? 'visible' : 'hidden' }}>
+            NUMMER BESTAAT AL
+          </div>
           <NumPad onKey={handleNumKey} />
         </div>
       </div>
