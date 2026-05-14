@@ -149,14 +149,26 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
         lastCoatLookupRef.current = null;
         return;
       }
-      // Check for paid session with same wardrobe number
-      const { data: paidSession } = await supabase
+      // Check DB for any existing session (active or paid) with same wardrobe number
+      const { data: existingSessions } = await supabase
         .from('sessions')
-        .select('id')
+        .select('id, status')
         .eq('wardrobe_number', wardrobeNum)
-        .eq('status', 'paid')
-        .limit(1)
-        .maybeSingle();
+        .in('status', ['active', 'paid']);
+      const activeExisting = existingSessions?.find(s => s.status === 'active');
+      if (activeExisting) {
+        // Patch cache so subsequent checks are instant
+        qc.setQueryData(['sessions', 'active'], (old: any[] | undefined) => {
+          if (!old) return old;
+          if (old.some(s => s.id === activeExisting.id)) return old;
+          return [...old, { id: activeExisting.id, wardrobe_number: wardrobeNum, status: 'active' }];
+        });
+        toast.error(`Gast ${wardrobeNum} bestaat al als actieve klant!`);
+        setCoatNumber('');
+        lastCoatLookupRef.current = null;
+        return;
+      }
+      const paidSession = existingSessions?.find(s => s.status === 'paid');
       if (paidSession) {
         toast.error(`Nummer ${wardrobeNum} is al betaald — doe eerst een close shift`);
         setCoatNumber('');
