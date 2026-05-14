@@ -198,6 +198,19 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       const cached = cachedSessions?.find(s => s.wardrobe_number === wardrobeNum) ?? null;
 
       if (!cached) {
+        // Pre-check DB for any existing active session with this number — show warning before confirm dialog
+        const { data: existing } = await supabase
+          .from('sessions')
+          .select('id')
+          .eq('wardrobe_number', wardrobeNum)
+          .eq('status', 'active')
+          .limit(1);
+        if (existing && existing.length > 0) {
+          setDuplicateWarning(true);
+          setCoatNumber('');
+          lastCoatLookupRef.current = null;
+          return;
+        }
         setPendingNewWardrobe(wardrobeNum);
         setShowNewNumberConfirm(true);
         return;
