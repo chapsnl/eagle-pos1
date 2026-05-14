@@ -145,7 +145,7 @@ export const TestPage = forwardRef<TestPageHandle, TestPageProps>(({ initialGues
       // Check cache first instead of network
       const cachedSessions: any[] | undefined = qc.getQueryData(['sessions', 'active']);
       if (cachedSessions?.some(s => s.wardrobe_number === wardrobeNum)) {
-        toast.error(`Gast ${wardrobeNum} bestaat al als actieve klant!`);
+        setDuplicateWarning(true);
         setCoatNumber('');
         lastCoatLookupRef.current = null;
         return;
